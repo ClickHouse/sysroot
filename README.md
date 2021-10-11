@@ -14,7 +14,7 @@ It contains an amalgamation of tools, libraries and binaries for all the needs: 
 
 We don't really need all of this amalgamation for the following reason:
 - we don't need cross-compiler and other tools, because we use LLVM infrastructure (clang, lld, llvm-ar, ...) and it supports cross-compilation by default;
-- we don't need C++ headers and libraries because we include libc++, libc++abi, LLVM'a libunwind as a source code and compile it from sources during build process;
+- we don't need C++ headers and libraries because we include libc++, libc++abi, LLVM's libunwind as a source code and compile it from sources during build process;
 - we definitely don't need Fortran headers;
 
 The idea is to strip down the "toolchain" as much as possible and provide it as a submodule instead of tarball.
