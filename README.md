@@ -1,10 +1,10 @@
-# Files for cross-compilation
+# Files For Cross-Compilation
 
 To do cross-compiling, "toolchain" has to be used.
 
 Typical toolchain contains:
 - header files for the target platform for "default" libraries like libc, c++ standard library, etc;
-- header files for libraries related to compiler builtins (known as `compiler-rt` or `libgcc`, sometimes including a library for exception handling support);
+- header files for the libraries related to compiler builtins (known as `compiler-rt` or `libgcc`, sometimes including a library for exception handling support);
 - binaries `.a`, `.so` and similar for "default" libraries;
 - binaries for "startfiles" like `crt1.o` that contain entry point, initialization and deinitialization routines relevant to the libc;
 - the binaries of cross-compiler, cross-linker, cross-assembler, `ar` and `ranlib` and possibly other `binutils` - the binaries that run on host platform but generates artifacts for the target platform;
