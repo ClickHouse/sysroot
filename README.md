@@ -1,0 +1,34 @@
+# Files for cross-compilation
+
+To do cross-compiling, "toolchain" has to be used.
+
+Typical toolchain contains:
+- header files for the target platform for "default" libraries like libc, c++ standard library, etc;
+- header files for libraries related to compiler builtins (known as `compiler-rt` or `libgcc`, sometimes including a library for exception handling support);
+- binaries `.a`, `.so` and similar for "default" libraries;
+- binaries for "startfiles" like `crt1.o` that contain entry point, initialization and deinitialization routines relevant to the libc;
+- the binaries of cross-compiler, cross-linker, cross-assembler, `ar` and `ranlib` and possibly other `binutils` - the binaries that run on host platform but generates artifacts for the target platform;
+
+Toolchain is usually distributed as a tarball and is quite large, in order of hundreds MB.
+It contains an amalgamation of tools, libraries and binaries for all needs: C, C++, Fortran, CUDA...
+
+We don't really need all of this amalgamation for the following reason:
+- we don't need cross-compiler and other tools, because we use LLVM infrastructure (clang, lld, llvm-ar, ...) and it supports cross-compilation by default;
+- we don't need C++ headers and libraries because we include libc++, libc++abi, LLVM'a libunwind as a source code and compile it from sources during build process;
+- we definitely don't need Fortran headers;
+
+The idea is to strip down the "toolchain" as much as possible and provide it as a submodule instead of tarball.
+Actually it's not longer a "toolchain", it's just a collection of libc-related libraries and a few files for compiler builtins.
+
+This gives us the following advantages:
+- more easy to add new platforms (no need to search for complete toolchain, just copy the relevant files from the OS image);
+- better understanding what's going on - only the relevant files included;
+- avoid risks of supply-chain attacks;
+- allow to use custom sysroot even for default (non-cross) build to get reproducible, hermetic builds;
+- opens up for experiment of building the libc from sources;
+- simplify using musl-libc instead of glibc.
+
+This repository contains some blobs like `libc.so`.
+The source:
+- for `x86_64` they are from Ubuntu 20.04 image;
+- for `aarch64` they are from [developer.arm.com](https://developer.arm.com/-/media/Files/downloads/gnu-a/8.3-2019.03/binrel/gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz?revision=2e88a73f-d233-4f96-b1f4-d8b36e9bb0b9&la=en)
