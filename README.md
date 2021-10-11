@@ -10,7 +10,7 @@ Typical toolchain contains:
 - the binaries of cross-compiler, cross-linker, cross-assembler, `ar` and `ranlib` and possibly other `binutils` - the binaries that run on host platform but generates artifacts for the target platform;
 
 Toolchain is usually distributed as a tarball and is quite large, in order of hundreds MB.
-It contains an amalgamation of tools, libraries and binaries for all needs: C, C++, Fortran, CUDA...
+It contains an amalgamation of tools, libraries and binaries for all the needs: C, C++, Fortran, CUDA...
 
 We don't really need all of this amalgamation for the following reason:
 - we don't need cross-compiler and other tools, because we use LLVM infrastructure (clang, lld, llvm-ar, ...) and it supports cross-compilation by default;
