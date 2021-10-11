@@ -35,3 +35,18 @@ This repository contains some blobs like `libc.so`.
 The source:
 - for `x86_64` they are from Ubuntu 20.04 image;
 - for `aarch64` they are from [developer.arm.com](https://developer.arm.com/-/media/Files/downloads/gnu-a/8.3-2019.03/binrel/gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz?revision=2e88a73f-d233-4f96-b1f4-d8b36e9bb0b9&la=en)
+- for `powerpc64le` it is extracted from Docker image:
+
+```
+docker run -it  ppc64le/ubuntu:14.04
+apt update
+apt install gcc
+
+docker export b38a367a8a05 > ppc64.tar
+```
+
+The ubuntu version 14.04 is selected for better compatibility.
+
+TODO:
+- build `compiler-rt` from sources and remove `libgcc.a` from here;
+- simplify directory structure even more.
