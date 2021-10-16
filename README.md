@@ -38,7 +38,7 @@ The source:
 - for `powerpc64le` it is extracted from Docker image:
 
 ```
-docker run -it  ppc64le/ubuntu:14.04
+docker run -it ppc64le/ubuntu:14.04
 apt update
 apt install gcc
 
