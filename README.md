@@ -46,6 +46,7 @@ docker export b38a367a8a05 > ppc64.tar
 ```
 
 - for `x86_64-musl` they are from https://musl.cc/
+- for `riscv` they are from Debian Unstable image
 
 The ubuntu version 14.04 is selected for better compatibility.
 
