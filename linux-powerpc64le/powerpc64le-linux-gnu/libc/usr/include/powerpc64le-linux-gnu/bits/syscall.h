@@ -20,6 +20,7 @@
 #define SYS_alarm __NR_alarm
 #define SYS_bdflush __NR_bdflush
 #define SYS_bind __NR_bind
+#define SYS_bpf __NR_bpf
 #define SYS_break __NR_break
 #define SYS_brk __NR_brk
 #define SYS_capget __NR_capget
@@ -50,6 +51,7 @@
 #define SYS_eventfd __NR_eventfd
 #define SYS_eventfd2 __NR_eventfd2
 #define SYS_execve __NR_execve
+#define SYS_execveat __NR_execveat
 #define SYS_exit __NR_exit
 #define SYS_exit_group __NR_exit_group
 #define SYS_faccessat __NR_faccessat
@@ -103,6 +105,7 @@
 #define SYS_getpmsg __NR_getpmsg
 #define SYS_getppid __NR_getppid
 #define SYS_getpriority __NR_getpriority
+#define SYS_getrandom __NR_getrandom
 #define SYS_getresgid __NR_getresgid
 #define SYS_getresuid __NR_getresuid
 #define SYS_getrlimit __NR_getrlimit
@@ -152,6 +155,8 @@
 #define SYS_lstat64 __NR_lstat64
 #define SYS_madvise __NR_madvise
 #define SYS_mbind __NR_mbind
+#define SYS_membarrier __NR_membarrier
+#define SYS_memfd_create __NR_memfd_create
 #define SYS_migrate_pages __NR_migrate_pages
 #define SYS_mincore __NR_mincore
 #define SYS_mkdir __NR_mkdir
@@ -159,6 +164,7 @@
 #define SYS_mknod __NR_mknod
 #define SYS_mknodat __NR_mknodat
 #define SYS_mlock __NR_mlock
+#define SYS_mlock2 __NR_mlock2
 #define SYS_mlockall __NR_mlockall
 #define SYS_mmap __NR_mmap
 #define SYS_mmap2 __NR_mmap2
@@ -232,6 +238,7 @@
 #define SYS_removexattr __NR_removexattr
 #define SYS_rename __NR_rename
 #define SYS_renameat __NR_renameat
+#define SYS_renameat2 __NR_renameat2
 #define SYS_request_key __NR_request_key
 #define SYS_restart_syscall __NR_restart_syscall
 #define SYS_rmdir __NR_rmdir
@@ -247,13 +254,16 @@
 #define SYS_sched_get_priority_max __NR_sched_get_priority_max
 #define SYS_sched_get_priority_min __NR_sched_get_priority_min
 #define SYS_sched_getaffinity __NR_sched_getaffinity
+#define SYS_sched_getattr __NR_sched_getattr
 #define SYS_sched_getparam __NR_sched_getparam
 #define SYS_sched_getscheduler __NR_sched_getscheduler
 #define SYS_sched_rr_get_interval __NR_sched_rr_get_interval
 #define SYS_sched_setaffinity __NR_sched_setaffinity
+#define SYS_sched_setattr __NR_sched_setattr
 #define SYS_sched_setparam __NR_sched_setparam
 #define SYS_sched_setscheduler __NR_sched_setscheduler
 #define SYS_sched_yield __NR_sched_yield
+#define SYS_seccomp __NR_seccomp
 #define SYS_select __NR_select
 #define SYS_send __NR_send
 #define SYS_sendfile __NR_sendfile
@@ -312,6 +322,7 @@
 #define SYS_swapcontext __NR_swapcontext
 #define SYS_swapoff __NR_swapoff
 #define SYS_swapon __NR_swapon
+#define SYS_switch_endian __NR_switch_endian
 #define SYS_symlink __NR_symlink
 #define SYS_symlinkat __NR_symlinkat
 #define SYS_sync __NR_sync
@@ -347,6 +358,7 @@
 #define SYS_unlinkat __NR_unlinkat
 #define SYS_unshare __NR_unshare
 #define SYS_uselib __NR_uselib
+#define SYS_userfaultfd __NR_userfaultfd
 #define SYS_ustat __NR_ustat
 #define SYS_utime __NR_utime
 #define SYS_utimensat __NR_utimensat
@@ -375,6 +387,7 @@
 #define SYS_alarm __NR_alarm
 #define SYS_bdflush __NR_bdflush
 #define SYS_bind __NR_bind
+#define SYS_bpf __NR_bpf
 #define SYS_break __NR_break
 #define SYS_brk __NR_brk
 #define SYS_capget __NR_capget
@@ -405,6 +418,7 @@
 #define SYS_eventfd __NR_eventfd
 #define SYS_eventfd2 __NR_eventfd2
 #define SYS_execve __NR_execve
+#define SYS_execveat __NR_execveat
 #define SYS_exit __NR_exit
 #define SYS_exit_group __NR_exit_group
 #define SYS_faccessat __NR_faccessat
@@ -453,6 +467,7 @@
 #define SYS_getpmsg __NR_getpmsg
 #define SYS_getppid __NR_getppid
 #define SYS_getpriority __NR_getpriority
+#define SYS_getrandom __NR_getrandom
 #define SYS_getresgid __NR_getresgid
 #define SYS_getresuid __NR_getresuid
 #define SYS_getrlimit __NR_getrlimit
@@ -501,6 +516,8 @@
 #define SYS_lstat __NR_lstat
 #define SYS_madvise __NR_madvise
 #define SYS_mbind __NR_mbind
+#define SYS_membarrier __NR_membarrier
+#define SYS_memfd_create __NR_memfd_create
 #define SYS_migrate_pages __NR_migrate_pages
 #define SYS_mincore __NR_mincore
 #define SYS_mkdir __NR_mkdir
@@ -508,6 +525,7 @@
 #define SYS_mknod __NR_mknod
 #define SYS_mknodat __NR_mknodat
 #define SYS_mlock __NR_mlock
+#define SYS_mlock2 __NR_mlock2
 #define SYS_mlockall __NR_mlockall
 #define SYS_mmap __NR_mmap
 #define SYS_modify_ldt __NR_modify_ldt
@@ -581,6 +599,7 @@
 #define SYS_removexattr __NR_removexattr
 #define SYS_rename __NR_rename
 #define SYS_renameat __NR_renameat
+#define SYS_renameat2 __NR_renameat2
 #define SYS_request_key __NR_request_key
 #define SYS_restart_syscall __NR_restart_syscall
 #define SYS_rmdir __NR_rmdir
@@ -596,13 +615,16 @@
 #define SYS_sched_get_priority_max __NR_sched_get_priority_max
 #define SYS_sched_get_priority_min __NR_sched_get_priority_min
 #define SYS_sched_getaffinity __NR_sched_getaffinity
+#define SYS_sched_getattr __NR_sched_getattr
 #define SYS_sched_getparam __NR_sched_getparam
 #define SYS_sched_getscheduler __NR_sched_getscheduler
 #define SYS_sched_rr_get_interval __NR_sched_rr_get_interval
 #define SYS_sched_setaffinity __NR_sched_setaffinity
+#define SYS_sched_setattr __NR_sched_setattr
 #define SYS_sched_setparam __NR_sched_setparam
 #define SYS_sched_setscheduler __NR_sched_setscheduler
 #define SYS_sched_yield __NR_sched_yield
+#define SYS_seccomp __NR_seccomp
 #define SYS_select __NR_select
 #define SYS_send __NR_send
 #define SYS_sendfile __NR_sendfile
@@ -659,6 +681,7 @@
 #define SYS_swapcontext __NR_swapcontext
 #define SYS_swapoff __NR_swapoff
 #define SYS_swapon __NR_swapon
+#define SYS_switch_endian __NR_switch_endian
 #define SYS_symlink __NR_symlink
 #define SYS_symlinkat __NR_symlinkat
 #define SYS_sync __NR_sync
@@ -693,6 +716,7 @@
 #define SYS_unlinkat __NR_unlinkat
 #define SYS_unshare __NR_unshare
 #define SYS_uselib __NR_uselib
+#define SYS_userfaultfd __NR_userfaultfd
 #define SYS_ustat __NR_ustat
 #define SYS_utime __NR_utime
 #define SYS_utimensat __NR_utimensat
@@ -721,6 +745,7 @@
 #define SYS_alarm __NR_alarm
 #define SYS_bdflush __NR_bdflush
 #define SYS_bind __NR_bind
+#define SYS_bpf __NR_bpf
 #define SYS_break __NR_break
 #define SYS_brk __NR_brk
 #define SYS_capget __NR_capget
@@ -751,6 +776,7 @@
 #define SYS_eventfd __NR_eventfd
 #define SYS_eventfd2 __NR_eventfd2
 #define SYS_execve __NR_execve
+#define SYS_execveat __NR_execveat
 #define SYS_exit __NR_exit
 #define SYS_exit_group __NR_exit_group
 #define SYS_faccessat __NR_faccessat
@@ -799,6 +825,7 @@
 #define SYS_getpmsg __NR_getpmsg
 #define SYS_getppid __NR_getppid
 #define SYS_getpriority __NR_getpriority
+#define SYS_getrandom __NR_getrandom
 #define SYS_getresgid __NR_getresgid
 #define SYS_getresuid __NR_getresuid
 #define SYS_getrlimit __NR_getrlimit
@@ -847,6 +874,8 @@
 #define SYS_lstat __NR_lstat
 #define SYS_madvise __NR_madvise
 #define SYS_mbind __NR_mbind
+#define SYS_membarrier __NR_membarrier
+#define SYS_memfd_create __NR_memfd_create
 #define SYS_migrate_pages __NR_migrate_pages
 #define SYS_mincore __NR_mincore
 #define SYS_mkdir __NR_mkdir
@@ -854,6 +883,7 @@
 #define SYS_mknod __NR_mknod
 #define SYS_mknodat __NR_mknodat
 #define SYS_mlock __NR_mlock
+#define SYS_mlock2 __NR_mlock2
 #define SYS_mlockall __NR_mlockall
 #define SYS_mmap __NR_mmap
 #define SYS_modify_ldt __NR_modify_ldt
@@ -927,6 +957,7 @@
 #define SYS_removexattr __NR_removexattr
 #define SYS_rename __NR_rename
 #define SYS_renameat __NR_renameat
+#define SYS_renameat2 __NR_renameat2
 #define SYS_request_key __NR_request_key
 #define SYS_restart_syscall __NR_restart_syscall
 #define SYS_rmdir __NR_rmdir
@@ -942,13 +973,16 @@
 #define SYS_sched_get_priority_max __NR_sched_get_priority_max
 #define SYS_sched_get_priority_min __NR_sched_get_priority_min
 #define SYS_sched_getaffinity __NR_sched_getaffinity
+#define SYS_sched_getattr __NR_sched_getattr
 #define SYS_sched_getparam __NR_sched_getparam
 #define SYS_sched_getscheduler __NR_sched_getscheduler
 #define SYS_sched_rr_get_interval __NR_sched_rr_get_interval
 #define SYS_sched_setaffinity __NR_sched_setaffinity
+#define SYS_sched_setattr __NR_sched_setattr
 #define SYS_sched_setparam __NR_sched_setparam
 #define SYS_sched_setscheduler __NR_sched_setscheduler
 #define SYS_sched_yield __NR_sched_yield
+#define SYS_seccomp __NR_seccomp
 #define SYS_select __NR_select
 #define SYS_send __NR_send
 #define SYS_sendfile __NR_sendfile
@@ -1005,6 +1039,7 @@
 #define SYS_swapcontext __NR_swapcontext
 #define SYS_swapoff __NR_swapoff
 #define SYS_swapon __NR_swapon
+#define SYS_switch_endian __NR_switch_endian
 #define SYS_symlink __NR_symlink
 #define SYS_symlinkat __NR_symlinkat
 #define SYS_sync __NR_sync
@@ -1039,6 +1074,7 @@
 #define SYS_unlinkat __NR_unlinkat
 #define SYS_unshare __NR_unshare
 #define SYS_uselib __NR_uselib
+#define SYS_userfaultfd __NR_userfaultfd
 #define SYS_ustat __NR_ustat
 #define SYS_utime __NR_utime
 #define SYS_utimensat __NR_utimensat
