@@ -28,9 +28,6 @@ This gives us the following advantages:
 - opens up for experiment of building the libc from sources;
 - simplify using musl-libc instead of glibc.
 
-Drawbacks:
-- it is incompatible with `check_cxx_source_compiles` from CMake: these checks should be replaced to constant values.
-
 This repository contains some blobs like `libc.so`.
 The source:
 - for `x86_64` they are from Ubuntu 20.04 image;
