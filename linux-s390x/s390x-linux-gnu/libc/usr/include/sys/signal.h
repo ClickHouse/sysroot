@@ -1,1 +1,1 @@
-#include <signal.h>
+../s390x-linux-gnu/sys/signal.h

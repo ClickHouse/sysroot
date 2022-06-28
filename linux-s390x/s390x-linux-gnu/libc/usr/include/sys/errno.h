@@ -1,1 +1,1 @@
-#include <errno.h>
+../s390x-linux-gnu/sys/errno.h

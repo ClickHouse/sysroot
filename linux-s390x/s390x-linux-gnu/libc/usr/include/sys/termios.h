@@ -1,4 +1,1 @@
-#ifndef _SYS_TERMIOS_H
-#define _SYS_TERMIOS_H
-#include <termios.h>
-#endif
+../s390x-linux-gnu/sys/termios.h

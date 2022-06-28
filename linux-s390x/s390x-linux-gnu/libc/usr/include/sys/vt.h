@@ -1,1 +1,1 @@
-#include <linux/vt.h>
+../s390x-linux-gnu/sys/vt.h

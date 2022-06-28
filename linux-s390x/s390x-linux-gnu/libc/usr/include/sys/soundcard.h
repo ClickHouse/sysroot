@@ -1,1 +1,1 @@
-#include <linux/soundcard.h>
+../s390x-linux-gnu/sys/soundcard.h

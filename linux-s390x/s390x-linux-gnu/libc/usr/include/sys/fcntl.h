@@ -1,1 +1,1 @@
-#include <fcntl.h>
+../s390x-linux-gnu/sys/fcntl.h

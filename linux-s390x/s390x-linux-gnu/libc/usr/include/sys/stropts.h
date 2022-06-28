@@ -1,1 +1,1 @@
-#include <stropts.h>
+../s390x-linux-gnu/sys/stropts.h

@@ -1,3 +1,1 @@
-/* The GNU <sys/types.h> defines all the necessary types.  */
-
-#include <sys/types.h>
+../s390x-linux-gnu/sys/bitypes.h
