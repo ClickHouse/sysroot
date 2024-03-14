@@ -56,6 +56,7 @@ The ubuntu version 14.04 is selected for better compatibility.
 
 - for `x86_64-musl` they are from https://musl.cc/
 - for `riscv` they are from Debian Unstable image
+- for `loongarch64` they are from Debian Unstable image
 
 FreeBSD:
 
