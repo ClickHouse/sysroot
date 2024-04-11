@@ -54,7 +54,7 @@ docker export b38a367a8a05 > ppc64.tar
 
 The ubuntu version 14.04 is selected for better compatibility.
 
-- for `x86_64-musl` they are from https://musl.cc/
+- for `x86_64-musl` they are from https://musl.cc/. Last updated from build 23-Nov-2021 04:50 (7e2fa1cbc6b6c23d15e7b65015777e89  x86_64-linux-musl-native.tgz).
 - for `riscv` they are from Debian Unstable image
 - for `loongarch64` they are from Debian Unstable image
 
