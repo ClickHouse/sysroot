@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_SYS_IOCTL_H
 #define	_SYS_IOCTL_H	1
@@ -38,7 +38,17 @@ __BEGIN_DECLS
 /* Perform the I/O control operation specified by REQUEST on FD.
    One argument may follow; its presence and type depend on REQUEST.
    Return value depends on REQUEST.  Usually -1 indicates error.  */
+#ifndef __USE_TIME_BITS64
 extern int ioctl (int __fd, unsigned long int __request, ...) __THROW;
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT_NTH (ioctl, (int __fd, unsigned long int __request, ...),
+			   __ioctl_time64);
+# else
+extern int __ioctl_time64 (int __fd, unsigned long int __request, ...) __THROW;
+#  define ioctl __ioctl_time64
+# endif
+#endif
 
 __END_DECLS
 

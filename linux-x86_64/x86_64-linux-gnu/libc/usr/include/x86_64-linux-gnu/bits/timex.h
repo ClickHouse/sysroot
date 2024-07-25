@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_BITS_TIMEX_H
 #define	_BITS_TIMEX_H	1
@@ -25,6 +25,36 @@
 
 struct timex
 {
+# if defined __USE_TIME_BITS64 || (__TIMESIZE == 64 && __WORDSIZE == 32)
+  unsigned int modes;          /* mode selector */
+  int :32;                     /* pad */
+  long long offset;            /* time offset (usec) */
+  long long freq;              /* frequency offset (scaled ppm) */
+  long long maxerror;          /* maximum error (usec) */
+  long long esterror;          /* estimated error (usec) */
+  int status;                  /* clock command/status */
+  int :32;                     /* pad */
+  long long constant;          /* pll time constant */
+  long long precision;         /* clock precision (usec) (read only) */
+  long long tolerance;         /* clock frequency tolerance (ppm) (ro) */
+  struct timeval time;     /* (read only, except for ADJ_SETOFFSET) */
+  long long tick;              /* (modified) usecs between clock ticks */
+  long long ppsfreq;           /* pps frequency (scaled ppm) (ro) */
+  long long jitter;            /* pps jitter (us) (ro) */
+  int shift;                   /* interval duration (s) (shift) (ro) */
+  int :32;                     /* pad */
+  long long stabil;            /* pps stability (scaled ppm) (ro) */
+  long long jitcnt;            /* jitter limit exceeded (ro) */
+  long long calcnt;            /* calibration intervals (ro) */
+  long long errcnt;            /* calibration errors (ro) */
+  long long stbcnt;            /* stability limit exceeded (ro) */
+
+  int tai;                     /* TAI offset (ro) */
+
+  int  :32; int  :32; int  :32; int  :32;
+  int  :32; int  :32; int  :32; int  :32;
+  int  :32; int  :32; int  :32;
+# else
   unsigned int modes;		/* mode selector */
   __syscall_slong_t offset;	/* time offset (usec) */
   __syscall_slong_t freq;	/* frequency offset (scaled ppm) */
@@ -51,6 +81,7 @@ struct timex
   int  :32; int  :32; int  :32; int  :32;
   int  :32; int  :32; int  :32; int  :32;
   int  :32; int  :32; int  :32;
+# endif
 };
 
 /* Mode codes (timex.mode) */
@@ -104,7 +135,7 @@ struct timex
 #define STA_CLK		0x8000	/* clock source (0 = A, 1 = B) (ro) */
 
 /* Read-only bits */
-#define STA_RONLY (STA_PPSSIGNAL | STA_PPSJITTER | STA_PPSWANDER | \
-    STA_PPSERROR | STA_CLOCKERR | STA_NANO | STA_MODE | STA_CLK)
+#define STA_RONLY (STA_PPSSIGNAL | STA_PPSJITTER | STA_PPSWANDER \
+    | STA_PPSERROR | STA_CLOCKERR | STA_NANO | STA_MODE | STA_CLK)
 
 #endif /* bits/timex.h */

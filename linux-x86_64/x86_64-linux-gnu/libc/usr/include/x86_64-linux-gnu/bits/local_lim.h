@@ -1,5 +1,5 @@
 /* Minimum guaranteed maximum values for system limits.  Linux version.
-   Copyright (C) 1993-2018 Free Software Foundation, Inc.
+   Copyright (C) 1993-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; see the file COPYING.LIB.  If
-   not, see <http://www.gnu.org/licenses/>.  */
+   not, see <https://www.gnu.org/licenses/>.  */
 
 /* The kernel header pollutes the namespace with the NR_OPEN symbol
    and defines LINK_MAX although filesystems have different maxima.  A
@@ -73,12 +73,12 @@
 /* We have no predefined limit on the number of threads.  */
 #undef PTHREAD_THREADS_MAX
 
-/* Maximum amount by which a process can descrease its asynchronous I/O
+/* Maximum amount by which a process can decrease its asynchronous I/O
    priority level.  */
 #define AIO_PRIO_DELTA_MAX	20
 
-/* Minimum size for a thread.  We are free to choose a reasonable value.  */
-#define PTHREAD_STACK_MIN	16384
+/* Arrange for the definition of PTHREAD_STACK_MIN.  */
+#include <bits/pthread_stack_min-dynamic.h>
 
 /* Maximum number of timer expiration overruns.  */
 #define DELAYTIMER_MAX	2147483647

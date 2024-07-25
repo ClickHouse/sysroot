@@ -1,5 +1,5 @@
 /* System-specific socket constants and types.  Linux version.
-   Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef __BITS_SOCKET_H
 #define __BITS_SOCKET_H
@@ -85,7 +85,9 @@ typedef __socklen_t socklen_t;
 #define PF_KCM		41	/* Kernel Connection Multiplexor.  */
 #define PF_QIPCRTR	42	/* Qualcomm IPC Router.  */
 #define PF_SMC		43	/* SMC sockets.  */
-#define PF_MAX		44	/* For now..  */
+#define PF_XDP		44	/* XDP sockets.  */
+#define PF_MCTP		45	/* Management component transport protocol.  */
+#define PF_MAX		46	/* For now..  */
 
 /* Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
@@ -135,6 +137,8 @@ typedef __socklen_t socklen_t;
 #define AF_KCM		PF_KCM
 #define AF_QIPCRTR	PF_QIPCRTR
 #define AF_SMC		PF_SMC
+#define AF_XDP		PF_XDP
+#define AF_MCTP		PF_MCTP
 #define AF_MAX		PF_MAX
 
 /* Socket level values.  Others are defined in the appropriate headers.
@@ -164,9 +168,13 @@ typedef __socklen_t socklen_t;
 #define SOL_NFC		280
 #define SOL_KCM		281
 #define SOL_TLS		282
+#define SOL_XDP		283
+#define SOL_MPTCP	284
+#define SOL_MCTP	285
+#define SOL_SMC		286
 
 /* Maximum queue length specifiable by listen.  */
-#define SOMAXCONN	128
+#define SOMAXCONN	4096
 
 /* Get the definition of the macro to define the common sockaddr members.  */
 #include <bits/sockaddr.h>
@@ -299,6 +307,12 @@ struct cmsghdr
 			 + CMSG_ALIGN (sizeof (struct cmsghdr)))
 #define CMSG_LEN(len)   (CMSG_ALIGN (sizeof (struct cmsghdr)) + (len))
 
+/* Given a length, return the additional padding necessary such that
+   len + __CMSG_PADDING(len) == CMSG_ALIGN (len).  */
+#define __CMSG_PADDING(len) ((sizeof (size_t) \
+                              - ((len) & (sizeof (size_t) - 1))) \
+                             & (sizeof (size_t) - 1))
+
 extern struct cmsghdr *__cmsg_nxthdr (struct msghdr *__mhdr,
 				      struct cmsghdr *__cmsg) __THROW;
 #ifdef __USE_EXTERN_INLINES
@@ -308,18 +322,38 @@ extern struct cmsghdr *__cmsg_nxthdr (struct msghdr *__mhdr,
 _EXTERN_INLINE struct cmsghdr *
 __NTH (__cmsg_nxthdr (struct msghdr *__mhdr, struct cmsghdr *__cmsg))
 {
+  /* We may safely assume that __cmsg lies between __mhdr->msg_control and
+     __mhdr->msg_controllen because the user is required to obtain the first
+     cmsg via CMSG_FIRSTHDR, set its length, then obtain subsequent cmsgs
+     via CMSG_NXTHDR, setting lengths along the way.  However, we don't yet
+     trust the value of __cmsg->cmsg_len and therefore do not use it in any
+     pointer arithmetic until we check its value.  */
+
+  unsigned char * __msg_control_ptr = (unsigned char *) __mhdr->msg_control;
+  unsigned char * __cmsg_ptr = (unsigned char *) __cmsg;
+
+  size_t __size_needed = sizeof (struct cmsghdr)
+                         + __CMSG_PADDING (__cmsg->cmsg_len);
+
+  /* The current header is malformed, too small to be a full header.  */
   if ((size_t) __cmsg->cmsg_len < sizeof (struct cmsghdr))
-    /* The kernel header does this so there may be a reason.  */
     return (struct cmsghdr *) 0;
 
+  /* There isn't enough space between __cmsg and the end of the buffer to
+  hold the current cmsg *and* the next one.  */
+  if (((size_t)
+         (__msg_control_ptr + __mhdr->msg_controllen - __cmsg_ptr)
+       < __size_needed)
+      || ((size_t)
+            (__msg_control_ptr + __mhdr->msg_controllen - __cmsg_ptr
+             - __size_needed)
+          < __cmsg->cmsg_len))
+
+    return (struct cmsghdr *) 0;
+
+  /* Now, we trust cmsg_len and can use it to find the next header.  */
   __cmsg = (struct cmsghdr *) ((unsigned char *) __cmsg
 			       + CMSG_ALIGN (__cmsg->cmsg_len));
-  if ((unsigned char *) (__cmsg + 1) > ((unsigned char *) __mhdr->msg_control
-					+ __mhdr->msg_controllen)
-      || ((unsigned char *) __cmsg + CMSG_ALIGN (__cmsg->cmsg_len)
-	  > ((unsigned char *) __mhdr->msg_control + __mhdr->msg_controllen)))
-    /* No more entries.  */
-    return (struct cmsghdr *) 0;
   return __cmsg;
 }
 #endif	/* Use `extern inline'.  */
@@ -333,6 +367,10 @@ enum
 #ifdef __USE_GNU
     , SCM_CREDENTIALS = 0x02	/* Credentials passing.  */
 # define SCM_CREDENTIALS SCM_CREDENTIALS
+    , SCM_SECURITY = 0x03	/* Security label.  */
+# define SCM_SECURITY SCM_SECURITY
+    , SCM_PIDFD = 0x04		/* Pidfd.  */
+# define SCM_PIDFD SCM_PIDFD
 #endif
   };
 
@@ -346,98 +384,12 @@ struct ucred
 };
 #endif
 
-/* Ugly workaround for unclean kernel headers.  */
-#ifndef __USE_MISC
-# ifndef FIOGETOWN
-#  define __SYS_SOCKET_H_undef_FIOGETOWN
-# endif
-# ifndef FIOSETOWN
-#  define __SYS_SOCKET_H_undef_FIOSETOWN
-# endif
-# ifndef SIOCATMARK
-#  define __SYS_SOCKET_H_undef_SIOCATMARK
-# endif
-# ifndef SIOCGPGRP
-#  define __SYS_SOCKET_H_undef_SIOCGPGRP
-# endif
-# ifndef SIOCGSTAMP
-#  define __SYS_SOCKET_H_undef_SIOCGSTAMP
-# endif
-# ifndef SIOCGSTAMPNS
-#  define __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-# endif
-# ifndef SIOCSPGRP
-#  define __SYS_SOCKET_H_undef_SIOCSPGRP
-# endif
-#endif
-#ifndef IOCSIZE_MASK
-# define __SYS_SOCKET_H_undef_IOCSIZE_MASK
-#endif
-#ifndef IOCSIZE_SHIFT
-# define __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-#endif
-#ifndef IOC_IN
-# define __SYS_SOCKET_H_undef_IOC_IN
-#endif
-#ifndef IOC_INOUT
-# define __SYS_SOCKET_H_undef_IOC_INOUT
-#endif
-#ifndef IOC_OUT
-# define __SYS_SOCKET_H_undef_IOC_OUT
-#endif
-
-/* Get socket manipulation related informations from kernel headers.  */
-#include <asm/socket.h>
-
-#ifndef __USE_MISC
-# ifdef __SYS_SOCKET_H_undef_FIOGETOWN
-#  undef __SYS_SOCKET_H_undef_FIOGETOWN
-#  undef FIOGETOWN
-# endif
-# ifdef __SYS_SOCKET_H_undef_FIOSETOWN
-#  undef __SYS_SOCKET_H_undef_FIOSETOWN
-#  undef FIOSETOWN
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCATMARK
-#  undef __SYS_SOCKET_H_undef_SIOCATMARK
-#  undef SIOCATMARK
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGPGRP
-#  undef __SYS_SOCKET_H_undef_SIOCGPGRP
-#  undef SIOCGPGRP
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#  undef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#  undef SIOCGSTAMP
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#  undef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#  undef SIOCGSTAMPNS
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCSPGRP
-#  undef __SYS_SOCKET_H_undef_SIOCSPGRP
-#  undef SIOCSPGRP
-# endif
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-# undef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-# undef IOCSIZE_MASK
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-# undef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-# undef IOCSIZE_SHIFT
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_IN
-# undef __SYS_SOCKET_H_undef_IOC_IN
-# undef IOC_IN
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_INOUT
-# undef __SYS_SOCKET_H_undef_IOC_INOUT
-# undef IOC_INOUT
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_OUT
-# undef __SYS_SOCKET_H_undef_IOC_OUT
-# undef IOC_OUT
+#ifdef __USE_MISC
+# include <bits/types/time_t.h>
+# include <asm/socket.h>
+#else
+# define SO_DEBUG 1
+# include <bits/socket-constants.h>
 #endif
 
 /* Structure used to manipulate the SO_LINGER option.  */

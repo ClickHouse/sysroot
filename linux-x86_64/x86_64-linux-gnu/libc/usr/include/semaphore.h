@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2020 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -59,16 +59,41 @@ extern int sem_wait (sem_t *__sem) __nonnull ((1));
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+# ifndef __USE_TIME_BITS64
 extern int sem_timedwait (sem_t *__restrict __sem,
 			  const struct timespec *__restrict __abstime)
   __nonnull ((1, 2));
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (sem_timedwait,
+                       (sem_t *__restrict __sem,
+                        const struct timespec *__restrict __abstime),
+                        __sem_timedwait64)
+  __nonnull ((1, 2));
+#  else
+#   define sem_timedwait __sem_timedwait64
+#  endif
+# endif
 #endif
 
 #ifdef __USE_GNU
+# ifndef __USE_TIME_BITS64
 extern int sem_clockwait (sem_t *__restrict __sem,
 			  clockid_t clock,
 			  const struct timespec *__restrict __abstime)
   __nonnull ((1, 3));
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (sem_clockwait,
+                       (sem_t *__restrict __sem,
+                        clockid_t clock,
+                        const struct timespec *__restrict __abstime),
+                        __sem_clockwait64)
+  __nonnull ((1, 3));
+#  else
+#   define sem_clockwait __sem_clockwait64
+#  endif
+# endif
 #endif
 
 /* Test whether SEM is posted.  */

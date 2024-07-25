@@ -1,5 +1,5 @@
 /* Bit values & structures for resource limits.  Linux version.
-   Copyright (C) 1994-2018 Free Software Foundation, Inc.
+   Copyright (C) 1994-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_RESOURCE_H
 # error "Never use <bits/resource.h> directly; include <sys/resource.h> instead."
@@ -98,7 +98,7 @@ enum __rlimit_resource
   __RLIMIT_RTPRIO = 14,
 #define RLIMIT_RTPRIO __RLIMIT_RTPRIO
 
-  /* Maximum CPU time in µs that a process scheduled under a real-time
+  /* Maximum CPU time in microseconds that a process scheduled under a real-time
      scheduling policy may consume without making a blocking system
      call before being forcibly descheduled.  */
   __RLIMIT_RTTIME = 15,

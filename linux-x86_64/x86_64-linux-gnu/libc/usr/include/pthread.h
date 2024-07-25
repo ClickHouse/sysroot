@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2018 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,21 +13,25 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _PTHREAD_H
 #define _PTHREAD_H	1
 
 #include <features.h>
-#include <endian.h>
 #include <sched.h>
 #include <time.h>
 
+#include <bits/endian.h>
 #include <bits/pthreadtypes.h>
 #include <bits/setjmp.h>
 #include <bits/wordsize.h>
 #include <bits/types/struct_timespec.h>
-
+#include <bits/types/__sigset_t.h>
+#include <bits/types/struct___jmp_buf_tag.h>
+#ifdef __USE_MISC
+# include <bits/pthread_stack_min-dynamic.h>
+#endif
 
 /* Detach state.  */
 enum
@@ -83,30 +87,15 @@ enum
 #endif
 
 
-#if __PTHREAD_MUTEX_HAVE_PREV
-# define PTHREAD_MUTEX_INITIALIZER \
-  { { 0, 0, 0, 0, 0, __PTHREAD_SPINS, { 0, 0 } } }
-# ifdef __USE_GNU
-#  define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, 0, PTHREAD_MUTEX_RECURSIVE_NP, __PTHREAD_SPINS, { 0, 0 } } }
-#  define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, __PTHREAD_SPINS, { 0, 0 } } }
-#  define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, 0, PTHREAD_MUTEX_ADAPTIVE_NP, __PTHREAD_SPINS, { 0, 0 } } }
-
-# endif
-#else
-# define PTHREAD_MUTEX_INITIALIZER \
-  { { 0, 0, 0, 0, 0, { __PTHREAD_SPINS } } }
-# ifdef __USE_GNU
-#  define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, PTHREAD_MUTEX_RECURSIVE_NP, 0, { __PTHREAD_SPINS } } }
-#  define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, 0, { __PTHREAD_SPINS } } }
-#  define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-  { { 0, 0, 0, PTHREAD_MUTEX_ADAPTIVE_NP, 0, { __PTHREAD_SPINS } } }
-
-# endif
+#define PTHREAD_MUTEX_INITIALIZER \
+ { {  __PTHREAD_MUTEX_INITIALIZER (PTHREAD_MUTEX_TIMED_NP) } }
+#ifdef __USE_GNU
+# define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
+ { {  __PTHREAD_MUTEX_INITIALIZER (PTHREAD_MUTEX_RECURSIVE_NP) } }
+# define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
+ { {  __PTHREAD_MUTEX_INITIALIZER (PTHREAD_MUTEX_ERRORCHECK_NP) } }
+# define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
+ { {  __PTHREAD_MUTEX_INITIALIZER (PTHREAD_MUTEX_ADAPTIVE_NP) } }
 #endif
 
 
@@ -120,34 +109,13 @@ enum
   PTHREAD_RWLOCK_DEFAULT_NP = PTHREAD_RWLOCK_PREFER_READER_NP
 };
 
-/* Define __PTHREAD_RWLOCK_INT_FLAGS_SHARED to 1 if pthread_rwlock_t
-   has the shared field.  All 64-bit architectures have the shared field
-   in pthread_rwlock_t.  */
-#ifndef __PTHREAD_RWLOCK_INT_FLAGS_SHARED
-# if __WORDSIZE == 64
-#  define __PTHREAD_RWLOCK_INT_FLAGS_SHARED 1
-# endif
-#endif
 
 /* Read-write lock initializers.  */
 # define PTHREAD_RWLOCK_INITIALIZER \
-  { { 0, 0, 0, 0, 0, 0, 0, 0, __PTHREAD_RWLOCK_ELISION_EXTRA, 0, 0 } }
+  { { __PTHREAD_RWLOCK_INITIALIZER (PTHREAD_RWLOCK_DEFAULT_NP) } }
 # ifdef __USE_GNU
-#  ifdef __PTHREAD_RWLOCK_INT_FLAGS_SHARED
-#   define PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP \
-  { { 0, 0, 0, 0, 0, 0, 0, 0, __PTHREAD_RWLOCK_ELISION_EXTRA, 0,					      \
-	PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP } }
-#  else
-#   if __BYTE_ORDER == __LITTLE_ENDIAN
-#    define PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP \
-  { { 0, 0, 0, 0, 0, 0, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP, \
-      0, __PTHREAD_RWLOCK_ELISION_EXTRA, 0, 0 } }
-#   else
-#    define PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP \
-  { { 0, 0, 0, 0, 0, 0, 0, 0, 0, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP,\
-      0 } }
-#   endif
-#  endif
+#  define PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP \
+  { { __PTHREAD_RWLOCK_INITIALIZER (PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP) } }
 # endif
 #endif  /* Unix98 or XOpen2K */
 
@@ -255,6 +223,7 @@ extern int pthread_join (pthread_t __th, void **__thread_return);
    the thread in *THREAD_RETURN, if THREAD_RETURN is not NULL.  */
 extern int pthread_tryjoin_np (pthread_t __th, void **__thread_return) __THROW;
 
+# ifndef __USE_TIME_BITS64
 /* Make calling thread wait for termination of the thread TH, but only
    until TIMEOUT.  The exit status of the thread is stored in
    *THREAD_RETURN, if THREAD_RETURN is not NULL.
@@ -263,6 +232,34 @@ extern int pthread_tryjoin_np (pthread_t __th, void **__thread_return) __THROW;
    __THROW.  */
 extern int pthread_timedjoin_np (pthread_t __th, void **__thread_return,
 				 const struct timespec *__abstime);
+
+/* Make calling thread wait for termination of the thread TH, but only
+   until TIMEOUT measured against the clock specified by CLOCKID.  The
+   exit status of the thread is stored in *THREAD_RETURN, if
+   THREAD_RETURN is not NULL.
+
+   This function is a cancellation point and therefore not marked with
+   __THROW.  */
+extern int pthread_clockjoin_np (pthread_t __th, void **__thread_return,
+                                 clockid_t __clockid,
+				 const struct timespec *__abstime);
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (pthread_timedjoin_np,
+                       (pthread_t __th, void **__thread_return,
+                        const struct timespec *__abstime),
+                       __pthread_timedjoin_np64);
+
+extern int __REDIRECT (pthread_clockjoin_np,
+                       (pthread_t __th, void **__thread_return,
+                        clockid_t __clockid,
+                        const struct timespec *__abstime),
+                       __pthread_clockjoin_np64);
+#  else
+#   define pthread_timedjoin_np __pthread_timedjoin_np64
+#   define pthread_clockjoin_np __pthread_clockjoin_np64
+#  endif
+# endif
 #endif
 
 /* Indicate that the thread TH is never to be joined with PTHREAD_JOIN.
@@ -410,6 +407,20 @@ extern int pthread_attr_getaffinity_np (const pthread_attr_t *__attr,
 extern int pthread_getattr_default_np (pthread_attr_t *__attr)
      __THROW __nonnull ((1));
 
+/* Store *SIGMASK as the signal mask for the new thread in *ATTR.  */
+extern int pthread_attr_setsigmask_np (pthread_attr_t *__attr,
+				       const __sigset_t *sigmask);
+
+/* Store the signal mask of *ATTR in *SIGMASK.  If there is no signal
+   mask stored, return PTHREAD_ATTR_NOSIGMASK_NP.  Return zero on
+   success.  */
+extern int pthread_attr_getsigmask_np (const pthread_attr_t *__attr,
+				       __sigset_t *sigmask);
+
+/* Special return value from pthread_attr_getsigmask_np if the signal
+   mask has not been set.  */
+#define PTHREAD_ATTR_NO_SIGMASK_NP (-1)
+
 /* Set the default attributes to be used by pthread_create in this
    process.  */
 extern int pthread_setattr_default_np (const pthread_attr_t *__attr)
@@ -463,11 +474,14 @@ extern int pthread_setconcurrency (int __level) __THROW;
 #endif
 
 #ifdef __USE_GNU
-/* Yield the processor to another thread or process.
-   This function is similar to the POSIX `sched_yield' function but
-   might be differently implemented in the case of a m-on-n thread
-   implementation.  */
 extern int pthread_yield (void) __THROW;
+# ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (pthread_yield, (void), sched_yield)
+  __attribute_deprecated_msg__ ("\
+pthread_yield is deprecated, use sched_yield instead");
+# else
+#  define pthread_yield sched_yield
+# endif
 
 
 /* Limit specified thread TH to run only on the processors represented
@@ -502,7 +516,7 @@ extern int pthread_once (pthread_once_t *__once_control,
    exception in C++ code.  If cancellation is implemented by unwinding
    this is necessary to have the compiler generate the unwind information.  */
 
-/* Set cancelability state of current thread to STATE, returning old
+/* Set cancellability state of current thread to STATE, returning old
    state in *OLDSTATE if OLDSTATE is not NULL.  */
 extern int pthread_setcancelstate (int __state, int *__oldstate);
 
@@ -521,13 +535,15 @@ extern void pthread_testcancel (void);
 
 /* Cancellation handling with integration into exception handling.  */
 
+struct __cancel_jmp_buf_tag
+{
+  __jmp_buf __cancel_jmp_buf;
+  int __mask_was_saved;
+};
+
 typedef struct
 {
-  struct
-  {
-    __jmp_buf __cancel_jmp_buf;
-    int __mask_was_saved;
-  } __cancel_jmp_buf[1];
+  struct __cancel_jmp_buf_tag __cancel_jmp_buf[1];
   void *__pad[4];
 } __pthread_unwind_buf_t __attribute__ ((__aligned__));
 
@@ -667,8 +683,8 @@ __pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame)
     __pthread_unwind_buf_t __cancel_buf;				      \
     void (*__cancel_routine) (void *) = (routine);			      \
     void *__cancel_arg = (arg);						      \
-    int __not_first_call = __sigsetjmp ((struct __jmp_buf_tag *) (void *)     \
-					__cancel_buf.__cancel_jmp_buf, 0);    \
+    int __not_first_call = __sigsetjmp_cancel (__cancel_buf.__cancel_jmp_buf, \
+					       0);			      \
     if (__glibc_unlikely (__not_first_call))				      \
       {									      \
 	__cancel_routine (__cancel_arg);				      \
@@ -702,8 +718,8 @@ extern void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
     __pthread_unwind_buf_t __cancel_buf;				      \
     void (*__cancel_routine) (void *) = (routine);			      \
     void *__cancel_arg = (arg);						      \
-    int __not_first_call = __sigsetjmp ((struct __jmp_buf_tag *) (void *)     \
-					__cancel_buf.__cancel_jmp_buf, 0);    \
+    int __not_first_call = __sigsetjmp_cancel (__cancel_buf.__cancel_jmp_buf, \
+					       0);			      \
     if (__glibc_unlikely (__not_first_call))				      \
       {									      \
 	__cancel_routine (__cancel_arg);				      \
@@ -739,9 +755,24 @@ extern void __pthread_unwind_next (__pthread_unwind_buf_t *__buf)
      ;
 #endif
 
-/* Function used in the macros.  */
-struct __jmp_buf_tag;
-extern int __sigsetjmp (struct __jmp_buf_tag *__env, int __savemask) __THROWNL;
+/* Function used in the macros.  Calling __sigsetjmp, with its first
+   argument declared as an array, results in a -Wstringop-overflow
+   warning from GCC 11 because struct pthread_unwind_buf is smaller
+   than jmp_buf.  The calls from the macros have __SAVEMASK set to 0,
+   so nothing beyond the common prefix is used and this warning is a
+   false positive.  Use an alias with its first argument declared to
+   use the type in the macros if possible to avoid this warning.  */
+#if __GNUC_PREREQ (11, 0)
+extern int __REDIRECT_NTHNL (__sigsetjmp_cancel,
+			     (struct __cancel_jmp_buf_tag __env[1],
+			      int __savemask),
+			     __sigsetjmp) __attribute_returns_twice__;
+#else
+# define __sigsetjmp_cancel(env, savemask) \
+  __sigsetjmp ((struct __jmp_buf_tag *) (void *) (env), (savemask))
+extern int __sigsetjmp (struct __jmp_buf_tag __env[1],
+			int __savemask) __THROWNL;
+#endif
 
 
 /* Mutex handling.  */
@@ -765,9 +796,39 @@ extern int pthread_mutex_lock (pthread_mutex_t *__mutex)
 
 #ifdef __USE_XOPEN2K
 /* Wait until lock becomes available, or specified time passes. */
+# ifndef __USE_TIME_BITS64
 extern int pthread_mutex_timedlock (pthread_mutex_t *__restrict __mutex,
 				    const struct timespec *__restrict
 				    __abstime) __THROWNL __nonnull ((1, 2));
+# else
+#  ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_mutex_timedlock,
+                             (pthread_mutex_t *__restrict __mutex,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_mutex_timedlock64) __nonnull ((1, 2));
+#  else
+#   define pthread_mutex_timedlock __pthread_mutex_timedlock64
+#  endif
+# endif
+#endif
+
+#ifdef __USE_GNU
+# ifndef __USE_TIME_BITS64
+extern int pthread_mutex_clocklock (pthread_mutex_t *__restrict __mutex,
+				    clockid_t __clockid,
+				    const struct timespec *__restrict
+				    __abstime) __THROWNL __nonnull ((1, 3));
+# else
+#  ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_mutex_clocklock,
+                             (pthread_mutex_t *__restrict __mutex,
+                              clockid_t __clockid,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_mutex_clocklock64) __nonnull ((1, 3));
+#  else
+#   define pthread_mutex_clocklock __pthread_mutex_clocklock64
+#  endif
+# endif
 #endif
 
 /* Unlock a mutex.  */
@@ -794,8 +855,14 @@ extern int pthread_mutex_setprioceiling (pthread_mutex_t *__restrict __mutex,
 extern int pthread_mutex_consistent (pthread_mutex_t *__mutex)
      __THROW __nonnull ((1));
 # ifdef __USE_GNU
-extern int pthread_mutex_consistent_np (pthread_mutex_t *__mutex)
-     __THROW __nonnull ((1));
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (pthread_mutex_consistent_np, (pthread_mutex_t *),
+			   pthread_mutex_consistent) __nonnull ((1))
+  __attribute_deprecated_msg__ ("\
+pthread_mutex_consistent_np is deprecated, use pthread_mutex_consistent");
+#  else
+#   define pthread_mutex_consistent_np pthread_mutex_consistent
+#  endif
 # endif
 #endif
 
@@ -864,9 +931,15 @@ extern int pthread_mutexattr_getrobust (const pthread_mutexattr_t *__attr,
 					int *__robustness)
      __THROW __nonnull ((1, 2));
 # ifdef __USE_GNU
-extern int pthread_mutexattr_getrobust_np (const pthread_mutexattr_t *__attr,
-					   int *__robustness)
-     __THROW __nonnull ((1, 2));
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (pthread_mutexattr_getrobust_np,
+			   (pthread_mutexattr_t *, int *),
+			   pthread_mutexattr_getrobust) __nonnull ((1))
+  __attribute_deprecated_msg__ ("\
+pthread_mutexattr_getrobust_np is deprecated, use pthread_mutexattr_getrobust");
+#  else
+#   define pthread_mutexattr_getrobust_np pthread_mutexattr_getrobust
+#  endif
 # endif
 
 /* Set the robustness flag of the mutex attribute ATTR.  */
@@ -874,12 +947,17 @@ extern int pthread_mutexattr_setrobust (pthread_mutexattr_t *__attr,
 					int __robustness)
      __THROW __nonnull ((1));
 # ifdef __USE_GNU
-extern int pthread_mutexattr_setrobust_np (pthread_mutexattr_t *__attr,
-					   int __robustness)
-     __THROW __nonnull ((1));
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (pthread_mutexattr_setrobust_np,
+			   (pthread_mutexattr_t *, int),
+			   pthread_mutexattr_setrobust) __nonnull ((1))
+  __attribute_deprecated_msg__ ("\
+pthread_mutexattr_setrobust_np is deprecated, use pthread_mutexattr_setrobust");
+#  else
+#   define pthread_mutexattr_setrobust_np pthread_mutexattr_setrobust
+#  endif
 # endif
 #endif
-
 
 #if defined __USE_UNIX98 || defined __USE_XOPEN2K
 /* Functions for handling read-write locks.  */
@@ -903,10 +981,42 @@ extern int pthread_rwlock_tryrdlock (pthread_rwlock_t *__rwlock)
   __THROWNL __nonnull ((1));
 
 # ifdef __USE_XOPEN2K
-/* Try to acquire read lock for RWLOCK or return after specfied time.  */
+/* Try to acquire read lock for RWLOCK or return after specified time.  */
+#  ifndef __USE_TIME_BITS64
 extern int pthread_rwlock_timedrdlock (pthread_rwlock_t *__restrict __rwlock,
 				       const struct timespec *__restrict
 				       __abstime) __THROWNL __nonnull ((1, 2));
+#  else
+#   ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_rwlock_timedrdlock,
+                             (pthread_rwlock_t *__restrict __rwlock,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_rwlock_timedrdlock64)
+    __nonnull ((1, 2));
+#   else
+#    define pthread_rwlock_timedrdlock __pthread_rwlock_timedrdlock64
+#   endif
+#  endif
+# endif
+
+# ifdef __USE_GNU
+#  ifndef __USE_TIME_BITS64
+extern int pthread_rwlock_clockrdlock (pthread_rwlock_t *__restrict __rwlock,
+				       clockid_t __clockid,
+				       const struct timespec *__restrict
+				       __abstime) __THROWNL __nonnull ((1, 3));
+#  else
+#   ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_rwlock_clockrdlock,
+                             (pthread_rwlock_t *__restrict __rwlock,
+                              clockid_t __clockid,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_rwlock_clockrdlock64)
+    __nonnull ((1, 3));
+#   else
+#    define pthread_rwlock_clockrdlock __pthread_rwlock_clockrdlock64
+#   endif
+#  endif
 # endif
 
 /* Acquire write lock for RWLOCK.  */
@@ -918,10 +1028,43 @@ extern int pthread_rwlock_trywrlock (pthread_rwlock_t *__rwlock)
      __THROWNL __nonnull ((1));
 
 # ifdef __USE_XOPEN2K
-/* Try to acquire write lock for RWLOCK or return after specfied time.  */
+/* Try to acquire write lock for RWLOCK or return after specified time.  */
+#  ifndef __USE_TIME_BITS64
 extern int pthread_rwlock_timedwrlock (pthread_rwlock_t *__restrict __rwlock,
 				       const struct timespec *__restrict
 				       __abstime) __THROWNL __nonnull ((1, 2));
+#  else
+#   ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_rwlock_timedwrlock,
+                             (pthread_rwlock_t *__restrict __rwlock,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_rwlock_timedwrlock64)
+    __nonnull ((1, 2));
+#   else
+#    define pthread_rwlock_timedwrlock __pthread_rwlock_timedwrlock64
+#   endif
+#  endif
+# endif
+
+# ifdef __USE_GNU
+#  ifndef __USE_TIME_BITS64
+extern int pthread_rwlock_clockwrlock (pthread_rwlock_t *__restrict __rwlock,
+				       clockid_t __clockid,
+				       const struct timespec *__restrict
+				       __abstime) __THROWNL __nonnull ((1, 3));
+
+#  else
+#   ifdef __REDIRECT_NTHNL
+extern int __REDIRECT_NTHNL (pthread_rwlock_clockwrlock,
+                             (pthread_rwlock_t *__restrict __rwlock,
+                              clockid_t __clockid,
+                              const struct timespec *__restrict __abstime),
+                             __pthread_rwlock_clockwrlock64)
+    __nonnull ((1, 3));
+#   else
+#    define pthread_rwlock_clockwrlock __pthread_rwlock_clockwrlock64
+#   endif
+#  endif
 # endif
 
 /* Unlock RWLOCK.  */
@@ -998,10 +1141,52 @@ extern int pthread_cond_wait (pthread_cond_t *__restrict __cond,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+# ifndef __USE_TIME_BITS64
 extern int pthread_cond_timedwait (pthread_cond_t *__restrict __cond,
 				   pthread_mutex_t *__restrict __mutex,
 				   const struct timespec *__restrict __abstime)
      __nonnull ((1, 2, 3));
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (pthread_cond_timedwait,
+                       (pthread_cond_t *__restrict __cond,
+                        pthread_mutex_t *__restrict __mutex,
+                        const struct timespec *__restrict __abstime),
+                       __pthread_cond_timedwait64)
+     __nonnull ((1, 2, 3));
+#  else
+#   define pthread_cond_timedwait __pthread_cond_timedwait64
+#  endif
+# endif
+
+# ifdef __USE_GNU
+/* Wait for condition variable COND to be signaled or broadcast until
+   ABSTIME measured by the specified clock. MUTEX is assumed to be
+   locked before. CLOCK is the clock to use. ABSTIME is an absolute
+   time specification against CLOCK's epoch.
+
+   This function is a cancellation point and therefore not marked with
+   __THROW. */
+#  ifndef __USE_TIME_BITS64
+extern int pthread_cond_clockwait (pthread_cond_t *__restrict __cond,
+				   pthread_mutex_t *__restrict __mutex,
+				   __clockid_t __clock_id,
+				   const struct timespec *__restrict __abstime)
+     __nonnull ((1, 2, 4));
+#  else
+#   ifdef __REDIRECT
+extern int __REDIRECT (pthread_cond_clockwait,
+                       (pthread_cond_t *__restrict __cond,
+                        pthread_mutex_t *__restrict __mutex,
+                        __clockid_t __clock_id,
+                        const struct timespec *__restrict __abstime),
+                       __pthread_cond_clockwait64)
+     __nonnull ((1, 2, 4));
+#   else
+#    define pthread_cond_clockwait __pthread_cond_clockwait64
+#   endif
+#  endif
+# endif
 
 /* Functions for handling condition variable attributes.  */
 
@@ -1121,7 +1306,8 @@ extern void *pthread_getspecific (pthread_key_t __key) __THROW;
 
 /* Store POINTER in the thread-specific data slot identified by KEY. */
 extern int pthread_setspecific (pthread_key_t __key,
-				const void *__pointer) __THROW ;
+				const void *__pointer)
+  __THROW __attr_access_none (2);
 
 
 #ifdef __USE_XOPEN2K

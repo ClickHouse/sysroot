@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _FENV_H
 # error "Never use <bits/fenv.h> directly; include <fenv.h> instead."
@@ -101,7 +101,7 @@ fenv_t;
 # define FE_NOMASK_ENV	((const fenv_t *) -2)
 #endif
 
-#if __GLIBC_USE (IEC_60559_BFP_EXT)
+#if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
 /* Type representing floating-point control modes.  */
 typedef struct
   {
@@ -113,58 +113,4 @@ femode_t;
 
 /* Default floating-point control modes.  */
 # define FE_DFL_MODE	((const femode_t *) -1L)
-#endif
-
-
-#ifdef __USE_EXTERN_INLINES
-__BEGIN_DECLS
-
-/* Optimized versions.  */
-#ifndef _LIBC
-extern int __REDIRECT_NTH (__feraiseexcept_renamed, (int), feraiseexcept);
-#endif
-__extern_always_inline void
-__NTH (__feraiseexcept_invalid_divbyzero (int __excepts))
-{
-  if ((FE_INVALID & __excepts) != 0)
-    {
-      /* One example of an invalid operation is 0.0 / 0.0.  */
-      float __f = 0.0;
-
-# ifdef __SSE_MATH__
-      __asm__ __volatile__ ("divss %0, %0 " : : "x" (__f));
-# else
-      __asm__ __volatile__ ("fdiv %%st, %%st(0); fwait"
-			    : "=t" (__f) : "0" (__f));
-# endif
-      (void) &__f;
-    }
-  if ((FE_DIVBYZERO & __excepts) != 0)
-    {
-      float __f = 1.0;
-      float __g = 0.0;
-
-# ifdef __SSE_MATH__
-      __asm__ __volatile__ ("divss %1, %0" : : "x" (__f), "x" (__g));
-# else
-      __asm__ __volatile__ ("fdivp %%st, %%st(1); fwait"
-			    : "=t" (__f) : "0" (__f), "u" (__g) : "st(1)");
-# endif
-      (void) &__f;
-    }
-}
-__extern_inline int
-__NTH (feraiseexcept (int __excepts))
-{
-  if (__builtin_constant_p (__excepts)
-      && (__excepts & ~(FE_INVALID | FE_DIVBYZERO)) == 0)
-    {
-      __feraiseexcept_invalid_divbyzero (__excepts);
-      return 0;
-    }
-
-  return __feraiseexcept_renamed (__excepts);
-}
-
-__END_DECLS
 #endif

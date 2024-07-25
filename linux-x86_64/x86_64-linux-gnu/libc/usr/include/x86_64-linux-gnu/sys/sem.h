@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_SEM_H
 #define _SYS_SEM_H	1
@@ -48,7 +48,17 @@ struct sembuf
 __BEGIN_DECLS
 
 /* Semaphore control operation.  */
+#ifndef __USE_TIME_BITS64
 extern int semctl (int __semid, int __semnum, int __cmd, ...) __THROW;
+#else
+# ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (semctl,
+                           (int __semid, int __semnum, int __cmd, ...),
+                           __semctl64);
+# else
+#  define semctl __semctl64
+# endif
+#endif
 
 /* Get semaphore.  */
 extern int semget (key_t __key, int __nsems, int __semflg) __THROW;
@@ -58,8 +68,19 @@ extern int semop (int __semid, struct sembuf *__sops, size_t __nsops) __THROW;
 
 #ifdef __USE_GNU
 /* Operate on semaphore with timeout.  */
+# ifndef __USE_TIME_BITS64
 extern int semtimedop (int __semid, struct sembuf *__sops, size_t __nsops,
 		       const struct timespec *__timeout) __THROW;
+# else
+#  ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (semtimedop, (int __semid, struct sembuf *__sops,
+                                        size_t __nsops,
+                                        const struct timespec *__timeout),
+                           __semtimedop64);
+#  else
+#   define semtimedop __semtimedop64
+#  endif
+# endif
 #endif
 
 __END_DECLS

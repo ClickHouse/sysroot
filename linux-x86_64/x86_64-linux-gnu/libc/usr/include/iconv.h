@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _ICONV_H
 #define _ICONV_H	1
@@ -29,12 +29,19 @@ __BEGIN_DECLS
 typedef void *iconv_t;
 
 
+/* Free resources allocated for descriptor CD for code conversion.
+
+   This function is a possible cancellation point and therefore not
+   marked with __THROW.  */
+extern int iconv_close (iconv_t __cd);
+
 /* Allocate descriptor for code conversion from codeset FROMCODE to
    codeset TOCODE.
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern iconv_t iconv_open (const char *__tocode, const char *__fromcode);
+extern iconv_t iconv_open (const char *__tocode, const char *__fromcode)
+	__attribute_malloc__ __attr_dealloc (iconv_close, 1);
 
 /* Convert at most *INBYTESLEFT bytes from *INBUF according to the
    code conversion algorithm specified by CD and place up to
@@ -43,12 +50,6 @@ extern size_t iconv (iconv_t __cd, char **__restrict __inbuf,
 		     size_t *__restrict __inbytesleft,
 		     char **__restrict __outbuf,
 		     size_t *__restrict __outbytesleft);
-
-/* Free resources allocated for descriptor CD for code conversion.
-
-   This function is a possible cancellation point and therefore not
-   marked with __THROW.  */
-extern int iconv_close (iconv_t __cd);
 
 __END_DECLS
 

@@ -1,5 +1,5 @@
 /* Declarations of socket constants, types, and functions.
-   Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_SYS_SOCKET_H
 #define	_SYS_SOCKET_H	1
@@ -154,7 +154,7 @@ extern ssize_t sendto (int __fd, const void *__buf, size_t __n,
 		       socklen_t __addr_len);
 
 /* Read N bytes into BUF through socket FD.
-   If ADDR is not NULL, fill in *ADDR_LEN bytes of it with tha address of
+   If ADDR is not NULL, fill in *ADDR_LEN bytes of it with the address of
    the sender, and store the actual size of the address in *ADDR_LEN.
    Returns the number of bytes read or -1 for errors.
 
@@ -170,8 +170,20 @@ extern ssize_t recvfrom (int __fd, void *__restrict __buf, size_t __n,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+#ifndef __USE_TIME_BITS64
 extern ssize_t sendmsg (int __fd, const struct msghdr *__message,
 			int __flags);
+#else
+# ifdef __REDIRECT
+extern ssize_t __REDIRECT (sendmsg, (int __fd, const struct msghdr *__message,
+				     int __flags),
+			   __sendmsg64);
+# else
+extern ssize_t __sendmsg64 (int __fd, const struct msghdr *__message,
+			    int __flags);
+#  define sendmsg __sendmsg64
+# endif
+#endif
 
 #ifdef __USE_GNU
 /* Send a VLEN messages as described by VMESSAGES to socket FD.
@@ -179,16 +191,39 @@ extern ssize_t sendmsg (int __fd, const struct msghdr *__message,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+# ifndef __USE_TIME_BITS64
 extern int sendmmsg (int __fd, struct mmsghdr *__vmessages,
 		     unsigned int __vlen, int __flags);
-#endif
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (sendmmsg, (int __fd, struct mmsghdr *__vmessages,
+				  unsigned int __vlen, int __flags),
+		       __sendmmsg64);
+#  else
+extern int __sendmmsg64 (int __fd, struct mmsghdr *__vmessages,
+			 unsigned int __vlen, int __flags);
+#   define sendmmsg __sendmmsg64
+#  endif
+# endif	 /* __USE_TIME_BITS64 */
+#endif /* __USE_GNU */
 
 /* Receive a message as described by MESSAGE from socket FD.
    Returns the number of bytes read or -1 for errors.
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+#ifndef __USE_TIME_BITS64
 extern ssize_t recvmsg (int __fd, struct msghdr *__message, int __flags);
+#else
+# ifdef __REDIRECT
+extern ssize_t __REDIRECT (recvmsg,
+			   (int __fd, struct msghdr *__message, int __flags),
+			   __recvmsg64);
+# else
+extern ssize_t __recvmsg64 (int __fd, struct msghdr *__message, int __flags);
+#  define recvmsg __recvmsg64
+# endif
+#endif
 
 #ifdef __USE_GNU
 /* Receive up to VLEN messages as described by VMESSAGES from socket FD.
@@ -196,24 +231,63 @@ extern ssize_t recvmsg (int __fd, struct msghdr *__message, int __flags);
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+# ifndef __USE_TIME_BITS64
 extern int recvmmsg (int __fd, struct mmsghdr *__vmessages,
 		     unsigned int __vlen, int __flags,
 		     struct timespec *__tmo);
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (recvmmsg, (int __fd, struct mmsghdr *__vmessages,
+                                  unsigned int __vlen, int __flags,
+                                  struct timespec *__tmo),
+                       __recvmmsg64);
+#  else
+#   define recvmmsg __recvmmsg64
+#  endif
+# endif
 #endif
 
 
 /* Put the current value for socket FD's option OPTNAME at protocol level LEVEL
    into OPTVAL (which is *OPTLEN bytes long), and set *OPTLEN to the value's
    actual length.  Returns 0 on success, -1 for errors.  */
+#ifndef __USE_TIME_BITS64
 extern int getsockopt (int __fd, int __level, int __optname,
 		       void *__restrict __optval,
 		       socklen_t *__restrict __optlen) __THROW;
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT_NTH (getsockopt,
+			   (int __fd, int __level, int __optname,
+			    void *__restrict __optval,
+			    socklen_t *__restrict __optlen),
+			   __getsockopt64);
+# else
+extern int __getsockopt64 (int __fd, int __level, int __optname,
+			   void *__restrict __optval,
+			   socklen_t *__restrict __optlen) __THROW;
+#  define getsockopt __getsockopt64
+# endif
+#endif
 
 /* Set socket FD's option OPTNAME at protocol level LEVEL
    to *OPTVAL (which is OPTLEN bytes long).
    Returns 0 on success, -1 for errors.  */
+#ifndef __USE_TIME_BITS64
 extern int setsockopt (int __fd, int __level, int __optname,
 		       const void *__optval, socklen_t __optlen) __THROW;
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT_NTH (setsockopt,
+			   (int __fd, int __level, int __optname,
+			    const void *__optval, socklen_t __optlen),
+			   __setsockopt64);
+# else
+extern int __setsockopt64 (int __fd, int __level, int __optname,
+			   const void *__optval, socklen_t __optlen) __THROW;
+#  define setsockopt __setsockopt64
+# endif
+#endif
 
 
 /* Prepare to accept connections on socket FD.
@@ -251,7 +325,7 @@ extern int shutdown (int __fd, int __how) __THROW;
 
 
 #ifdef __USE_XOPEN2K
-/* Determine wheter socket is at a out-of-band mark.  */
+/* Determine whether socket is at a out-of-band mark.  */
 extern int sockatmark (int __fd) __THROW;
 #endif
 

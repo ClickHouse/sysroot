@@ -1,5 +1,5 @@
 /* O_*, F_*, FD_* bit values for Linux.
-   Copyright (C) 2001-2018 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_FCNTL_H
 # error "Never use <bits/fcntl-linux.h> directly; include <fcntl.h> instead."
@@ -101,7 +101,7 @@
 #endif
 
 #ifndef F_GETLK
-# ifndef __USE_FILE_OFFSET64
+# if !defined __USE_FILE_OFFSET64 && __TIMESIZE != 64
 #  define F_GETLK	5	/* Get record locking info.  */
 #  define F_SETLK	6	/* Set record locking info (non-blocking).  */
 #  define F_SETLKW	7	/* Set record locking info (blocking).  */
@@ -284,11 +284,15 @@ struct f_owner_ex
 # define F_SEAL_SHRINK	0x0002	/* Prevent file from shrinking.  */
 # define F_SEAL_GROW	0x0004	/* Prevent file from growing.  */
 # define F_SEAL_WRITE	0x0008	/* Prevent writes.  */
+# define F_SEAL_FUTURE_WRITE	0x0010	/* Prevent future writes while
+					   mapped.  */
+# define F_SEAL_EXEC	0x0020	/* Prevent chmod modifying exec bits. */
 #endif
 
 #ifdef __USE_GNU
 /* Hint values for F_{GET,SET}_RW_HINT.  */
-# define RWF_WRITE_LIFE_NOT_SET	0
+# define RWH_WRITE_LIFE_NOT_SET	0
+# define RWF_WRITE_LIFE_NOT_SET	RWH_WRITE_LIFE_NOT_SET
 # define RWH_WRITE_LIFE_NONE	1
 # define RWH_WRITE_LIFE_SHORT	2
 # define RWH_WRITE_LIFE_MEDIUM	3
@@ -332,6 +336,11 @@ struct f_owner_ex
 # define SYNC_FILE_RANGE_WAIT_AFTER	4 /* Wait upon writeout of all pages in
 					     the range after performing the
 					     write.  */
+/* SYNC_FILE_RANGE_WRITE_AND_WAIT ensures all pages in the range are
+   written to disk before returning.  */
+# define SYNC_FILE_RANGE_WRITE_AND_WAIT	(SYNC_FILE_RANGE_WRITE		\
+					 | SYNC_FILE_RANGE_WAIT_BEFORE	\
+					 | SYNC_FILE_RANGE_WAIT_AFTER)
 
 /* Flags for SPLICE and VMSPLICE.  */
 # define SPLICE_F_MOVE		1	/* Move pages instead of copying.  */
@@ -359,22 +368,15 @@ struct file_handle
 # define MAX_HANDLE_SZ	128
 #endif
 
-/* Values for `*at' functions.  */
-#ifdef __USE_ATFILE
-# define AT_FDCWD		-100	/* Special value used to indicate
-					   the *at functions should use the
-					   current working directory. */
-# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
-# define AT_REMOVEDIR		0x200	/* Remove directory instead of
-					   unlinking file.  */
-# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
-# ifdef __USE_GNU
-#  define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
-					   traversal.  */
-#  define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname.  */
-# endif
-# define AT_EACCESS		0x200	/* Test access permitted for
-					   effective IDs, not real IDs.  */
+#ifdef __USE_GNU
+/* Flags for name_to_handle_at.  See comment in fcntl.h about the use
+   of the same AT_* flag bits for different purposes in different
+   functions.  */
+# define AT_HANDLE_FID		AT_REMOVEDIR /* File handle is needed
+						to compare object
+						identity and may not
+						be usable to
+						open_by_handle_at.  */
 #endif
 
 __BEGIN_DECLS

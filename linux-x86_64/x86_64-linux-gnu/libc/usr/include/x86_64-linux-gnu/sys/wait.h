@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /*
  *	POSIX Standard: 3.2.1 Wait for Process Termination	<sys/wait.h>
@@ -68,6 +68,12 @@ typedef __pid_t pid_t;
 # define W_EXITCODE(ret, sig)	__W_EXITCODE (ret, sig)
 # define W_STOPCODE(sig)	__W_STOPCODE (sig)
 #endif
+
+/* The following values are used by the `waitid' function.  */
+#if defined __USE_XOPEN_EXTENDED || defined __USE_XOPEN2K8
+# include <bits/types/idtype_t.h>
+#endif
+
 
 /* Wait for a child to die.  When one does, put its status in *STAT_LOC
    and return its process ID.  For errors, return (pid_t) -1.
@@ -133,14 +139,34 @@ struct rusage;
    nil, store information about the child's resource usage there.  If the
    WUNTRACED bit is set in OPTIONS, return status for stopped children;
    otherwise don't.  */
+# ifndef __USE_TIME_BITS64
 extern __pid_t wait3 (int *__stat_loc, int __options,
 		      struct rusage * __usage) __THROWNL;
+# else
+#  ifdef __REDIRECT_NTHNL
+extern __pid_t __REDIRECT_NTHNL (wait3, (int *__stat_loc, int __options,
+                                         struct rusage * __usage),
+                                 __wait3_time64);
+#  else
+#   define wait3 __wait3_time64
+#  endif
+# endif
 #endif
 
 #ifdef __USE_MISC
+# ifndef __USE_TIME_BITS64
 /* PID is like waitpid.  Other args are like wait3.  */
 extern __pid_t wait4 (__pid_t __pid, int *__stat_loc, int __options,
 		      struct rusage *__usage) __THROWNL;
+# else
+#  ifdef __REDIRECT_NTHNL
+extern __pid_t __REDIRECT_NTHNL (wait4, (__pid_t __pid, int *__stat_loc,
+                                         int __options, struct rusage *__usage),
+                                 __wait4_time64);
+#  else
+#   define wait4 __wait4_time64
+#  endif
+# endif
 #endif /* Use misc.  */
 
 

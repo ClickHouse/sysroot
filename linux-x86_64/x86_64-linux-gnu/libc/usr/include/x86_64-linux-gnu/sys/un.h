@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_SYS_UN_H
 #define	_SYS_UN_H	1
@@ -34,10 +34,11 @@ struct sockaddr_un
 
 
 #ifdef __USE_MISC
+# include <stddef.h>
 # include <string.h>		/* For prototype of `strlen'.  */
 
 /* Evaluate to actual length of the `sockaddr_un' structure.  */
-# define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path)	      \
+# define SUN_LEN(ptr) (offsetof (struct sockaddr_un, sun_path)		      \
 		      + strlen ((ptr)->sun_path))
 #endif
 

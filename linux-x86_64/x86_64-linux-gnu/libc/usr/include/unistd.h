@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /*
  *	POSIX Standard: 2.10 Symbolic Constants		<unistd.h>
@@ -106,9 +106,6 @@ __BEGIN_DECLS
 
 /* The X/Open Unix extensions are available.  */
 #define _XOPEN_UNIX	1
-
-/* Encryption is present.  */
-#define	_XOPEN_CRYPT	1
 
 /* The enhanced internationalization capabilities according to XPG4.2
    are present.  */
@@ -298,6 +295,11 @@ extern int euidaccess (const char *__name, int __type)
 /* An alias for `euidaccess', used by some other systems.  */
 extern int eaccess (const char *__name, int __type)
      __THROW __nonnull ((1));
+
+/* Execute program relative to a directory file descriptor.  */
+extern int execveat (int __fd, const char *__path, char *const __argv[],
+                     char *const __envp[], int __flags)
+    __THROW __nonnull ((2, 3));
 #endif
 
 #ifdef __USE_ATFILE
@@ -355,18 +357,26 @@ extern __off64_t lseek64 (int __fd, __off64_t __offset, int __whence)
    __THROW.  */
 extern int close (int __fd);
 
+#ifdef __USE_MISC
+/* Close all open file descriptors greater than or equal to LOWFD.
+   Negative LOWFD is clamped to 0.  */
+extern void closefrom (int __lowfd) __THROW;
+#endif
+
 /* Read NBYTES into BUF from FD.  Return the
    number read, -1 for errors or 0 for EOF.
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t read (int __fd, void *__buf, size_t __nbytes) __wur;
+extern ssize_t read (int __fd, void *__buf, size_t __nbytes) __wur
+    __fortified_attr_access (__write_only__, 2, 3);
 
 /* Write N bytes of BUF to FD.  Return the number written, or -1.
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur;
+extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur
+    __attr_access ((__read_only__, 2, 3));
 
 #if defined __USE_UNIX98 || defined __USE_XOPEN2K8
 # ifndef __USE_FILE_OFFSET64
@@ -377,7 +387,8 @@ extern ssize_t write (int __fd, const void *__buf, size_t __n) __wur;
    This function is a cancellation point and therefore not marked with
    __THROW.  */
 extern ssize_t pread (int __fd, void *__buf, size_t __nbytes,
-		      __off_t __offset) __wur;
+		      __off_t __offset) __wur
+    __fortified_attr_access (__write_only__, 2, 3);
 
 /* Write N bytes of BUF to FD at the given position OFFSET without
    changing the file pointer.  Return the number written, or -1.
@@ -385,15 +396,19 @@ extern ssize_t pread (int __fd, void *__buf, size_t __nbytes,
    This function is a cancellation point and therefore not marked with
    __THROW.  */
 extern ssize_t pwrite (int __fd, const void *__buf, size_t __n,
-		       __off_t __offset) __wur;
+		       __off_t __offset) __wur
+    __attr_access ((__read_only__, 2, 3));
+
 # else
 #  ifdef __REDIRECT
 extern ssize_t __REDIRECT (pread, (int __fd, void *__buf, size_t __nbytes,
 				   __off64_t __offset),
-			   pread64) __wur;
+			   pread64) __wur
+    __fortified_attr_access (__write_only__, 2, 3);
 extern ssize_t __REDIRECT (pwrite, (int __fd, const void *__buf,
 				    size_t __nbytes, __off64_t __offset),
-			   pwrite64) __wur;
+			   pwrite64) __wur
+    __attr_access ((__read_only__, 2, 3));
 #  else
 #   define pread pread64
 #   define pwrite pwrite64
@@ -405,11 +420,13 @@ extern ssize_t __REDIRECT (pwrite, (int __fd, const void *__buf,
    changing the file pointer.  Return the number read, -1 for errors
    or 0 for EOF.  */
 extern ssize_t pread64 (int __fd, void *__buf, size_t __nbytes,
-			__off64_t __offset) __wur;
+			__off64_t __offset) __wur
+    __fortified_attr_access (__write_only__, 2, 3);
 /* Write N bytes of BUF to FD at the given position OFFSET without
    changing the file pointer.  Return the number written, or -1.  */
 extern ssize_t pwrite64 (int __fd, const void *__buf, size_t __n,
-			 __off64_t __offset) __wur;
+			 __off64_t __offset) __wur
+    __attr_access ((__read_only__, 2, 3));
 # endif
 #endif
 
@@ -526,7 +543,8 @@ extern char *get_current_dir_name (void) __THROW;
    If successful, return BUF.  If not, put an error message in
    BUF and return NULL.  BUF should be at least PATH_MAX bytes long.  */
 extern char *getwd (char *__buf)
-     __THROW __nonnull ((1)) __attribute_deprecated__ __wur;
+     __THROW __nonnull ((1)) __attribute_deprecated__ __wur
+    __attr_access ((__write_only__, 1));
 #endif
 
 
@@ -623,7 +641,8 @@ extern long int sysconf (int __name) __THROW;
 
 #ifdef	__USE_POSIX2
 /* Get the value of the string-valued system variable NAME.  */
-extern size_t confstr (int __name, char *__buf, size_t __len) __THROW;
+extern size_t confstr (int __name, char *__buf, size_t __len) __THROW
+    __fortified_attr_access (__write_only__, 2, 3);
 #endif
 
 
@@ -689,8 +708,8 @@ extern __gid_t getegid (void) __THROW;
 /* If SIZE is zero, return the number of supplementary groups
    the calling process is in.  Otherwise, fill in the group IDs
    of its supplementary groups in LIST and return the number written.  */
-extern int getgroups (int __size, __gid_t __list[]) __THROW __wur;
-
+extern int getgroups (int __size, __gid_t __list[]) __THROW __wur
+    __fortified_attr_access (__write_only__, 2, 1);
 #ifdef	__USE_GNU
 /* Return nonzero iff the calling process is in group GID.  */
 extern int group_member (__gid_t __gid) __THROW;
@@ -767,6 +786,13 @@ extern __pid_t fork (void) __THROWNL;
 extern __pid_t vfork (void) __THROW;
 #endif /* Use misc or XPG < 7. */
 
+#ifdef __USE_GNU
+/* This is similar to fork, however it does not run the atfork handlers
+   neither reinitialize any internal locks in multithread case.
+   Different than fork, _Fork is async-signal-safe.  */
+extern __pid_t _Fork (void) __THROW;
+#endif
+
 
 /* Return the pathname of the terminal FD is open on, or NULL on errors.
    The returned storage is good only until the next call to this function.  */
@@ -775,7 +801,8 @@ extern char *ttyname (int __fd) __THROW;
 /* Store at most BUFLEN characters of the pathname of the terminal FD is
    open on in BUF.  Return 0 on success, otherwise an error number.  */
 extern int ttyname_r (int __fd, char *__buf, size_t __buflen)
-     __THROW __nonnull ((2)) __wur;
+     __THROW __nonnull ((2)) __wur
+     __fortified_attr_access (__write_only__, 2, 3);
 
 /* Return 1 if FD is a valid descriptor associated
    with a terminal, zero if not.  */
@@ -810,7 +837,9 @@ extern int symlink (const char *__from, const char *__to)
    Returns the number of characters read, or -1 for errors.  */
 extern ssize_t readlink (const char *__restrict __path,
 			 char *__restrict __buf, size_t __len)
-     __THROW __nonnull ((1, 2)) __wur;
+     __THROW __nonnull ((1, 2)) __wur
+     __fortified_attr_access (__write_only__, 2, 3);
+
 #endif /* Use POSIX.1-2001.  */
 
 #ifdef __USE_ATFILE
@@ -821,7 +850,8 @@ extern int symlinkat (const char *__from, int __tofd,
 /* Like readlink but a relative PATH is interpreted relative to FD.  */
 extern ssize_t readlinkat (int __fd, const char *__restrict __path,
 			   char *__restrict __buf, size_t __len)
-     __THROW __nonnull ((2, 3)) __wur;
+     __THROW __nonnull ((2, 3)) __wur
+     __fortified_attr_access (__write_only__, 3, 4);
 #endif
 
 /* Remove the link NAME.  */
@@ -856,7 +886,8 @@ extern char *getlogin (void);
 
    This function is a possible cancellation point and therefore not
    marked with __THROW.  */
-extern int getlogin_r (char *__name, size_t __name_len) __nonnull ((1));
+extern int getlogin_r (char *__name, size_t __name_len) __nonnull ((1))
+    __fortified_attr_access (__write_only__, 1, 2);
 #endif
 
 #ifdef	__USE_MISC
@@ -877,7 +908,8 @@ extern int setlogin (const char *__name) __THROW __nonnull ((1));
 /* Put the name of the current host in no more than LEN bytes of NAME.
    The result is null-terminated if LEN is large enough for the full
    name and the terminator.  */
-extern int gethostname (char *__name, size_t __len) __THROW __nonnull ((1));
+extern int gethostname (char *__name, size_t __len) __THROW __nonnull ((1))
+    __fortified_attr_access (__write_only__, 1, 2);
 #endif
 
 
@@ -885,7 +917,7 @@ extern int gethostname (char *__name, size_t __len) __THROW __nonnull ((1));
 /* Set the name of the current host to NAME, which is LEN bytes long.
    This call is restricted to the super-user.  */
 extern int sethostname (const char *__name, size_t __len)
-     __THROW __nonnull ((1)) __wur;
+     __THROW __nonnull ((1)) __wur __attr_access ((__read_only__, 1, 2));
 
 /* Set the current machine's Internet number to ID.
    This call is restricted to the super-user.  */
@@ -896,10 +928,10 @@ extern int sethostid (long int __id) __THROW __wur;
    Called just like `gethostname' and `sethostname'.
    The NIS domain name is usually the empty string when not using NIS.  */
 extern int getdomainname (char *__name, size_t __len)
-     __THROW __nonnull ((1)) __wur;
+     __THROW __nonnull ((1)) __wur
+     __fortified_attr_access (__write_only__, 1, 2);
 extern int setdomainname (const char *__name, size_t __len)
-     __THROW __nonnull ((1)) __wur;
-
+     __THROW __nonnull ((1)) __wur __attr_access ((__read_only__, 1, 2));
 
 /* Revoke access permissions to all processes currently communicating
    with the control terminal, and then send a SIGHUP signal to the process
@@ -1118,26 +1150,28 @@ ssize_t copy_file_range (int __infd, __off64_t *__pinoff,
 extern int fdatasync (int __fildes);
 #endif /* Use POSIX199309 */
 
+#ifdef __USE_MISC
+/* One-way hash PHRASE, returning a string suitable for storage in the
+   user database.  SALT selects the one-way function to use, and
+   ensures that no two users' hashes are the same, even if they use
+   the same passphrase.  The return value points to static storage
+   which will be overwritten by the next call to crypt.
 
-/* XPG4.2 specifies that prototypes for the encryption functions must
-   be defined here.  */
-#ifdef	__USE_XOPEN
-/* Encrypt at most 8 characters from KEY using salt to perturb DES.  */
+   This declaration is deprecated; applications should include
+   <crypt.h> instead.  */
 extern char *crypt (const char *__key, const char *__salt)
      __THROW __nonnull ((1, 2));
+#endif
 
-/* Encrypt data in BLOCK in place if EDFLAG is zero; otherwise decrypt
-   block in place.  */
-extern void encrypt (char *__glibc_block, int __edflag)
-     __THROW __nonnull ((1));
-
-
+#ifdef	__USE_XOPEN
 /* Swab pairs bytes in the first N bytes of the area pointed to by
    FROM and copy the result to TO.  The value of TO must not be in the
    range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
    is without partner.  */
 extern void swab (const void *__restrict __from, void *__restrict __to,
-		  ssize_t __n) __THROW __nonnull ((1, 2));
+		  ssize_t __n) __THROW __nonnull ((1, 2))
+    __attr_access ((__read_only__, 1, 3))
+    __attr_access ((__write_only__, 2, 3));
 #endif
 
 
@@ -1164,13 +1198,27 @@ extern int pthread_atfork (void (*__prepare) (void),
 #ifdef __USE_MISC
 /* Write LENGTH bytes of randomness starting at BUFFER.  Return 0 on
    success or -1 on error.  */
-int getentropy (void *__buffer, size_t __length) __wur;
+int getentropy (void *__buffer, size_t __length) __wur
+    __attr_access ((__write_only__, 1, 2));
+#endif
+
+#ifdef __USE_GNU
+/* Close all file descriptors in the range FD up to MAX_FD.  The flag FLAGS
+   are define by the CLOSE_RANGE prefix.  This function behaves like close
+   on the range and gaps where the file descriptor is invalid or errors
+   encountered while closing file descriptors are ignored.   Returns 0 on
+   successor or -1 for failure (and sets errno accordingly).  */
+extern int close_range (unsigned int __fd, unsigned int __max_fd,
+			int __flags) __THROW;
 #endif
 
 /* Define some macros helping to catch buffer overflows.  */
 #if __USE_FORTIFY_LEVEL > 0 && defined __fortify_function
 # include <bits/unistd.h>
 #endif
+
+/* System-specific extensions.  */
+#include <bits/unistd_ext.h>
 
 __END_DECLS
 
