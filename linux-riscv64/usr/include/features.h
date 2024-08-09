@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -33,6 +33,8 @@
 			Extensions to ISO C11 from TS 18661-4:2015.
    __STDC_WANT_IEC_60559_TYPES_EXT__
 			Extensions to ISO C11 from TS 18661-3:2015.
+   __STDC_WANT_IEC_60559_EXT__
+			ISO C2X interfaces defined only in Annex F.
 
    _POSIX_SOURCE	IEEE Std 1003.1.
    _POSIX_C_SOURCE	If ==1, like _POSIX_SOURCE; if >=2 add IEEE Std 1003.2;
@@ -48,12 +50,15 @@
    _LARGEFILE64_SOURCE	Additional functionality from LFS for large files.
    _FILE_OFFSET_BITS=N	Select default filesystem interface.
    _ATFILE_SOURCE	Additional *at interfaces.
+   _DYNAMIC_STACK_SIZE_SOURCE Select correct (but non compile-time constant)
+			MINSIGSTKSZ, SIGSTKSZ and PTHREAD_STACK_MIN.
    _GNU_SOURCE		All of the above, plus GNU extensions.
    _DEFAULT_SOURCE	The default set of features (taking precedence over
 			__STRICT_ANSI__).
 
    _FORTIFY_SOURCE	Add security hardening to many library functions.
-			Set to 1 or 2; 2 performs stricter checks than 1.
+			Set to 1, 2 or 3; 3 performs stricter checks than 2, which
+			performs stricter checks than 1.
 
    _REENTRANT, _THREAD_SAFE
 			Obsolete; equivalent to _POSIX_C_SOURCE=199506L.
@@ -94,6 +99,8 @@
    __USE_FILE_OFFSET64	Define 64bit interface as default.
    __USE_MISC		Define things from 4.3BSD or System V Unix.
    __USE_ATFILE		Define *at interfaces and AT_* constants for them.
+   __USE_DYNAMIC_STACK_SIZE Define correct (but non compile-time constant)
+			MINSIGSTKSZ, SIGSTKSZ and PTHREAD_STACK_MIN.
    __USE_GNU		Define GNU extensions.
    __USE_FORTIFY_LEVEL	Additional security measures used, according to level.
 
@@ -137,12 +144,14 @@
 #undef	__USE_FILE_OFFSET64
 #undef	__USE_MISC
 #undef	__USE_ATFILE
+#undef	__USE_DYNAMIC_STACK_SIZE
 #undef	__USE_GNU
 #undef	__USE_FORTIFY_LEVEL
 #undef	__KERNEL_STRICT_NAMES
 #undef	__GLIBC_USE_ISOC2X
 #undef	__GLIBC_USE_DEPRECATED_GETS
 #undef	__GLIBC_USE_DEPRECATED_SCANF
+#undef	__GLIBC_USE_C2X_STRTOL
 
 /* Suppress kernel-name space pollution unless user expressedly asks
    for it.  */
@@ -213,6 +222,8 @@
 # define _DEFAULT_SOURCE	1
 # undef  _ATFILE_SOURCE
 # define _ATFILE_SOURCE	1
+# undef  _DYNAMIC_STACK_SIZE_SOURCE
+# define _DYNAMIC_STACK_SIZE_SOURCE 1
 #endif
 
 /* If nothing (other than _GNU_SOURCE and _DEFAULT_SOURCE) is defined,
@@ -380,6 +391,8 @@
 # define __USE_FILE_OFFSET64	1
 #endif
 
+#include <features-time64.h>
+
 #if defined _DEFAULT_SOURCE
 # define __USE_MISC	1
 #endif
@@ -388,18 +401,35 @@
 # define __USE_ATFILE	1
 #endif
 
+#ifdef	_DYNAMIC_STACK_SIZE_SOURCE
+# define __USE_DYNAMIC_STACK_SIZE	1
+#endif
+
 #ifdef	_GNU_SOURCE
 # define __USE_GNU	1
 #endif
 
 #if defined _FORTIFY_SOURCE && _FORTIFY_SOURCE > 0 \
-    && __GNUC_PREREQ (4, 1) && defined __OPTIMIZE__ && __OPTIMIZE__ > 0
-# if _FORTIFY_SOURCE > 1
+    && defined __OPTIMIZE__ && __OPTIMIZE__ > 0
+# if !__GNUC_PREREQ (4, 1)
+#  warning _FORTIFY_SOURCE requires GCC 4.1 or later
+# elif _FORTIFY_SOURCE > 2 && (__glibc_clang_prereq (9, 0)		      \
+			       || __GNUC_PREREQ (12, 0))
+
+#  if _FORTIFY_SOURCE > 3
+#   warning _FORTIFY_SOURCE > 3 is treated like 3 on this platform
+#  endif
+#  define __USE_FORTIFY_LEVEL 3
+# elif _FORTIFY_SOURCE > 1
+#  if _FORTIFY_SOURCE > 2
+#   warning _FORTIFY_SOURCE > 2 is treated like 2 on this platform
+#  endif
 #  define __USE_FORTIFY_LEVEL 2
 # else
 #  define __USE_FORTIFY_LEVEL 1
 # endif
-#else
+#endif
+#ifndef __USE_FORTIFY_LEVEL
 # define __USE_FORTIFY_LEVEL 0
 #endif
 
@@ -434,6 +464,17 @@
 # define __GLIBC_USE_DEPRECATED_SCANF 0
 #endif
 
+/* ISO C2X added support for a 0b or 0B prefix on binary constants as
+   inputs to strtol-family functions (base 0 or 2).  This macro is
+   used to condition redirection in headers to allow that redirection
+   to be disabled when building those functions, despite _GNU_SOURCE
+   being defined.  */
+#if __GLIBC_USE (ISOC2X)
+# define __GLIBC_USE_C2X_STRTOL 1
+#else
+# define __GLIBC_USE_C2X_STRTOL 0
+#endif
+
 /* Get definitions of __STDC_* predefined macros, if the compiler has
    not preincluded this header automatically.  */
 #include <stdc-predef.h>
@@ -450,7 +491,7 @@
 /* Major and minor version number of the GNU C library package.  Use
    these macros to test for features in specific releases.  */
 #define	__GLIBC__	2
-#define	__GLIBC_MINOR__	31
+#define	__GLIBC_MINOR__	39
 
 #define __GLIBC_PREREQ(maj, min) \
 	((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((maj) << 16) + (min))

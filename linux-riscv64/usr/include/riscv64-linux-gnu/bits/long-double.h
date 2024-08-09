@@ -1,5 +1,5 @@
 /* Properties of long double type.  ldbl-128 version.
-   Copyright (C) 2016-2020 Free Software Foundation, Inc.
+   Copyright (C) 2016-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -18,4 +18,4 @@
 
 /* long double is distinct from double, so there is nothing to
    define here.  */
-#define __LONG_DOUBLE_USES_FLOAT128 0
+#define __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI 0

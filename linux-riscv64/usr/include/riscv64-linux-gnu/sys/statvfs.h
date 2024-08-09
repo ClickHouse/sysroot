@@ -1,5 +1,5 @@
 /* Definitions for getting information about a filesystem.
-   Copyright (C) 1998-2020 Free Software Foundation, Inc.
+   Copyright (C) 1998-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -21,7 +21,7 @@
 
 #include <features.h>
 
-/* Get the system-specific definition of `struct statfs'.  */
+/* Get the system-specific definition of `struct statvfs'.  */
 #include <bits/statvfs.h>
 
 #ifndef __USE_FILE_OFFSET64

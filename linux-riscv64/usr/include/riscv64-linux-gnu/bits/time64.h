@@ -1,5 +1,5 @@
-/* bits/time64.h -- underlying types for __time64_t.  Generic version.
-   Copyright (C) 2018-2020 Free Software Foundation, Inc.
+/* bits/time64.h -- underlying types for __time64_t.  RISC-V version.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -25,7 +25,7 @@
 
 /* Define __TIME64_T_TYPE so that it is always a 64-bit type.  */
 
-#if __TIMESIZE == 64
+#if __WORDSIZE == 64
 /* If we already have 64-bit time type then use it.  */
 # define __TIME64_T_TYPE		__TIME_T_TYPE
 #else

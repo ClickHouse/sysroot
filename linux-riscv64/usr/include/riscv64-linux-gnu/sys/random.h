@@ -1,5 +1,5 @@
 /* Interfaces for obtaining random bytes.
-   Copyright (C) 2016-2020 Free Software Foundation, Inc.
+   Copyright (C) 2016-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -25,17 +25,20 @@
 /* Flags for use with getrandom.  */
 #define GRND_NONBLOCK 0x01
 #define GRND_RANDOM 0x02
+#define GRND_INSECURE 0x04
 
 __BEGIN_DECLS
 
 /* Write LENGTH bytes of randomness starting at BUFFER.  Return the
    number of bytes written, or -1 on error.  */
 ssize_t getrandom (void *__buffer, size_t __length,
-                   unsigned int __flags) __wur;
+                   unsigned int __flags) __wur
+                   __attr_access ((__write_only__, 1, 2));
 
 /* Write LENGTH bytes of randomness starting at BUFFER.  Return 0 on
    success or -1 on error.  */
-int getentropy (void *__buffer, size_t __length) __wur;
+int getentropy (void *__buffer, size_t __length) __wur
+                __attr_access ((__write_only__, 1, 2));
 
 __END_DECLS
 

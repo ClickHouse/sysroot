@@ -1,6 +1,5 @@
-/* Copyright (C) 2011-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
-   Contributed by Chris Metcalf <cmetcalf@tilera.com>, 2011.
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -13,70 +12,54 @@
    Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library.  If not, see
+   License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_STATFS_H
 # error "Never include <bits/statfs.h> directly; use <sys/statfs.h> instead."
 #endif
 
-#include <bits/endian.h>
 #include <bits/types.h>
-#include <bits/wordsize.h>
-
-/* 64-bit libc uses the kernel's 'struct statfs', accessed via the
-   statfs() syscall; 32-bit libc uses the kernel's 'struct statfs64'
-   and accesses it via the statfs64() syscall.  All the various
-   APIs offered by libc use the kernel shape for their struct statfs
-   structure; the only difference is that 32-bit programs not
-   using __USE_FILE_OFFSET64 only see the low 32 bits of some
-   of the fields (the __fsblkcnt_t and __fsfilcnt_t fields).  */
-
-#if defined __USE_FILE_OFFSET64
-# define __field64(type, type64, name) type64 name
-#elif __WORDSIZE == 64 || __STATFS_MATCHES_STATFS64
-# define __field64(type, type64, name) type name
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-# define __field64(type, type64, name) \
-  type name __attribute__((__aligned__ (__alignof__ (type64)))); int __##name##_pad
-#else
-# define __field64(type, type64, name) \
-  int __##name##_pad __attribute__((__aligned__ (__alignof__ (type64)))); type name
-#endif
 
 struct statfs
   {
-    __SWORD_TYPE f_type;
-    __SWORD_TYPE f_bsize;
-    __field64(__fsblkcnt_t, __fsblkcnt64_t, f_blocks);
-    __field64(__fsblkcnt_t, __fsblkcnt64_t, f_bfree);
-    __field64(__fsblkcnt_t, __fsblkcnt64_t, f_bavail);
-    __field64(__fsfilcnt_t, __fsfilcnt64_t, f_files);
-    __field64(__fsfilcnt_t, __fsfilcnt64_t, f_ffree);
+    __fsword_t f_type;
+    __fsword_t f_bsize;
+#ifndef __USE_FILE_OFFSET64
+    __fsblkcnt_t f_blocks;
+    __fsblkcnt_t f_bfree;
+    __fsblkcnt_t f_bavail;
+    __fsfilcnt_t f_files;
+    __fsfilcnt_t f_ffree;
+#else
+    __fsblkcnt64_t f_blocks;
+    __fsblkcnt64_t f_bfree;
+    __fsblkcnt64_t f_bavail;
+    __fsfilcnt64_t f_files;
+    __fsfilcnt64_t f_ffree;
+#endif
     __fsid_t f_fsid;
-    __SWORD_TYPE f_namelen;
-    __SWORD_TYPE f_frsize;
-    __SWORD_TYPE f_flags;
-    __SWORD_TYPE f_spare[4];
+    __fsword_t f_namelen;
+    __fsword_t f_frsize;
+    __fsword_t f_flags;
+    __fsword_t f_spare[4];
   };
-
-#undef __field64
 
 #ifdef __USE_LARGEFILE64
 struct statfs64
   {
-    __SWORD_TYPE f_type;
-    __SWORD_TYPE f_bsize;
+    __fsword_t f_type;
+    __fsword_t f_bsize;
     __fsblkcnt64_t f_blocks;
     __fsblkcnt64_t f_bfree;
     __fsblkcnt64_t f_bavail;
     __fsfilcnt64_t f_files;
     __fsfilcnt64_t f_ffree;
     __fsid_t f_fsid;
-    __SWORD_TYPE f_namelen;
-    __SWORD_TYPE f_frsize;
-    __SWORD_TYPE f_flags;
-    __SWORD_TYPE f_spare[4];
+    __fsword_t f_namelen;
+    __fsword_t f_frsize;
+    __fsword_t f_flags;
+    __fsword_t f_spare[4];
   };
 #endif
 

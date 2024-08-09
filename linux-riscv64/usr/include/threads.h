@@ -1,5 +1,5 @@
 /* ISO C11 Standard: 7.26 - Thread support library  <threads.h>.
-   Copyright (C) 2018-2020 Free Software Foundation, Inc.
+   Copyright (C) 2018-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,18 +24,20 @@
 
 __BEGIN_DECLS
 
-#include <bits/pthreadtypes-arch.h>
+#include <bits/thread-shared-types.h>
 #include <bits/types/struct_timespec.h>
 
-#ifndef __cplusplus
+#if (!defined __STDC_VERSION__				\
+     || __STDC_VERSION__ <= 201710L			\
+     || !__GNUC_PREREQ (13, 0)) && !defined __cplusplus
 # define thread_local _Thread_local
 #endif
 
 #define TSS_DTOR_ITERATIONS 4
-typedef unsigned int tss_t;
+typedef __tss_t tss_t;
 typedef void (*tss_dtor_t) (void*);
 
-typedef unsigned long int thrd_t;
+typedef __thrd_t thrd_t;
 typedef int (*thrd_start_t) (void*);
 
 /* Exit and error codes.  */
@@ -56,11 +58,8 @@ enum
   mtx_timed     = 2
 };
 
-typedef struct
-{
-  int __data __ONCE_ALIGNMENT;
-} once_flag;
-#define ONCE_FLAG_INIT { 0 }
+typedef __once_flag once_flag;
+#define ONCE_FLAG_INIT __ONCE_FLAG_INIT
 
 typedef union
 {
@@ -77,7 +76,7 @@ typedef union
 /* Threads functions.  */
 
 /* Create a new thread executing the function __FUNC.  Arguments for __FUNC
-   are passed through __ARG.  If succesful, __THR is set to new thread
+   are passed through __ARG.  If successful, __THR is set to new thread
    identifier.  */
 extern int thrd_create (thrd_t *__thr, thrd_start_t __func, void *__arg);
 
@@ -91,8 +90,18 @@ extern thrd_t thrd_current (void);
    __TIME_POINT.  The current thread may resume if receives a signal.  In
    that case, if __REMAINING is not NULL, the remaining time is stored in
    the object pointed by it.  */
+#ifndef __USE_TIME64_REDIRECTS
 extern int thrd_sleep (const struct timespec *__time_point,
 		       struct timespec *__remaining);
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT (thrd_sleep, (const struct timespec *__time_point,
+                                    struct timespec *__remaining),
+                       __thrd_sleep64);
+# else
+#  define thrd_sleep __thrd_sleep64
+# endif
+#endif
 
 /* Terminate current thread execution, cleaning up any thread local
    storage and freeing resources.  Returns the value specified in __RES.  */
@@ -134,8 +143,19 @@ extern int mtx_lock (mtx_t *__mutex);
 /* Block the current thread until the mutex pointed by __MUTEX is unlocked
    or time pointed by __TIME_POINT is reached.  In case the mutex is unlock,
    the current thread will not be blocked.  */
+#ifndef __USE_TIME64_REDIRECTS
 extern int mtx_timedlock (mtx_t *__restrict __mutex,
 			  const struct timespec *__restrict __time_point);
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT (mtx_timedlock, (mtx_t *__restrict __mutex,
+                                       const struct timespec *__restrict
+                                       __time_point),
+                       __mtx_timedlock64);
+# else
+#  define mtx_timedlock __mtx_timedlock64
+# endif
+#endif
 
 /* Try to lock the mutex pointed by __MUTEX without blocking.  If the mutex
    is free the current threads takes control of it, otherwise it returns
@@ -174,9 +194,21 @@ extern int cnd_wait (cnd_t *__cond, mtx_t *__mutex);
 /* Block current thread on the condition variable until condition variable
    pointed by __COND is signaled or time pointed by __TIME_POINT is
    reached.  */
+#ifndef __USE_TIME64_REDIRECTS
 extern int cnd_timedwait (cnd_t *__restrict __cond,
 			  mtx_t *__restrict __mutex,
 			  const struct timespec *__restrict __time_point);
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT (cnd_timedwait, (cnd_t *__restrict __cond,
+                                       mtx_t *__restrict __mutex,
+                                       const struct timespec *__restrict
+                                       __time_point),
+                       __cnd_timedwait64);
+# else
+#  define cnd_timedwait __cnd_timedwait64
+# endif
+#endif
 
 /* Destroy condition variable pointed by __cond and free all of its
    resources.  */

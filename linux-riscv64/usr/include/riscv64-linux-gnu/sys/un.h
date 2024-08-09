@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
 __BEGIN_DECLS
 
 /* Structure describing the address of an AF_LOCAL (aka AF_UNIX) socket.  */
-struct sockaddr_un
+struct __attribute_struct_may_alias__ sockaddr_un
   {
     __SOCKADDR_COMMON (sun_);
     char sun_path[108];		/* Path name.  */
@@ -34,10 +34,11 @@ struct sockaddr_un
 
 
 #ifdef __USE_MISC
+# include <stddef.h>
 # include <string.h>		/* For prototype of `strlen'.  */
 
 /* Evaluate to actual length of the `sockaddr_un' structure.  */
-# define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path)	      \
+# define SUN_LEN(ptr) (offsetof (struct sockaddr_un, sun_path)		      \
 		      + strlen ((ptr)->sun_path))
 #endif
 

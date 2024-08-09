@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -182,7 +182,8 @@ extern int printf_size_info (const struct printf_info *__restrict
 			     __info, size_t __n, int *__restrict __argtypes)
      __THROW;
 
-#ifdef __LDBL_COMPAT
+#include <bits/floatn.h>
+#if defined __LDBL_COMPAT || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
 # include <bits/printf-ldbl.h>
 #endif
 

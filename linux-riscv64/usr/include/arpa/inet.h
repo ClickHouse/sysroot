@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -74,10 +74,11 @@ extern int inet_aton (const char *__cp, struct in_addr *__inp) __THROW;
 
 /* Format a network number NET into presentation format and place result
    in buffer starting at BUF with length of LEN bytes.  */
-extern char *inet_neta (in_addr_t __net, char *__buf, size_t __len) __THROW;
+extern char *inet_neta (in_addr_t __net, char *__buf, size_t __len) __THROW
+  __attribute_deprecated_msg__ ("Use inet_ntop instead");
 
 /* Convert network number for interface type AF in buffer starting at
-   CP to presentation format.  The result will specifiy BITS bits of
+   CP to presentation format.  The result will specify BITS bits of
    the number.  */
 extern char *inet_net_ntop (int __af, const void *__cp, int __bits,
 			    char *__buf, size_t __len) __THROW;

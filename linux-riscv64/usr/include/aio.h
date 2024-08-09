@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@ __BEGIN_DECLS
 /* Asynchronous I/O control block.  */
 struct aiocb
 {
-  int aio_fildes;		/* File desriptor.  */
+  int aio_fildes;		/* File descriptor.  */
   int aio_lio_opcode;		/* Operation to be performed.  */
   int aio_reqprio;		/* Request priority offset.  */
   volatile void *aio_buf;	/* Location of buffer.  */
@@ -61,7 +61,7 @@ struct aiocb
 #ifdef __USE_LARGEFILE64
 struct aiocb64
 {
-  int aio_fildes;		/* File desriptor.  */
+  int aio_fildes;		/* File descriptor.  */
   int aio_lio_opcode;		/* Operation to be performed.  */
   int aio_reqprio;		/* Request priority offset.  */
   volatile void *aio_buf;	/* Location of buffer.  */
@@ -82,12 +82,11 @@ struct aiocb64
 
 
 #ifdef __USE_GNU
-/* To customize the implementation one can use the following struct.
-   This implementation follows the one in Irix.  */
+/* To optimize the implementation one can use the following struct.  */
 struct aioinit
   {
-    int aio_threads;		/* Maximal number of threads.  */
-    int aio_num;		/* Number of expected simultanious requests. */
+    int aio_threads;		/* Maximum number of threads.  */
+    int aio_num;		/* Number of expected simultaneous requests.  */
     int aio_locks;		/* Not used.  */
     int aio_usedba;		/* Not used.  */
     int aio_debug;		/* Not used.  */
@@ -99,7 +98,7 @@ struct aioinit
 #endif
 
 
-/* Return values of cancelation function.  */
+/* Return values of the aio_cancel function.  */
 enum
 {
   AIO_CANCELED,
@@ -169,7 +168,7 @@ extern int aio_suspend (const struct aiocb *const __list[], int __nent,
 			const struct timespec *__restrict __timeout)
   __nonnull ((1));
 
-/* Force all operations associated with file desriptor described by
+/* Force all operations associated with file descriptor described by
    `aio_fildes' member of AIOCBP.  */
 extern int aio_fsync (int __operation, struct aiocb *__aiocbp)
   __THROW __nonnull ((2));
@@ -194,12 +193,17 @@ extern __ssize_t __REDIRECT_NTH (aio_return, (struct aiocb *__aiocbp),
 extern int __REDIRECT_NTH (aio_cancel,
 			   (int __fildes, struct aiocb *__aiocbp),
 			   aio_cancel64);
-
+#  ifdef __USE_TIME64_REDIRECTS
+extern int __REDIRECT_NTH (aio_suspend,
+			   (const struct aiocb *const __list[], int __nent,
+			    const struct timespec *__restrict __timeout),
+			   __aio_suspend_time64) __nonnull ((1));
+#  else
 extern int __REDIRECT_NTH (aio_suspend,
 			   (const struct aiocb *const __list[], int __nent,
 			    const struct timespec *__restrict __timeout),
 			   aio_suspend64) __nonnull ((1));
-
+#  endif
 extern int __REDIRECT_NTH (aio_fsync,
 			   (int __operation, struct aiocb *__aiocbp),
 			   aio_fsync64) __nonnull ((2));
@@ -211,7 +215,11 @@ extern int __REDIRECT_NTH (aio_fsync,
 #  define aio_error aio_error64
 #  define aio_return aio_return64
 #  define aio_cancel aio_cancel64
-#  define aio_suspend aio_suspend64
+#  ifdef __USE_TIME64_REDIRECTS
+#   define aio_suspend __aio_suspend_time64
+#  else
+#   define aio_suspend aio_suspend64
+#  endif
 #  define aio_fsync aio_fsync64
 # endif
 #endif

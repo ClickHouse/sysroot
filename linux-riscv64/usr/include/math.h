@@ -1,5 +1,5 @@
 /* Declarations for math functions.
-   Copyright (C) 1991-2020 Free Software Foundation, Inc.
+   Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -104,7 +104,7 @@ __BEGIN_DECLS
 # endif
 #endif /* __USE_ISOC99 */
 
-#if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
+#if __GLIBC_USE (IEC_60559_BFP_EXT)
 /* Signaling NaN macros, if supported.  */
 # if __GNUC_PREREQ (3, 3)
 #  define SNANF (__builtin_nansf (""))
@@ -112,25 +112,39 @@ __BEGIN_DECLS
 #  define SNANL (__builtin_nansl (""))
 # endif
 #endif
-#if __HAVE_FLOAT16 && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT16					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF16 (__builtin_nansf16 (""))
 #endif
-#if __HAVE_FLOAT32 && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT32					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF32 (__builtin_nansf32 (""))
 #endif
-#if __HAVE_FLOAT64 && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT64					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF64 (__builtin_nansf64 (""))
 #endif
-#if __HAVE_FLOAT128 && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT128					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF128 (__builtin_nansf128 (""))
 #endif
-#if __HAVE_FLOAT32X && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT32X					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF32X (__builtin_nansf32x (""))
 #endif
-#if __HAVE_FLOAT64X && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT64X					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF64X (__builtin_nansf64x (""))
 #endif
-#if __HAVE_FLOAT128X && __GLIBC_USE (IEC_60559_TYPES_EXT)
+#if (__HAVE_FLOAT128X					\
+     && __GLIBC_USE (IEC_60559_TYPES_EXT)		\
+     && (defined __USE_GNU || !__GLIBC_USE (ISOC2X)))
 # define SNANF128X (__builtin_nansf128x (""))
 #endif
 
@@ -279,8 +293,17 @@ enum
 #define __MATHDECLX(type, function,suffix, args, attrib) \
   __MATHDECL_1(type, function,suffix, args) __attribute__ (attrib); \
   __MATHDECL_1(type, __CONCAT(__,function),suffix, args) __attribute__ (attrib)
-#define __MATHDECL_1(type, function,suffix, args) \
+#define __MATHDECL_1_IMPL(type, function, suffix, args) \
   extern type __MATH_PRECNAME(function,suffix) args __THROW
+#define __MATHDECL_1(type, function, suffix, args) \
+  __MATHDECL_1_IMPL(type, function, suffix, args)
+/* Ignore the alias by default.  The alias is only useful with
+   redirections.  */
+#define __MATHDECL_ALIAS(type, function, suffix, args, alias) \
+  __MATHDECL_1(type, function, suffix, args)
+
+#define __MATHREDIR(type, function, suffix, args, to) \
+  extern type __REDIRECT_NTH (__MATH_PRECNAME (function, suffix), args, to)
 
 #define _Mdouble_		double
 #define __MATH_PRECNAME(name,r)	__CONCAT(name,r)
@@ -331,11 +354,37 @@ extern long double __REDIRECT_NTH (nexttowardl,
 #   endif
 
 #   undef __MATHDECL_1
-#   define __MATHDECL_2(type, function,suffix, args, alias) \
-  extern type __REDIRECT_NTH(__MATH_PRECNAME(function,suffix), \
-			     args, alias)
 #   define __MATHDECL_1(type, function,suffix, args) \
-  __MATHDECL_2(type, function,suffix, args, __CONCAT(function,suffix))
+  __MATHREDIR(type, function, suffix, args, __CONCAT(function,suffix))
+
+#  elif __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#   ifdef __REDIRECT_NTH
+#    ifdef __USE_ISOC99
+extern float __REDIRECT_NTH (nexttowardf, (float __x, long double __y),
+			    __nexttowardf_to_ieee128)
+  __attribute__ ((__const__));
+extern double __REDIRECT_NTH (nexttoward, (double __x, long double __y),
+			     __nexttoward_to_ieee128)
+  __attribute__ ((__const__));
+
+#define __dremieee128 __remainderieee128
+#define __gammaieee128 __lgammaieee128
+
+#    endif
+#   endif
+
+#   undef __MATHDECL_1
+#   undef __MATHDECL_ALIAS
+
+#   define __REDIRTO(function, suffix) \
+  __ ## function ## ieee128 ## suffix
+#   define __REDIRTO_ALT(function, suffix) \
+  __ ## function ## f128 ## suffix
+
+#   define __MATHDECL_1(type, function, suffix, args) \
+  __MATHREDIR (type, function, suffix, args, __REDIRTO (function, suffix))
+#   define __MATHDECL_ALIAS(type, function, suffix, args, alias) \
+  __MATHREDIR (type, function, suffix, args, __REDIRTO_ALT (alias, suffix))
 #  endif
 
 /* Include the file of declarations again, this time using `long double'
@@ -348,11 +397,23 @@ extern long double __REDIRECT_NTH (nexttowardl,
 #  define __MATH_DECLARE_LDOUBLE   1
 #  include <bits/mathcalls-helper-functions.h>
 #  include <bits/mathcalls.h>
+
 #  undef _Mdouble_
 #  undef __MATH_PRECNAME
 #  undef __MATH_DECLARING_DOUBLE
 #  undef __MATH_DECLARING_FLOATN
 
+#  if defined __LDBL_COMPAT \
+      || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#   undef __REDIRTO
+#   undef __REDIRTO_ALT
+#   undef __MATHDECL_1
+#   undef __MATHDECL_ALIAS
+#   define __MATHDECL_1(type, function, suffix, args) \
+  __MATHDECL_1_IMPL(type, function, suffix, args)
+#   define __MATHDECL_ALIAS(type, function, suffix, args, alias) \
+  __MATHDECL_1(type, function, suffix, args)
+#  endif
 # endif /* !(__NO_LONG_DOUBLE_MATH && _LIBC) || __LDBL_COMPAT */
 
 #endif	/* Use ISO C99.  */
@@ -479,7 +540,9 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef __MATH_DECLARING_FLOATN
 #endif /* __HAVE_DISTINCT_FLOAT128X || (__HAVE_FLOAT128X && !_LIBC).  */
 
+#undef	__MATHDECL_1_IMPL
 #undef	__MATHDECL_1
+#undef	__MATHDECL_ALIAS
 #undef	__MATHDECL
 #undef	__MATHCALL
 
@@ -510,6 +573,13 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # define __MATHCALL_NAME(name) f ## name ## l
 # ifdef __LDBL_COMPAT
 #  define __MATHCALL_REDIR_NAME(name) f ## name
+#  define __MATHCALL_REDIR_NAME2(name) f ## name
+#  undef __MATHCALL_NARROW
+#  define __MATHCALL_NARROW(func, redir, nargs) \
+  __MATHCALL_NARROW_REDIR (func, redir, nargs)
+# elif __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#  define __MATHCALL_REDIR_NAME(name) __ ## f32 ## name ## ieee128
+#  define __MATHCALL_REDIR_NAME2(name) __ ## f32 ## name ## ieee128
 #  undef __MATHCALL_NARROW
 #  define __MATHCALL_NARROW(func, redir, nargs) \
   __MATHCALL_NARROW_REDIR (func, redir, nargs)
@@ -518,8 +588,10 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef _Mret_
 # undef _Marg_
 # undef __MATHCALL_NAME
-# ifdef __LDBL_COMPAT
+# if defined __LDBL_COMPAT \
+     || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
 #  undef __MATHCALL_REDIR_NAME
+#  undef __MATHCALL_REDIR_NAME2
 #  undef __MATHCALL_NARROW
 #  define __MATHCALL_NARROW(func, redir, nargs) \
   __MATHCALL_NARROW_NORMAL (func, nargs)
@@ -530,6 +602,13 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # define __MATHCALL_NAME(name) d ## name ## l
 # ifdef __LDBL_COMPAT
 #  define __MATHCALL_REDIR_NAME(name) __nldbl_d ## name ## l
+#  define __MATHCALL_REDIR_NAME2(name) name
+#  undef __MATHCALL_NARROW
+#  define __MATHCALL_NARROW(func, redir, nargs) \
+  __MATHCALL_NARROW_REDIR (func, redir, nargs)
+# elif __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#  define __MATHCALL_REDIR_NAME(name) __ ## f64 ## name ## ieee128
+#  define __MATHCALL_REDIR_NAME2(name) __ ## f64 ## name ## ieee128
 #  undef __MATHCALL_NARROW
 #  define __MATHCALL_NARROW(func, redir, nargs) \
   __MATHCALL_NARROW_REDIR (func, redir, nargs)
@@ -538,8 +617,10 @@ extern long double __REDIRECT_NTH (nexttowardl,
 # undef _Mret_
 # undef _Marg_
 # undef __MATHCALL_NAME
-# ifdef __LDBL_COMPAT
+# if defined __LDBL_COMPAT \
+     || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
 #  undef __MATHCALL_REDIR_NAME
+#  undef __MATHCALL_REDIR_NAME2
 #  undef __MATHCALL_NARROW
 #  define __MATHCALL_NARROW(func, redir, nargs) \
   __MATHCALL_NARROW_NORMAL (func, nargs)
@@ -934,7 +1015,8 @@ enum
 
 /* Return nonzero value if X is positive or negative infinity.  */
 # if __HAVE_DISTINCT_FLOAT128 && !__GNUC_PREREQ (7,0) \
-     && !defined __SUPPORT_SNAN__ && !defined __cplusplus
+     && !defined __SUPPORT_SNAN__ && !defined __cplusplus \
+     && !defined __clang__
    /* Since __builtin_isinf_sign is broken for float128 before GCC 7.0,
       use the helper function, __isinff128, with older compilers.  This is
       only provided for C mode, because in C++ mode, GCC has no support
@@ -1077,6 +1159,23 @@ iszero (__T __val)
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif
 
+/* GNU extension to provide float constants with similar names.  */
+#ifdef __USE_GNU
+# define M_Ef		2.7182818284590452354f	/* e */
+# define M_LOG2Ef	1.4426950408889634074f	/* log_2 e */
+# define M_LOG10Ef	0.43429448190325182765f	/* log_10 e */
+# define M_LN2f		0.69314718055994530942f	/* log_e 2 */
+# define M_LN10f	2.30258509299404568402f	/* log_e 10 */
+# define M_PIf		3.14159265358979323846f	/* pi */
+# define M_PI_2f	1.57079632679489661923f	/* pi/2 */
+# define M_PI_4f	0.78539816339744830962f	/* pi/4 */
+# define M_1_PIf	0.31830988618379067154f	/* 1/pi */
+# define M_2_PIf	0.63661977236758134308f	/* 2/pi */
+# define M_2_SQRTPIf	1.12837916709551257390f	/* 2/sqrt(pi) */
+# define M_SQRT2f	1.41421356237309504880f	/* sqrt(2) */
+# define M_SQRT1_2f	0.70710678118654752440f	/* 1/sqrt(2) */
+#endif
+
 /* The above constants are not adequate for computation using `long double's.
    Therefore we provide as an extension constants with similar names as a
    GNU extension.  Provide enough digits for the 128-bit IEEE quad.  */
@@ -1196,13 +1295,6 @@ iszero (__T __val)
 # error "M_* values needed for _Float128x"
 #endif
 
-/* When compiling in strict ISO C compatible mode we must not use the
-   inline functions since they, among other things, do not set the
-   `errno' variable correctly.  */
-#if defined __STRICT_ANSI__ && !defined __NO_MATH_INLINES
-# define __NO_MATH_INLINES	1
-#endif
-
 #ifdef __USE_ISOC99
 # if __GNUC_PREREQ (3, 1)
 /* ISO C99 defines some macros to compare number while taking care for
@@ -1210,7 +1302,7 @@ iszero (__T __val)
    these operations.  Generic support in GCC for these as builtins went
    in 2.97, but not all cpus added their patterns until 3.1.  Therefore
    we enable the builtins from 3.1 onwards and use a generic implementation
-   othwerwise.  */
+   otherwise.  */
 #  define isgreater(x, y)	__builtin_isgreater(x, y)
 #  define isgreaterequal(x, y)	__builtin_isgreaterequal(x, y)
 #  define isless(x, y)		__builtin_isless(x, y)
@@ -1239,12 +1331,6 @@ iszero (__T __val)
 		    __u != __v && (__u != __u || __v != __v); }))
 # endif
 #endif
-
-/* Get machine-dependent inline versions (if there are any).  */
-#ifdef __USE_EXTERN_INLINES
-# include <bits/mathinline.h>
-#endif
-
 
 #if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
 /* An expression whose type has the widest of the evaluation formats
@@ -1306,14 +1392,62 @@ template<> struct __iseqsig_type<long double>
   }
 };
 
-#  if __HAVE_FLOAT128_UNLIKE_LDBL
+#  if __HAVE_FLOAT32 && __GNUC_PREREQ (13, 0)
+template<> struct __iseqsig_type<_Float32>
+{
+  static int __call (_Float32 __x, _Float32 __y) throw ()
+  {
+    return __iseqsigf (__x, __y);
+  }
+};
+#  endif
+
+#  if __HAVE_FLOAT64 && __GNUC_PREREQ (13, 0)
+template<> struct __iseqsig_type<_Float64>
+{
+  static int __call (_Float64 __x, _Float64 __y) throw ()
+  {
+    return __iseqsig (__x, __y);
+  }
+};
+#  endif
+
+#  if __HAVE_FLOAT128_UNLIKE_LDBL || (__HAVE_FLOAT128 && __GNUC_PREREQ (13, 0))
   /* When using an IEEE 128-bit long double, _Float128 is defined as long double
      in C++.  */
 template<> struct __iseqsig_type<_Float128>
 {
   static int __call (_Float128 __x, _Float128 __y) throw ()
   {
+#   if __HAVE_FLOAT128_UNLIKE_LDBL
     return __iseqsigf128 (__x, __y);
+#   else
+    return __iseqsigl (__x, __y);
+#   endif
+  }
+};
+#  endif
+
+#  if __HAVE_FLOAT32X && __GNUC_PREREQ (13, 0)
+template<> struct __iseqsig_type<_Float32x>
+{
+  static int __call (_Float32x __x, _Float32x __y) throw ()
+  {
+    return __iseqsig (__x, __y);
+  }
+};
+#  endif
+
+#  if __HAVE_FLOAT64X && __GNUC_PREREQ (13, 0)
+template<> struct __iseqsig_type<_Float64x>
+{
+  static int __call (_Float64x __x, _Float64x __y) throw ()
+  {
+#   if __HAVE_FLOAT64X_LONG_DOUBLE
+    return __iseqsigl (__x, __y);
+#   else
+    return __iseqsigf128 (__x, __y);
+#   endif
   }
 };
 #  endif

@@ -1,4 +1,4 @@
-  /* Copyright (C) 1996-2020 Free Software Foundation, Inc.
+  /* Copyright (C) 1996-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -700,6 +700,17 @@ extern int getaddrinfo_a (int __mode, struct gaicb *__list[__restrict_arr],
    therefore not marked with __THROW.  */
 extern int gai_suspend (const struct gaicb *const __list[], int __ent,
 			const struct timespec *__timeout);
+
+# ifdef __USE_TIME64_REDIRECTS
+#  if defined(__REDIRECT)
+extern int __REDIRECT (gai_suspend, (const struct gaicb *const __list[],
+                                     int __ent,
+                                     const struct timespec *__timeout),
+                       __gai_suspend_time64);
+#  else
+#   define gai_suspend __gai_suspend_time64
+#  endif
+# endif
 
 /* Get the error status of the request REQ.  */
 extern int gai_error (struct gaicb *__req) __THROW;

@@ -1,5 +1,5 @@
 /* System-specific extensions of <unistd.h>, Linux version.
-   Copyright (C) 2019-2020 Free Software Foundation, Inc.
+   Copyright (C) 2019-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -33,4 +33,18 @@
    not detached and has not been joined.  */
 extern __pid_t gettid (void) __THROW;
 
+#ifdef __has_include
+# if __has_include ("linux/close_range.h")
+#  include "linux/close_range.h"
+# endif
 #endif
+/* Unshare the file descriptor table before closing file descriptors.  */
+#ifndef CLOSE_RANGE_UNSHARE
+# define CLOSE_RANGE_UNSHARE (1U << 1)
+#endif
+/* Set the FD_CLOEXEC bit instead of closing the file descriptor.  */
+#ifndef CLOSE_RANGE_CLOEXEC
+# define CLOSE_RANGE_CLOEXEC (1U << 2)
+#endif
+
+#endif /* __USE_GNU  */
