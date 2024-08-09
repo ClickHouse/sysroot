@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/mman.h
+#include <asm-generic/mman.h>

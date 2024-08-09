@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/sockios.h
+#include <asm-generic/sockios.h>

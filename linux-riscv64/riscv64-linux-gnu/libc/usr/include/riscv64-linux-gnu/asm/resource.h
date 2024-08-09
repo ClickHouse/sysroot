@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/resource.h
+#include <asm-generic/resource.h>

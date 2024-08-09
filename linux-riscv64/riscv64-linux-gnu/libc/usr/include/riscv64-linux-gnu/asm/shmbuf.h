@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/shmbuf.h
+#include <asm-generic/shmbuf.h>

@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/statfs.h
+#include <asm-generic/statfs.h>

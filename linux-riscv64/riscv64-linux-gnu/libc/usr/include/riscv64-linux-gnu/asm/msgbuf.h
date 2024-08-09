@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/msgbuf.h
+#include <asm-generic/msgbuf.h>

@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/fcntl.h
+#include <asm-generic/fcntl.h>

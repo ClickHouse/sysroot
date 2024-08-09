@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/param.h
+#include <asm-generic/param.h>

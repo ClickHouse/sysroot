@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/swab.h
+#include <asm-generic/swab.h>

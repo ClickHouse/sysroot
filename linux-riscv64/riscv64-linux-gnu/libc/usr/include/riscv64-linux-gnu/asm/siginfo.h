@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/siginfo.h
+#include <asm-generic/siginfo.h>

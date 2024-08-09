@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/ipcbuf.h
+#include <asm-generic/ipcbuf.h>

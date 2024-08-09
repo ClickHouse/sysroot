@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/socket.h
+#include <asm-generic/socket.h>

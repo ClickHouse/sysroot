@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/types.h
+#include <asm-generic/types.h>

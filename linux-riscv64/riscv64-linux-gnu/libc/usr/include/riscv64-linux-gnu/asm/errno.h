@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/errno.h
+#include <asm-generic/errno.h>

@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/posix_types.h
+#include <asm-generic/posix_types.h>

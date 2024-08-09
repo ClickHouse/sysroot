@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/ioctl.h
+#include <asm-generic/ioctl.h>

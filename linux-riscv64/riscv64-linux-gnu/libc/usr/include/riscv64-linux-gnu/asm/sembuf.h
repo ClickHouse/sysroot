@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/sembuf.h
+#include <asm-generic/sembuf.h>

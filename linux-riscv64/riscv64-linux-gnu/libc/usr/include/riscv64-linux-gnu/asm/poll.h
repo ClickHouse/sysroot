@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/poll.h
+#include <asm-generic/poll.h>

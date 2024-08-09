@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/termios.h
+#include <asm-generic/termios.h>

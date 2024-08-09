@@ -1,1 +1,1 @@
-../../../lib/linux/uapi/riscv/asm/signal.h
+#include <asm-generic/signal.h>
