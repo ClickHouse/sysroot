@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/priv.h 332991 2018-04-25 12:21:13Z kib $
  */
 
 /*
@@ -105,6 +105,7 @@
 #define	PRIV_CRED_SETRESGID	58	/* setresgid. */
 #define	PRIV_SEEOTHERGIDS	59	/* Exempt bsd.seeothergids. */
 #define	PRIV_SEEOTHERUIDS	60	/* Exempt bsd.seeotheruids. */
+#define	PRIV_SEEJAILPROC        61      /* Exempt from bsd.see_jail_proc. */
 
 /*
  * Debugging privileges.
@@ -190,6 +191,7 @@
 #define	PRIV_SCHED_SETPARAM	205	/* Can set thread scheduler params. */
 #define	PRIV_SCHED_CPUSET	206	/* Can manipulate cpusets. */
 #define	PRIV_SCHED_CPUSET_INTR	207	/* Can adjust IRQ to CPU binding. */
+#define	PRIV_SCHED_IDPRIO	208	/* Can set idle time scheduling. */
 
 /*
  * POSIX semaphore privileges.
@@ -281,6 +283,7 @@
 #define	PRIV_VFS_SYSFLAGS	342	/* Can modify system flags. */
 #define	PRIV_VFS_UNMOUNT	343	/* Can unmount(). */
 #define	PRIV_VFS_STAT		344	/* Override vnode MAC stat perm. */
+#define	PRIV_VFS_READ_DIR	345	/* Can read(2) a dirfd, needs sysctl. */
 
 /*
  * Virtual memory privileges.
@@ -344,12 +347,16 @@
 #define	PRIV_NET_VXLAN		420	/* Administer vxlan. */
 #define	PRIV_NET_SETLANPCP	421	/* Set LAN priority. */
 #define	PRIV_NET_SETVLANPCP	PRIV_NET_SETLANPCP /* Alias Set VLAN priority */
+#define	PRIV_NET_ME		423	/* Administer ME interface. */
+#define	PRIV_NET_WG		424	/* Administer WireGuard interface. */
 
 /*
  * 802.11-related privileges.
  */
-#define	PRIV_NET80211_GETKEY	440	/* Query 802.11 keys. */
-#define	PRIV_NET80211_MANAGE	441	/* Administer 802.11. */
+#define	PRIV_NET80211_VAP_GETKEY	440	/* Query VAP 802.11 keys. */
+#define	PRIV_NET80211_VAP_MANAGE	441	/* Administer 802.11 VAP */
+#define	PRIV_NET80211_VAP_SETMAC	442	/* Set VAP MAC address */
+#define	PRIV_NET80211_CREATE_VAP	443	/* Create a new VAP */
 
 /*
  * Placeholder for AppleTalk privileges, not supported anymore.
@@ -530,7 +537,10 @@
 struct thread;
 struct ucred;
 int	priv_check(struct thread *td, int priv);
-int	priv_check_cred(struct ucred *cred, int priv, int flags);
+int	priv_check_cred(struct ucred *cred, int priv);
+int	priv_check_cred_vfs_lookup(struct ucred *cred);
+int	priv_check_cred_vfs_lookup_nomac(struct ucred *cred);
+int	priv_check_cred_vfs_generation(struct ucred *cred);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */

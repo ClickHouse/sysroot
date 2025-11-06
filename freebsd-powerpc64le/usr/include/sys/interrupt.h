@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_INTERRUPT_H_
@@ -144,7 +142,7 @@ struct intr_event {
 #define	SWI_TTY		0
 #define	SWI_NET		1
 #define	SWI_CAMBIO	2
-#define	SWI_VM		3
+#define	SWI_BUSDMA	3
 #define	SWI_CLOCK	4
 #define	SWI_TQ_FAST	5
 #define	SWI_TQ		6
@@ -153,11 +151,9 @@ struct intr_event {
 struct proc;
 
 extern struct	intr_event *clk_intr_event;
-extern struct	intr_event *tty_intr_event;
-extern void	*vm_ih;
 
 /* Counts and names for statistics (defined in MD code). */
-extern u_long 	*intrcnt;	/* counts for for each device and stray */
+extern u_long 	*intrcnt;	/* counts for each device and stray */
 extern char 	*intrnames;	/* string table containing device names */
 extern size_t	sintrcnt;	/* size of intrcnt table */
 extern size_t	sintrnames;	/* size of intrnames table */
@@ -190,7 +186,7 @@ int	intr_event_resume_handler(void *cookie);
 int	intr_getaffinity(int irq, int mode, void *mask);
 void	*intr_handler_source(void *cookie);
 int	intr_setaffinity(int irq, int mode, void *mask);
-void	_intr_drain(int irq);  /* Linux compat only. */
+void	_intr_drain(int irq);  /* LinuxKPI only. */
 int	swi_add(struct intr_event **eventp, const char *name,
 	    driver_intr_t handler, void *arg, int pri, enum intr_type flags,
 	    void **cookiep);

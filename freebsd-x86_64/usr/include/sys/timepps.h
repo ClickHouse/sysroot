@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: Beerware
+ *
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
  * <phk@FreeBSD.org> wrote this file.  As long as you retain this notice you
@@ -7,12 +9,9 @@
  * ----------------------------------------------------------------------------
  *
  * Copyright (c) 2011 The FreeBSD Foundation
- * All rights reserved.
  *
  * Portions of this software were developed by Julien Ridoux at the University
  * of Melbourne under sponsorship from the FreeBSD Foundation.
- *
- * $FreeBSD: releng/11.3/sys/sys/timepps.h 282424 2015-05-04 17:59:39Z ian $
  *
  * The is a FreeBSD version of the RFC 2783 API for Pulse Per Second 
  * timing interfaces.  
@@ -78,7 +77,6 @@ typedef struct {
 
 #define assert_offset_ntpfp     assert_off_tu.ntpfp
 #define clear_offset_ntpfp      clear_off_tu.ntpfp
-
 
 #define PPS_CAPTUREASSERT	0x01
 #define PPS_CAPTURECLEAR	0x02

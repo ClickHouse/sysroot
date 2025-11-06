@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2017 Kyle J. Kneitinger <kyle@kneit.in>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/lib/libbe/be.h 346802 2019-04-28 03:49:40Z kevans $
  */
 
 #ifndef _LIBBE_H
@@ -60,6 +57,7 @@ typedef enum be_error {
 	BE_ERR_NOMEM,		/* insufficient memory */
 	BE_ERR_UNKNOWN,         /* unknown error */
 	BE_ERR_INVORIGIN,       /* invalid origin */
+	BE_ERR_HASCLONES,	/* snapshot has clones */
 } be_error_t;
 
 
@@ -81,6 +79,9 @@ int be_prop_list_alloc(nvlist_t **be_list);
 void be_prop_list_free(nvlist_t *be_list);
 
 int be_activate(libbe_handle_t *, const char *, bool);
+int be_deactivate(libbe_handle_t *, const char *, bool);
+
+bool be_is_auto_snapshot_name(libbe_handle_t *, const char *);
 
 /* Bootenv creation functions */
 int be_create(libbe_handle_t *, const char *);
@@ -97,6 +98,7 @@ int be_rename(libbe_handle_t *, const char *, const char *);
 typedef enum {
 	BE_DESTROY_FORCE	= 1 << 0,
 	BE_DESTROY_ORIGIN	= 1 << 1,
+	BE_DESTROY_AUTOORIGIN	= 1 << 2,
 } be_destroy_opt_t;
 
 int be_destroy(libbe_handle_t *, const char *, int);
@@ -108,8 +110,8 @@ typedef enum {
 	BE_MNT_DEEP		= 1 << 1,
 } be_mount_opt_t;
 
-int be_mount(libbe_handle_t *, char *, char *, int, char *);
-int be_unmount(libbe_handle_t *, char *, int);
+int be_mount(libbe_handle_t *, const char *, const char *, int, char *);
+int be_unmount(libbe_handle_t *, const char *, int);
 int be_mounted_at(libbe_handle_t *, const char *path, nvlist_t *);
 
 /* Error related functions: be_error.c */
@@ -121,7 +123,7 @@ void libbe_print_on_error(libbe_handle_t *, bool);
 int be_root_concat(libbe_handle_t *, const char *, char *);
 int be_validate_name(libbe_handle_t * __unused, const char *);
 int be_validate_snap(libbe_handle_t *, const char *);
-int be_exists(libbe_handle_t *, char *);
+int be_exists(libbe_handle_t *, const char *);
 
 int be_export(libbe_handle_t *, const char *, int fd);
 int be_import(libbe_handle_t *, const char *, int fd);

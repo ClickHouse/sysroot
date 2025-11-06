@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2000-2001 Boris Popov
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netsmb/smb_subr.h 217174 2011-01-08 23:06:54Z csjp $
  */
 #ifndef _NETSMB_SMB_SUBR_H_
 #define _NETSMB_SMB_SUBR_H_
@@ -62,7 +62,7 @@ void m_dumpm(struct mbuf *m);
 	 SIGISMEMBER(set, SIGHUP) || SIGISMEMBER(set, SIGKILL) ||	\
 	 SIGISMEMBER(set, SIGQUIT))
 
-#define	smb_suser(cred)	priv_check_cred(cred, PRIV_NETSMB, 0)
+#define	smb_suser(cred)	priv_check_cred(cred, PRIV_NETSMB)
 
 /*
  * Compatibility wrappers for simple locks
@@ -76,7 +76,6 @@ void m_dumpm(struct mbuf *m);
 #define	smb_sl_destroy(mtx)		mtx_destroy(mtx)
 #define	smb_sl_lock(mtx)		mtx_lock(mtx)
 #define	smb_sl_unlock(mtx)		mtx_unlock(mtx)
-
 
 #define SMB_STRFREE(p)	do { if (p) smb_strfree(p); } while(0)
 

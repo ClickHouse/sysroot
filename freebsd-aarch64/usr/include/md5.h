@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/lib/libmd/md5.h 307584 2016-10-18 23:20:49Z asomers $ */
 
 #ifndef _MD5_H_
 #define _MD5_H_

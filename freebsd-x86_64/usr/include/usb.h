@@ -1,5 +1,6 @@
-/* $FreeBSD: releng/11.3/lib/libusb/usb.h 331722 2018-03-29 02:50:57Z eadler $ */
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

@@ -1,5 +1,4 @@
 /*	$NetBSD: raw.h,v 1.1 2000/06/02 22:57:56 fvdl Exp $	*/
-/*	$FreeBSD: releng/12.2/include/rpc/raw.h 326024 2017-11-20 19:45:28Z pfg $ */
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause

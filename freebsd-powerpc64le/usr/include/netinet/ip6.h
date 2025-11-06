@@ -1,4 +1,3 @@
-/*	$FreeBSD$	*/
 /*	$KAME: ip6.h,v 1.18 2001/03/29 05:34:30 itojun Exp $	*/
 
 /*-
@@ -98,13 +97,19 @@ struct ip6_hdr {
 #if BYTE_ORDER == BIG_ENDIAN
 #define IPV6_FLOWINFO_MASK	0x0fffffff	/* flow info (28 bits) */
 #define IPV6_FLOWLABEL_MASK	0x000fffff	/* flow label (20 bits) */
+#define IPV6_ECN_MASK		0x00300000	/* ECN code point (2 bits) */
 #else
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define IPV6_FLOWINFO_MASK	0xffffff0f	/* flow info (28 bits) */
 #define IPV6_FLOWLABEL_MASK	0xffff0f00	/* flow label (20 bits) */
+#define IPV6_ECN_MASK		0x00003000	/* ECN code point (2 bits) */
 #endif /* LITTLE_ENDIAN */
 #endif
 #define IPV6_FLOWLABEL_LEN	20
+
+#define	IPV6_TRAFFIC_CLASS(ip6)	((ntohl((ip6)->ip6_flow) >> 20) & 0xff)
+#define	IPV6_DSCP(ip6)		((ntohl((ip6)->ip6_flow) >> 20) & 0xfc)
+#define	IPV6_ECN(ip6)		((ntohl((ip6)->ip6_flow) >> 20) & 0x03)
 
 /*
  * Extension Headers

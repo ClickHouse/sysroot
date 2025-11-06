@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006-2009 University of Zagreb
  * Copyright (c) 2006-2009 FreeBSD Foundation
@@ -33,8 +33,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*-
@@ -238,6 +236,10 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	curvnet = saved_vnet;
 #endif /* VNET_DEBUG */
 
+#define	CURVNET_ASSERT_SET()						\
+	VNET_ASSERT(curvnet != NULL, ("vnet is not set at %s:%d %s()",  \
+	    __FILE__, __LINE__, __func__))
+
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
 
@@ -356,12 +358,6 @@ struct vnet_sysinit {
 	    vnet_deregister_sysuninit, &ident ## _vnet_uninit)
 
 /*
- * Run per-vnet sysinits or sysuninits during vnet creation/destruction.
- */
-void	 vnet_sysinit(void);
-void	 vnet_sysuninit(void);
-
-/*
  * Interfaces for managing per-vnet constructors and destructors.
  */
 void	vnet_register_sysinit(void *arg);
@@ -403,6 +399,7 @@ do {									\
 #define	CURVNET_SET(arg)
 #define	CURVNET_SET_QUIET(arg)
 #define	CURVNET_RESTORE()
+#define	CURVNET_ASSERT_SET()						\
 
 #define	VNET_LIST_RLOCK()
 #define	VNET_LIST_RLOCK_NOSLEEP()

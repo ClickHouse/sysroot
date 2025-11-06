@@ -1,6 +1,8 @@
 /*-
  * Structure and function declarations for Processor type devices.
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1998 Justin T. Gibbs
  * All rights reserved.
  *
@@ -24,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/scsi/scsi_pt.h 139743 2005-01-05 22:34:37Z imp $
  */
 
 #ifndef	_SCSI_SCSI_PT_H

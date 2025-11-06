@@ -1,6 +1,8 @@
 /*	$NetBSD: usb.h,v 1.8 2000/08/13 22:22:02 augustss Exp $	*/
 
-/*
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1999 Lennart Augustsson <augustss@netbsd.org>
  * All rights reserved.
  *
@@ -25,9 +27,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: releng/11.3/lib/libusbhid/usbhid.h 331722 2018-03-29 02:50:57Z eadler $
- *
  */
+
+#ifndef _USBHID_H_
+#define _USBHID_H_
 
 #include <stdint.h>
 
@@ -111,3 +114,5 @@ int hid_set_report(int fd, enum hid_kind k,
     unsigned char *data, unsigned int size);
 
 __END_DECLS
+
+#endif /* !_USBHID_H_ */

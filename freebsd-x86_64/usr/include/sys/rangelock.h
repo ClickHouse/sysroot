@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2009 Konstantin Belousov <kib@FreeBSD.org>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/rangelock.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef	_SYS_RANGELOCK_H
@@ -73,9 +73,36 @@ void	*rangelock_unlock_range(struct rangelock *lock, void *cookie,
 	    off_t start, off_t end, struct mtx *ilk);
 void	*rangelock_rlock(struct rangelock *lock, off_t start, off_t end,
 	    struct mtx *ilk);
+void	*rangelock_tryrlock(struct rangelock *lock, off_t start, off_t end,
+	    struct mtx *ilk);
 void	*rangelock_wlock(struct rangelock *lock, off_t start, off_t end,
 	    struct mtx *ilk);
+void	*rangelock_trywlock(struct rangelock *lock, off_t start, off_t end,
+	    struct mtx *ilk);
 void	 rlqentry_free(struct rl_q_entry *rlqe);
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
+void	_rangelock_cookie_assert(void *cookie, int what, const char *file,
+    int line);
+#endif
+
+#ifdef INVARIANTS
+#define	rangelock_cookie_assert_(cookie, what, file, line)	\
+	_rangelock_cookie_assert((cookie), (what), (file), (line))
+#else
+#define	rangelock_cookie_assert_(cookie, what, file, line)		(void)0
+#endif
+
+#define	rangelock_cookie_assert(cookie, what)	\
+	rangelock_cookie_assert_((cookie), (what), __FILE__, __LINE__)
+
+/*
+ * Assertion flags.
+ */
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
+#define	RCA_LOCKED	0x0001
+#define	RCA_RLOCKED	0x0002
+#define	RCA_WLOCKED	0x0004
+#endif
 
 #endif	/* _KERNEL */
 

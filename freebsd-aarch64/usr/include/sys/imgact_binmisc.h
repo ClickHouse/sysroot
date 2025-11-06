@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Stacey D. Son
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/imgact_binmisc.h 326823 2017-12-13 16:13:17Z pfg $
  */
 
 #ifndef	_IMGACT_BINMISC_H_
@@ -47,11 +45,19 @@
 #define	IBE_INTERP_LEN_MAX	(MAXPATHLEN + IBE_ARG_LEN_MAX)
 #define	IBE_MAX_ENTRIES	64	/* Max number of interpreter entries. */
 
+/* We only map the first page for identification purposes. */
+#define	IBE_MATCH_MAX	PAGE_SIZE
+_Static_assert(IBE_MAGIC_MAX <= IBE_MATCH_MAX,
+    "Cannot identify binaries past the first page.");
+
 /*
  * Imgact bin misc interpreter entry flags.
  */
 #define	IBF_ENABLED	0x0001	/* Entry is active. */
 #define	IBF_USE_MASK	0x0002	/* Use mask on header magic field. */
+#define	IBF_PRE_OPEN	0x0004	/* Cache the vnode for interpreter */
+
+#define	IBF_VALID_UFLAGS	0x0007	/* Bits allowed from userland. */
 
 /*
  * Used with sysctlbyname() to pass imgact bin misc entries in and out of the

@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)mpool.h	8.4 (Berkeley) 11/2/95
- * $FreeBSD: releng/12.2/include/mpool.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 #ifndef _MPOOL_H_

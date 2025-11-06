@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/ipcomp_var.h 326023 2017-11-20 19:43:44Z pfg $	*/
 /*	$KAME: ipcomp.h,v 1.8 2000/09/26 07:55:14 itojun Exp $	*/
 
 /*-

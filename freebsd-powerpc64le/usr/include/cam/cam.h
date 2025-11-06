@@ -1,7 +1,7 @@
 /*-
  * Data structures and definitions for the CAM system.
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _CAM_CAM_H
@@ -377,6 +375,8 @@ caddr_t	cam_quirkmatch(caddr_t target, caddr_t quirk_table, int num_entries,
 		       int entry_size, cam_quirkmatch_t *comp_func);
 
 void	cam_strvis(u_int8_t *dst, const u_int8_t *src, int srclen, int dstlen);
+void	cam_strvis_flag(u_int8_t *dst, const u_int8_t *src, int srclen,
+			int dstlen, uint32_t flags);
 void	cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
 			uint32_t flags);
 

@@ -1,4 +1,8 @@
+/*	$NetBSD: chio.h,v 1.9 1997/09/29 17:32:26 mjacob Exp $	*/
+
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 1996 Jason R. Thorpe <thorpej@and.com>
  * All rights reserved.
  *
@@ -28,8 +32,6 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/chio.h 343226 2019-01-20 21:38:24Z joerg $
  */
 
 #ifndef	_SYS_CHIO_H_
@@ -244,7 +246,6 @@ struct changer_element_status_request {
 	struct changer_element_status	*cesr_element_status;
 };
 
-
 struct changer_set_voltag_request {
 	u_int16_t		csvr_type;
 	u_int16_t		csvr_addr;
@@ -259,7 +260,6 @@ struct changer_set_voltag_request {
 
 	changer_voltag_t     	csvr_voltag;
 };
-
 
 #define	CESTATUS_BITS	\
 	"\20\6INENAB\5EXENAB\4ACCESS\3EXCEPT\2IMPEXP\1FULL"

@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/include/iconv.h 326192 2017-11-25 17:09:43Z pfg $	*/
 /*	$NetBSD: iconv.h,v 1.6 2005/02/03 04:39:32 perry Exp $	*/
 
 /*-

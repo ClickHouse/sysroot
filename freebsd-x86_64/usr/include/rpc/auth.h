@@ -1,6 +1,8 @@
 /*	$NetBSD: auth.h,v 1.15 2000/06/02 22:57:55 fvdl Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2009, Sun Microsystems, Inc.
  * All rights reserved.
  *
@@ -30,7 +32,6 @@
  *	from: @(#)auth.h 1.17 88/02/08 SMI
  *	from: @(#)auth.h	2.3 88/08/07 4.0 RPCSRC
  *	from: @(#)auth.h	1.43 	98/02/02 SMI
- * $FreeBSD: releng/11.3/include/rpc/auth.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 /*
@@ -277,11 +278,12 @@ __END_DECLS
  * Netname manipulation routines.
  */
 __BEGIN_DECLS
-extern int getnetname(char *);
-extern int host2netname(char *, const char *, const char *);
-extern int user2netname(char *, const uid_t, const char *);
-extern int netname2user(char *, uid_t *, gid_t *, int *, gid_t *);
-extern int netname2host(char *, char *, const int);
+extern int getnetname(char [MAXNETNAMELEN + 1]);
+extern int host2netname(char [MAXNETNAMELEN + 1], const char *, const char *);
+extern int user2netname(char [MAXNETNAMELEN + 1], const uid_t, const char *);
+extern int netname2user(char [MAXNETNAMELEN + 1], uid_t *, gid_t *, int *,
+    gid_t *);
+extern int netname2host(char [MAXNETNAMELEN + 1], char *, const int);
 extern void passwd2des ( char *, char * );
 __END_DECLS
 

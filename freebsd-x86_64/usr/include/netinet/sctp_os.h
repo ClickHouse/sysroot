@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2006-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -30,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_os.h 331722 2018-03-29 02:50:57Z eadler $");
-
 #ifndef _NETINET_SCTP_OS_H_
 #define _NETINET_SCTP_OS_H_
 
@@ -61,10 +60,6 @@ __FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_os.h 331722 2018-03-29 02:50:57
  */
 
 #include <netinet/sctp_os_bsd.h>
-
-
-
-
 
 /* All os's must implement this address gatherer. If
  * no VRF's exist, then vrf 0 is the only one and all

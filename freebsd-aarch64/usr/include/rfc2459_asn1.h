@@ -1055,7 +1055,7 @@ extern ASN1EXP const heim_oid asn1_oid_id_x509_ce_basicConstraints;
 /*
 BasicConstraints ::= SEQUENCE {
   cA                  BOOLEAN OPTIONAL,
-  pathLenConstraint   INTEGER (0..-1) OPTIONAL,
+  pathLenConstraint   INTEGER (0..4294967295) OPTIONAL,
 }
 */
 
@@ -1481,7 +1481,7 @@ ASN1EXP void   ASN1CALL free_RSAPublicKey  (RSAPublicKey *);
 
 /*
 RSAPrivateKey ::= SEQUENCE {
-  version           INTEGER (0..-1),
+  version           INTEGER (0..4294967295),
   modulus           INTEGER,
   publicExponent    INTEGER,
   privateExponent   INTEGER,
@@ -1778,7 +1778,7 @@ ASN1EXP void   ASN1CALL free_ProxyPolicy  (ProxyPolicy *);
 
 /*
 ProxyCertInfo ::= SEQUENCE {
-  pCPathLenConstraint   INTEGER (0..-1) OPTIONAL,
+  pCPathLenConstraint   INTEGER (0..4294967295) OPTIONAL,
   proxyPolicy           ProxyPolicy,
 }
 */

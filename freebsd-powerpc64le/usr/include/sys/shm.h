@@ -1,4 +1,3 @@
-/* $FreeBSD$ */
 /*	$NetBSD: shm.h,v 1.15 1994/06/29 06:45:17 cgd Exp $	*/
 
 /*-
@@ -153,8 +152,14 @@ struct vmspace;
 
 extern struct shminfo	shminfo;
 
+#define	SHMSEG_FREE     	0x0200
+#define	SHMSEG_REMOVED  	0x0400
+#define	SHMSEG_ALLOCATED	0x0800
+
 void	shmexit(struct vmspace *);
 void	shmfork(struct proc *, struct proc *);
+int	kern_get_shmsegs(struct thread *td, struct shmid_kernel **res,
+	    size_t *sz);
 
 #else /* !_KERNEL */
 

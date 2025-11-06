@@ -3,6 +3,8 @@
  */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright by Hannu Savolainen 1993 / 4Front Technologies 1993-2006
  * Modified for the new FreeBSD sound driver by Luigi Rizzo, 1997
  *
@@ -28,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/soundcard.h 301406 2016-06-04 18:57:00Z ed $
  */
 
 /*
@@ -482,7 +482,7 @@ struct sysex_info {
  * This structure is also used with ioctl(SNDCTL_PGMR_IFACE) which allows
  * a patch manager daemon to read and write device parameters. This
  * ioctl available through /dev/sequencer also. Avoid using it since it's
- * extremely hardware dependent. In addition access trough /dev/sequencer
+ * extremely hardware dependent. In addition access through /dev/sequencer
  * may confuse the patch manager daemon.
  */
 
@@ -800,7 +800,6 @@ typedef struct {
 #define SNDCTL_DSP_SUBDIVIDE	_IOWR('P', 9, int)
 #define SNDCTL_DSP_SETFRAGMENT	_IOWR('P',10, int)
 
-
 #define SNDCTL_DSP_GETFMTS	_IOR ('P',11, int) /* Returns a mask */
 /*
  * Buffer status queries.
@@ -1043,7 +1042,6 @@ typedef struct copr_msg {
 #define SOUND_MIXER_VIDEO       22      /* Video/TV (audio) in */
 #define SOUND_MIXER_RADIO       23      /* Radio in */
 #define SOUND_MIXER_MONITOR     24      /* Monitor (usually mic) volume */
-
 
 /*
  * Some on/off settings (SOUND_SPECIAL_MIN - SOUND_SPECIAL_MAX)
@@ -1418,7 +1416,6 @@ void seqbuf_dump(void);	/* This function must be provided by programs */
 #define SEQ_BENDER(dev, chn, value) \
 	_CHN_COMMON(dev, MIDI_PITCH_BEND, chn, 0, 0, value)
 
-
 #define SEQ_V2_X_CONTROL(dev, voice, controller, value)	{ \
 	_SEQ_NEEDBUF(8);\
 	_seqbuf[_seqbufptr] = SEQ_EXTENDED;\
@@ -1594,7 +1591,6 @@ typedef struct audio_errinfo
 #define SNDCTL_DSP_SETPLAYVOL           _IOWR('P', 24, int)
 #define SNDCTL_DSP_GETERROR             _IOR ('P', 25, audio_errinfo)
 
-
 /*
  ****************************************************************************
  * Sync groups for audio devices
@@ -1748,7 +1744,7 @@ typedef struct oss_sysinfo
 	int	openedaudio[8];	/* Bit mask telling which audio devices
 				   are busy */
 
-	int	numsynths;	/* # of availavle synth devices */
+	int	numsynths;	/* # of available synth devices */
 	int	nummidis;	/* # of available MIDI ports */
 	int	numtimers;	/* # of available timer devices */
 	int	nummixers;	/* # of mixer devices */

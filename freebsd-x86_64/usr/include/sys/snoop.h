@@ -11,8 +11,6 @@
  * This software is provided ``AS IS'' without any warranties of any kind.
  *
  * Snoop stuff.
- *
- * $FreeBSD: releng/11.3/sys/sys/snoop.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_SNOOP_H_

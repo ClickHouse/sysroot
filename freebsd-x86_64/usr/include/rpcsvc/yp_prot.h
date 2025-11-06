@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1992/3 Theo de Raadt <deraadt@fsa.ca>
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/include/rpcsvc/yp_prot.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _RPCSVC_YP_PROT_H_
@@ -77,7 +77,7 @@ typedef u_int bool;
 #define YPPROG		((u_long)100004)
 #define YPVERS		((u_long)2)
 #define YPVERS_ORIG	((u_long)1)
-#define YPMAXRECORD	((u_long)1024)
+#define YPMAXRECORD	((u_long)16 * 1024 * 1024)
 #define YPMAXDOMAIN	((u_long)64)
 #define YPMAXMAP	((u_long)64)
 #define YPMAXPEER	((u_long)256)

@@ -1,7 +1,7 @@
 /*-
  * Data structures and definitions for SCSI Interface Modules (SIMs).
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _CAM_CAM_SIM_H
@@ -140,6 +138,12 @@ static __inline u_int32_t
 cam_sim_bus(const struct cam_sim *sim)
 {
 	return (sim->bus_id);
+}
+
+static __inline bool
+cam_sim_pollable(const struct cam_sim *sim)
+{
+	return (sim->sim_poll != NULL);
 }
 
 #endif /* _KERNEL */

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 2001 WIDE Project.
  * All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	$KAME: raw_ip6.h,v 1.2 2001/05/27 13:28:35 itojun Exp $
- * $FreeBSD: releng/11.3/sys/netinet6/raw_ip6.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NETINET6_RAW_IP6_H_

@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)gmon.h	8.2 (Berkeley) 1/4/94
- * $FreeBSD: releng/12.2/sys/sys/gmon.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _SYS_GMON_H_

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -26,8 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ioccom.h	8.2 (Berkeley) 3/28/94
- * $FreeBSD: releng/11.3/sys/sys/ioccom.h 332502 2018-04-14 12:52:34Z emaste $
+ *	@(#)ioccom.h	8.3 (Berkeley) 1/9/95
  */
 
 #ifndef	_SYS_IOCCOM_H_
@@ -37,6 +38,11 @@
  * Ioctl's have the command encoded in the lower word, and the size of
  * any in or out parameters in the upper word.  The high 3 bits of the
  * upper word are used to encode the in/out status of the parameter.
+ *
+ *	 31 29 28                     16 15            8 7             0
+ *	+---------------------------------------------------------------+
+ *	| I/O | Parameter Length        | Command Group | Command       |
+ *	+---------------------------------------------------------------+
  */
 #define	IOCPARM_SHIFT	13		/* number of bits for ioctl size */
 #define	IOCPARM_MASK	((1 << IOCPARM_SHIFT) - 1) /* parameter length mask */
@@ -45,11 +51,12 @@
 #define	IOCGROUP(x)	(((x) >> 8) & 0xff)
 
 #define	IOCPARM_MAX	(1 << IOCPARM_SHIFT) /* max size of ioctl */
-#define	IOC_VOID	0x20000000	/* no parameters */
-#define	IOC_OUT		0x40000000	/* copy out parameters */
-#define	IOC_IN		0x80000000	/* copy in parameters */
-#define	IOC_INOUT	(IOC_IN|IOC_OUT)
-#define	IOC_DIRMASK	(IOC_VOID|IOC_OUT|IOC_IN)
+
+#define	IOC_VOID	0x20000000UL	/* no parameters */
+#define	IOC_OUT		0x40000000UL	/* copy out parameters */
+#define	IOC_IN		0x80000000UL	/* copy in parameters */
+#define	IOC_INOUT	(IOC_IN|IOC_OUT)/* copy parameters in and out */
+#define	IOC_DIRMASK	(IOC_VOID|IOC_OUT|IOC_IN)/* mask for IN/OUT/VOID */
 
 #define	_IOC(inout,group,num,len)	((unsigned long) \
 	((inout) | (((len) & IOCPARM_MASK) << 16) | ((group) << 8) | (num)))
@@ -71,7 +78,10 @@
 #define	IOCPARM_IVAL(x)	((int)(intptr_t)(void *)*(caddr_t *)(void *)(x))
 #endif
 
-#else
+#define	_IOC_INVALID	(_IOC_VOID|_IOC_INOUT)	/* Never valid cmd value,
+						   use as filler */
+
+#elif !defined(_STANDALONE)
 
 #include <sys/cdefs.h>
 

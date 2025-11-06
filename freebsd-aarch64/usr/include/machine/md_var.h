@@ -27,7 +27,6 @@
  * SUCH DAMAGE.
  *
  *	from: FreeBSD: src/sys/i386/include/md_var.h,v 1.40 2001/07/12
- * $FreeBSD: releng/12.2/sys/arm64/include/md_var.h 304285 2016-08-17 09:52:09Z kib $
  */
 
 #ifndef	_MACHINE_MD_VAR_H_
@@ -36,15 +35,27 @@
 extern long Maxmem;
 extern char sigcode[];
 extern int szsigcode;
-extern uint64_t *vm_page_dump;
-extern int vm_page_dump_size;
+extern u_long elf_hwcap;
+extern u_long elf_hwcap2;
+#ifdef COMPAT_FREEBSD32
+extern u_long elf32_hwcap;
+extern u_long elf32_hwcap2;
+#endif
 
 struct dumperinfo;
+struct minidumpstate;
 
-extern int busdma_swi_pending;
-void busdma_swi(void);
-void dump_add_page(vm_paddr_t);
-void dump_drop_page(vm_paddr_t);
-int minidumpsys(struct dumperinfo *);
+int cpu_minidumpsys(struct dumperinfo *, const struct minidumpstate *);
+void generic_bs_fault(void) __asm(__STRING(generic_bs_fault));
+void generic_bs_peek_1(void) __asm(__STRING(generic_bs_peek_1));
+void generic_bs_peek_2(void) __asm(__STRING(generic_bs_peek_2));
+void generic_bs_peek_4(void) __asm(__STRING(generic_bs_peek_4));
+void generic_bs_peek_8(void) __asm(__STRING(generic_bs_peek_8));
+void generic_bs_poke_1(void) __asm(__STRING(generic_bs_poke_1));
+void generic_bs_poke_2(void) __asm(__STRING(generic_bs_poke_2));
+void generic_bs_poke_4(void) __asm(__STRING(generic_bs_poke_4));
+void generic_bs_poke_8(void) __asm(__STRING(generic_bs_poke_8));
+
+extern uint32_t initial_fpcr;
 
 #endif /* !_MACHINE_MD_VAR_H_ */

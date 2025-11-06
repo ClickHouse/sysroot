@@ -1,5 +1,4 @@
 /* MD5.H - header file for MD5C.C
- * $FreeBSD: releng/12.2/sys/sys/md5.h 326828 2017-12-13 16:30:39Z pfg $
  */
 
 /*-

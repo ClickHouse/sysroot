@@ -37,8 +37,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_ether.h 141910 2005-02-14 12:01:09Z glebius $
  * $Whistle: ng_ether.h,v 1.1 1999/02/02 03:17:22 julian Exp $
  */
 

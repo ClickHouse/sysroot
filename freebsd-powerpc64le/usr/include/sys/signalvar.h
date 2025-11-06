@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)signalvar.h	8.6 (Berkeley) 2/19/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_SIGNALVAR_H_
@@ -383,9 +382,8 @@ sigallowstop(int prev)
 
 int	cursig(struct thread *td);
 void	execsigs(struct proc *p);
-void	gsignal(int pgid, int sig, ksiginfo_t *ksi);
 void	killproc(struct proc *p, const char *why);
-ksiginfo_t * ksiginfo_alloc(int wait);
+ksiginfo_t *ksiginfo_alloc(int mwait);
 void	ksiginfo_free(ksiginfo_t *ksi);
 int	pksignal(struct proc *p, int sig, ksiginfo_t *ksi);
 void	pgsigio(struct sigio **sigiop, int sig, int checkctty);
@@ -404,7 +402,6 @@ int	sig_ast_needsigchk(struct thread *td);
 void	sig_drop_caught(struct proc *p);
 void	sigexit(struct thread *td, int sig) __dead2;
 int	sigev_findtd(struct proc *p, struct sigevent *sigev, struct thread **);
-int	sig_ffs(sigset_t *set);
 void	sigfastblock_clear(struct thread *td);
 void	sigfastblock_fetch(struct thread *td);
 void	sigfastblock_setpend(struct thread *td, bool resched);

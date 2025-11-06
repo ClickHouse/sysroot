@@ -22,12 +22,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_DISK_GPT_H_
 #define	_SYS_DISK_GPT_H_
+
+#include <sys/types.h>
 
 /*
  * Applications can define GPT_UUID_TYPE if they want the GPT structures
@@ -246,6 +246,11 @@ CTASSERT(sizeof(struct gpt_ent) == 128);
 	{0x6a9283a5,0x1dd2,0x11b2,0x99,0xa6,{0x08,0x00,0x20,0x73,0x66,0x31}}
 #define GPT_ENT_TYPE_SOLARIS_RESERVED	\
 	{0x6a945a3b,0x1dd2,0x11b2,0x99,0xa6,{0x08,0x00,0x20,0x73,0x66,0x31}}
+
+#define GPT_ENT_TYPE_HIFIVE_FSBL	\
+	{0x5b193300,0xfc78,0x40cd,0x80,0x02,{0xe8,0x6c,0x45,0x58,0x0b,0x47}}
+#define GPT_ENT_TYPE_HIFIVE_BBL		\
+	{0x2e54b353,0x1271,0x4842,0x80,0x6f,{0xe4,0x36,0xd6,0xaf,0x69,0x85}}
 
 /*
  * Boot partition used by GRUB 2.

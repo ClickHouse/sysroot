@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)mbuf.h	8.5 (Berkeley) 2/19/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_MBUF_H_
@@ -198,13 +197,16 @@ struct pkthdr {
 	} PH_loc;
 };
 #define	ether_vtag	PH_per.sixteen[0]
+#define tcp_tun_port	PH_per.sixteen[0] /* outbound */
 #define	PH_vt		PH_per
 #define	vt_nrecs	sixteen[0]	  /* mld and v6-ND */
 #define	tso_segsz	PH_per.sixteen[1] /* inbound after LRO */
 #define	lro_nsegs	tso_segsz	  /* inbound after LRO */
 #define	csum_data	PH_per.thirtytwo[1] /* inbound from hardware up */
-#define lro_len		PH_loc.sixteen[0] /* inbound during LRO (no reassembly) */
-#define lro_csum	PH_loc.sixteen[1] /* inbound during LRO (no reassembly) */
+#define	lro_tcp_d_len	PH_loc.sixteen[0] /* inbound during LRO (no reassembly) */
+#define	lro_tcp_d_csum	PH_loc.sixteen[1] /* inbound during LRO (no reassembly) */
+#define	lro_tcp_h_off	PH_loc.sixteen[2] /* inbound during LRO (no reassembly) */
+#define	lro_etype	PH_loc.sixteen[3] /* inbound during LRO (no reassembly) */
 /* Note PH_loc is used during IP reassembly (all 8 bytes as a ptr) */
 
 /*
@@ -437,7 +439,7 @@ m_epg_pagelen(const struct mbuf *m, int pidx, int pgoff)
 	    "too large header length");					\
 } while (0)
 #else
-#define	MBUF_EXT_PGS_ASSERT_SANITY(m)	do {} while (0);
+#define	MBUF_EXT_PGS_ASSERT_SANITY(m)	do {} while (0)
 #endif
 #endif
 
@@ -492,6 +494,12 @@ m_epg_pagelen(const struct mbuf *m, int pidx, int pgoff)
      M_TSTMP_HPREC|M_TSTMP_LRO|M_PROTOFLAGS)
 
 /*
+ * Flags preserved during demote.
+ */
+#define	M_DEMOTEFLAGS \
+    (M_EXT | M_RDONLY | M_NOFREE | M_EXTPG)
+
+/*
  * Mbuf flag description for use with printf(9) %b identifier.
  */
 #define	M_FLAG_BITS \
@@ -531,6 +539,7 @@ m_epg_pagelen(const struct mbuf *m, int pidx, int pgoff)
  * https://docs.microsoft.com/en-us/windows-hardware/drivers/network/rss-hashing-types#ndishashipv6ex
  */
 #define	M_HASHTYPE_HASHPROP		0x80	/* has hash properties */
+#define	M_HASHTYPE_INNER		0x40	/* calculated from inner headers */
 #define	M_HASHTYPE_HASH(t)		(M_HASHTYPE_HASHPROP | (t))
 /* Microsoft RSS standard hash types */
 #define	M_HASHTYPE_NONE			0
@@ -547,15 +556,19 @@ m_epg_pagelen(const struct mbuf *m, int pidx, int pgoff)
 #define	M_HASHTYPE_RSS_UDP_IPV6_EX	M_HASHTYPE_HASH(10)/* IPv6 UDP 4-tuple +
 							    * ext hdrs */
 
-#define	M_HASHTYPE_OPAQUE		63	/* ordering, not affinity */
+#define	M_HASHTYPE_OPAQUE		0x3f	/* ordering, not affinity */
 #define	M_HASHTYPE_OPAQUE_HASH		M_HASHTYPE_HASH(M_HASHTYPE_OPAQUE)
 						/* ordering+hash, not affinity*/
 
 #define	M_HASHTYPE_CLEAR(m)	((m)->m_pkthdr.rsstype = 0)
-#define	M_HASHTYPE_GET(m)	((m)->m_pkthdr.rsstype)
+#define	M_HASHTYPE_GET(m)	((m)->m_pkthdr.rsstype & ~M_HASHTYPE_INNER)
 #define	M_HASHTYPE_SET(m, v)	((m)->m_pkthdr.rsstype = (v))
 #define	M_HASHTYPE_TEST(m, v)	(M_HASHTYPE_GET(m) == (v))
-#define	M_HASHTYPE_ISHASH(m)	(M_HASHTYPE_GET(m) & M_HASHTYPE_HASHPROP)
+#define	M_HASHTYPE_ISHASH(m)	\
+    (((m)->m_pkthdr.rsstype & M_HASHTYPE_HASHPROP) != 0)
+#define	M_HASHTYPE_SETINNER(m)	do {			\
+	(m)->m_pkthdr.rsstype |= M_HASHTYPE_INNER;	\
+    } while (0)
 
 /*
  * External mbuf storage buffer types.
@@ -711,6 +724,8 @@ m_epg_pagelen(const struct mbuf *m, int pidx, int pgoff)
 #define	CSUM_UDP_IPV6		CSUM_IP6_UDP
 #define	CSUM_TCP_IPV6		CSUM_IP6_TCP
 #define	CSUM_SCTP_IPV6		CSUM_IP6_SCTP
+#define	CSUM_TLS_MASK		(CSUM_L5_CALC|CSUM_L5_VALID)
+#define	CSUM_TLS_DECRYPTED	CSUM_L5_CALC
 
 /*
  * mbuf types describing the content of the mbuf (including external storage).
@@ -763,7 +778,7 @@ union if_snd_tag_alloc_params;
 		    "Sleeping in \"%s\"", __func__);			\
 } while (0)
 #else
-#define	MBUF_CHECKSLEEP(how)
+#define	MBUF_CHECKSLEEP(how) do {} while (0)
 #endif
 
 /*
@@ -791,6 +806,7 @@ int		 mb_unmapped_compress(struct mbuf *m);
 struct mbuf 	*mb_unmapped_to_ext(struct mbuf *m);
 void		 mb_free_notready(struct mbuf *m, int count);
 void		 m_adj(struct mbuf *, int);
+void		 m_adj_decap(struct mbuf *, int);
 int		 m_apply(struct mbuf *, int, int,
 		    int (*)(void *, void *, u_int), void *);
 int		 m_append(struct mbuf *, int, c_caddr_t);
@@ -818,13 +834,13 @@ void		 m_extadd(struct mbuf *, char *, u_int, m_ext_free_t,
 u_int		 m_fixhdr(struct mbuf *);
 struct mbuf	*m_fragment(struct mbuf *, int, int);
 void		 m_freem(struct mbuf *);
+void		 m_free_raw(struct mbuf *);
 struct mbuf	*m_get2(int, int, short, int);
 struct mbuf	*m_getjcl(int, short, int, int);
 struct mbuf	*m_getm2(struct mbuf *, int, int, short, int);
 struct mbuf	*m_getptr(struct mbuf *, int, int *);
 u_int		 m_length(struct mbuf *, struct mbuf **);
 int		 m_mbuftouio(struct uio *, const struct mbuf *, int);
-int		 m_unmappedtouio(const struct mbuf *, int, struct uio *, int);
 void		 m_move_pkthdr(struct mbuf *, struct mbuf *);
 int		 m_pkthdr_init(struct mbuf *, int);
 struct mbuf	*m_prepend(struct mbuf *, int, int);
@@ -834,6 +850,8 @@ struct mbuf	*m_pullup(struct mbuf *, int);
 int		 m_sanity(struct mbuf *, int);
 struct mbuf	*m_split(struct mbuf *, int, int);
 struct mbuf	*m_uiotombuf(struct uio *, int, int, int, int);
+int		 m_unmapped_uiomove(const struct mbuf *, int, struct uio *,
+		    int);
 struct mbuf	*m_unshare(struct mbuf *, int);
 int		 m_snd_tag_alloc(struct ifnet *,
 		    union if_snd_tag_alloc_params *, struct m_snd_tag **);
@@ -1090,6 +1108,12 @@ m_extrefcnt(struct mbuf *m)
 	KASSERT((m) != NULL && (m)->m_flags & M_PKTHDR,			\
 	    ("%s: no mbuf packet header!", __func__))
 
+/* Check if the supplied mbuf has no send tag, or else panic. */
+#define	M_ASSERT_NO_SND_TAG(m)						\
+	KASSERT((m) != NULL && (m)->m_flags & M_PKTHDR &&		\
+	       ((m)->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0,		\
+	    ("%s: receive mbuf has send tag!", __func__))
+
 /* Check if mbuf is multipage. */
 #define M_ASSERTEXTPG(m)						\
 	KASSERT(((m)->m_flags & (M_EXTPG|M_PKTHDR)) == M_EXTPG,		\
@@ -1103,6 +1127,17 @@ m_extrefcnt(struct mbuf *m)
 #define	M_ASSERTVALID(m)						\
 	KASSERT((((struct mbuf *)m)->m_flags & 0) == 0,			\
 	    ("%s: attempted use of a free mbuf!", __func__))
+
+/* Check whether any mbuf in the chain is unmapped. */
+#ifdef INVARIANTS
+#define	M_ASSERTMAPPED(m) do {						\
+	for (struct mbuf *__m = (m); __m != NULL; __m = __m->m_next)	\
+		KASSERT((__m->m_flags & M_EXTPG) == 0,			\
+		    ("%s: chain %p contains an unmapped mbuf", __func__, (m)));\
+} while (0)
+#else
+#define	M_ASSERTMAPPED(m) do {} while (0)
+#endif
 
 /*
  * Return the address of the start of the buffer associated with an mbuf,
@@ -1299,7 +1334,7 @@ extern bool		mb_use_ext_pgs;	/* Use ext_pgs for sendfile */
 #define	PACKET_TAG_DIVERT			17 /* divert info */
 #define	PACKET_TAG_IPFORWARD			18 /* ipforward info */
 #define	PACKET_TAG_MACLABEL	(19 | MTAG_PERSISTENT) /* MAC label */
-#define	PACKET_TAG_PF		(21 | MTAG_PERSISTENT) /* PF/ALTQ information */
+#define	PACKET_TAG_PF				21 /* PF/ALTQ information */
 #define	PACKET_TAG_RTSOCKFAM			25 /* rtsock sa family */
 #define	PACKET_TAG_IPOPTIONS			27 /* Saved IP options */
 #define	PACKET_TAG_CARP				28 /* CARP info */
@@ -1528,6 +1563,12 @@ mbufq_last(const struct mbufq *mq)
 	return (STAILQ_LAST(&mq->mq_head, mbuf, m_stailqpkt));
 }
 
+static inline bool
+mbufq_empty(const struct mbufq *mq)
+{
+	return (mq->mq_len == 0);
+}
+
 static inline int
 mbufq_full(const struct mbufq *mq)
 {
@@ -1593,11 +1634,23 @@ mbuf_tstmp2timespec(struct mbuf *m, struct timespec *ts)
 {
 
 	KASSERT((m->m_flags & M_PKTHDR) != 0, ("mbuf %p no M_PKTHDR", m));
-	KASSERT((m->m_flags & (M_TSTMP|M_TSTMP_LRO)) != 0, ("mbuf %p no M_TSTMP or M_TSTMP_LRO", m));
+	KASSERT((m->m_flags & (M_TSTMP|M_TSTMP_LRO)) != 0,
+	    ("mbuf %p no M_TSTMP or M_TSTMP_LRO", m));
 	ts->tv_sec = m->m_pkthdr.rcv_tstmp / 1000000000;
 	ts->tv_nsec = m->m_pkthdr.rcv_tstmp % 1000000000;
 }
 #endif
+
+static inline void
+mbuf_tstmp2timeval(struct mbuf *m, struct timeval *tv)
+{
+
+	KASSERT((m->m_flags & M_PKTHDR) != 0, ("mbuf %p no M_PKTHDR", m));
+	KASSERT((m->m_flags & (M_TSTMP|M_TSTMP_LRO)) != 0,
+	    ("mbuf %p no M_TSTMP or M_TSTMP_LRO", m));
+	tv->tv_sec = m->m_pkthdr.rcv_tstmp / 1000000000;
+	tv->tv_usec = (m->m_pkthdr.rcv_tstmp % 1000000000) / 1000;
+}
 
 #ifdef DEBUGNET
 /* Invoked from the debugnet client code. */

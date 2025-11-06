@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2004 Marcel Moolenaar
  * All rights reserved.
  *
@@ -22,13 +24,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/kdb.h 344905 2019-03-08 00:20:37Z jhb $
  */
 
 #ifndef _SYS_KDB_H_
 #define	_SYS_KDB_H_
 
+#include <sys/linker_set.h>
 #include <machine/setjmp.h>
 
 struct pcb;
@@ -59,7 +60,10 @@ struct kdb_dbbe {
 	};						\
 	DATA_SET(kdb_dbbe_set, name##_dbbe)
 
+SET_DECLARE(kdb_dbbe_set, struct kdb_dbbe);
+
 extern u_char kdb_active;		/* Non-zero while in debugger. */
+extern int debugger_on_panic;		/* enter the debugger on panic. */
 extern int debugger_on_trap;		/* enter the debugger on trap. */
 extern struct kdb_dbbe *kdb_dbbe;	/* Default debugger backend or NULL. */
 extern struct trapframe *kdb_frame;	/* Frame to kdb_trap(). */
@@ -78,6 +82,7 @@ void *	kdb_jmpbuf(jmp_buf);
 void	kdb_panic(const char *);
 void	kdb_reboot(void);
 void	kdb_reenter(void);
+void	kdb_reenter_silent(void);
 struct pcb *kdb_thr_ctx(struct thread *);
 struct thread *kdb_thr_first(void);
 struct thread *kdb_thr_from_pid(pid_t);
@@ -120,5 +125,11 @@ extern const char * volatile kdb_why;
 #define	KDB_REQ_DEBUGGER	1	/* User requested Debugger */
 #define	KDB_REQ_PANIC		2	/* User requested a panic */
 #define	KDB_REQ_REBOOT		3	/* User requested a clean reboot */
+
+/* Debug breakpoint/watchpoint access types */
+#define	KDB_DBG_ACCESS_EXEC	0
+#define	KDB_DBG_ACCESS_R	1
+#define	KDB_DBG_ACCESS_W	2
+#define	KDB_DBG_ACCESS_RW	3
 
 #endif /* !_SYS_KDB_H_ */

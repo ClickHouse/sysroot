@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/12.2/sys/netinet/sctp_os.h 364595 2020-08-23 23:21:26Z tuexen $");
-
 #ifndef _NETINET_SCTP_OS_H_
 #define _NETINET_SCTP_OS_H_
 
@@ -63,9 +60,6 @@ __FBSDID("$FreeBSD: releng/12.2/sys/netinet/sctp_os.h 364595 2020-08-23 23:21:26
  */
 
 #include <netinet/sctp_os_bsd.h>
-
-
-
 
 /* All os's must implement this address gatherer. If
  * no VRF's exist, then vrf 0 is the only one and all

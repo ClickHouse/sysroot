@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -56,8 +58,6 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- * $FreeBSD: releng/11.3/sys/vm/pmap.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 /*
@@ -90,6 +90,7 @@ typedef struct pmap_statistics *pmap_statistics_t;
 #include <machine/pmap.h>
 
 #ifdef _KERNEL
+#include <sys/_cpuset.h>
 struct thread;
 
 /*
@@ -104,6 +105,7 @@ extern vm_offset_t kernel_vm_end;
  */
 #define	PMAP_ENTER_NOSLEEP	0x00000100
 #define	PMAP_ENTER_WIRED	0x00000200
+#define	PMAP_ENTER_LARGEPAGE	0x00000400
 #define	PMAP_ENTER_RESERVED	0xFF000000
 
 /*
@@ -117,6 +119,7 @@ extern vm_offset_t kernel_vm_end;
 #define	PMAP_TS_REFERENCED_MAX	5
 
 void		 pmap_activate(struct thread *td);
+void		 pmap_active_cpus(pmap_t pmap, cpuset_t *res);
 void		 pmap_advise(pmap_t pmap, vm_offset_t sva, vm_offset_t eva,
 		    int advice);
 void		 pmap_align_superpage(vm_object_t, vm_ooffset_t, vm_offset_t *,
@@ -140,9 +143,9 @@ void		 pmap_init(void);
 boolean_t	 pmap_is_modified(vm_page_t m);
 boolean_t	 pmap_is_prefaultable(pmap_t pmap, vm_offset_t va);
 boolean_t	 pmap_is_referenced(vm_page_t m);
+boolean_t	 pmap_is_valid_memattr(pmap_t, vm_memattr_t);
 vm_offset_t	 pmap_map(vm_offset_t *, vm_paddr_t, vm_paddr_t, int);
-int		 pmap_mincore(pmap_t pmap, vm_offset_t addr,
-		    vm_paddr_t *locked_pa);
+int		 pmap_mincore(pmap_t pmap, vm_offset_t addr, vm_paddr_t *pap);
 void		 pmap_object_init_pt(pmap_t pmap, vm_offset_t addr,
 		    vm_object_t object, vm_pindex_t pindex, vm_size_t size);
 boolean_t	 pmap_page_exists_quick(pmap_t pmap, vm_page_t m);
@@ -161,11 +164,10 @@ void		 pmap_remove_all(vm_page_t m);
 void		 pmap_remove_pages(pmap_t);
 void		 pmap_remove_write(vm_page_t m);
 void		 pmap_sync_icache(pmap_t, vm_offset_t, vm_size_t);
-boolean_t	 pmap_ts_referenced(vm_page_t m);
+int		 pmap_ts_referenced(vm_page_t m);
 void		 pmap_unwire(pmap_t pmap, vm_offset_t start, vm_offset_t end);
 void		 pmap_zero_page(vm_page_t);
 void		 pmap_zero_page_area(vm_page_t, int off, int size);
-void		 pmap_zero_page_idle(vm_page_t);
 
 #define	pmap_resident_count(pm)	((pm)->pm_stats.resident_count)
 #define	pmap_wired_count(pm)	((pm)->pm_stats.wired_count)

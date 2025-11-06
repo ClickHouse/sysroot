@@ -24,7 +24,6 @@
  * SUCH DAMAGE.
  *
  * $KAME: if_altq.h,v 1.12 2005/04/13 03:44:25 suz Exp $
- * $FreeBSD: releng/11.3/sys/net/altq/if_altq.h 281642 2015-04-17 06:38:31Z glebius $
  */
 #ifndef _ALTQ_IF_ALTQ_H_
 #define	_ALTQ_IF_ALTQ_H_
@@ -73,7 +72,6 @@ struct	ifaltq {
 	/* input traffic conditioner (doesn't belong to the output queue...) */
 	struct top_cdnr *altq_cdnr;
 };
-
 
 #ifdef _KERNEL
 
@@ -143,7 +141,11 @@ struct tb_regulator {
 #define	ALTRQ_PURGE		1	/* purge all packets */
 
 #define	ALTQ_IS_READY(ifq)		((ifq)->altq_flags & ALTQF_READY)
+#ifdef ALTQ
 #define	ALTQ_IS_ENABLED(ifq)		((ifq)->altq_flags & ALTQF_ENABLED)
+#else
+#define	ALTQ_IS_ENABLED(ifq)		0
+#endif
 #define	ALTQ_NEEDS_CLASSIFY(ifq)	((ifq)->altq_flags & ALTQF_CLASSIFY)
 #define	ALTQ_IS_CNDTNING(ifq)		((ifq)->altq_flags & ALTQF_CNDTNING)
 

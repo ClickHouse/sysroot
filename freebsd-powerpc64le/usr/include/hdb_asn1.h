@@ -94,7 +94,7 @@ enum { hdb_afs3_salt = 10 };
 
 /*
 Salt ::= SEQUENCE {
-  type            [0] INTEGER (0..-1),
+  type            [0] INTEGER (0..4294967295),
   salt            [1] OCTET STRING,
   opaque          [2] OCTET STRING OPTIONAL,
 }
@@ -115,7 +115,7 @@ ASN1EXP void   ASN1CALL free_Salt  (Salt *);
 
 /*
 Key ::= SEQUENCE {
-  mkvno           [0] INTEGER (0..-1) OPTIONAL,
+  mkvno           [0] INTEGER (0..4294967295) OPTIONAL,
   key             [1] EncryptionKey,
   salt            [2] Salt OPTIONAL,
 }
@@ -225,8 +225,8 @@ ASN1EXP void   ASN1CALL free_HDBFlags  (HDBFlags *);
 /*
 GENERATION ::= SEQUENCE {
   time            [0] KerberosTime,
-  usec            [1] INTEGER (0..-1),
-  gen             [2] INTEGER (0..-1),
+  usec            [1] INTEGER (0..4294967295),
+  gen             [2] INTEGER (0..4294967295),
 }
 */
 
@@ -340,7 +340,7 @@ ASN1EXP void   ASN1CALL free_HDB_Ext_Lan_Manager_OWF  (HDB_Ext_Lan_Manager_OWF *
 
 /*
 HDB-Ext-Password ::= SEQUENCE {
-  mkvno           [0] INTEGER (0..-1) OPTIONAL,
+  mkvno           [0] INTEGER (0..4294967295) OPTIONAL,
   password        OCTET STRING,
 }
 */
@@ -451,7 +451,7 @@ ASN1EXP void   ASN1CALL free_HDB_extensions  (HDB_extensions *);
 
 /*
 hdb_keyset ::= SEQUENCE {
-  kvno            [1] INTEGER (0..-1),
+  kvno            [1] INTEGER (0..4294967295),
   keys            [0] SEQUENCE OF Key,
 }
 */
@@ -474,17 +474,17 @@ ASN1EXP void   ASN1CALL free_hdb_keyset  (hdb_keyset *);
 /*
 hdb_entry ::= SEQUENCE {
   principal       [0] Principal OPTIONAL,
-  kvno            [1] INTEGER (0..-1),
+  kvno            [1] INTEGER (0..4294967295),
   keys            [2] SEQUENCE OF Key,
   created-by      [3] Event,
   modified-by     [4] Event OPTIONAL,
   valid-start     [5] KerberosTime OPTIONAL,
   valid-end       [6] KerberosTime OPTIONAL,
   pw-end          [7] KerberosTime OPTIONAL,
-  max-life        [8] INTEGER (0..-1) OPTIONAL,
-  max-renew       [9] INTEGER (0..-1) OPTIONAL,
+  max-life        [8] INTEGER (0..4294967295) OPTIONAL,
+  max-renew       [9] INTEGER (0..4294967295) OPTIONAL,
   flags           [10] HDBFlags,
-  etypes          [11] SEQUENCE OF INTEGER (0..-1) OPTIONAL,
+  etypes          [11] SEQUENCE OF INTEGER (0..4294967295) OPTIONAL,
   generation      [12] GENERATION OPTIONAL,
   extensions      [13] HDB-extensions OPTIONAL,
 }

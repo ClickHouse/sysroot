@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000-2001 Boris Popov
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/fs/smbfs/smbfs.h 326268 2017-11-27 15:15:37Z pfg $
  */
 #ifndef _SMBFS_SMBFS_H_
 #define _SMBFS_SMBFS_H_
@@ -43,7 +41,6 @@
 #define	SMBFS_MOUNT_NO_LONG	0x0010
 
 #define	SMBFS_MAXPATHCOMP	256	/* maximum number of path components */
-
 
 /* Layout of the mount control block for an smb file system. */
 struct smbfs_args {

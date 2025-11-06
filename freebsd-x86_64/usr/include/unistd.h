@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)unistd.h	8.12 (Berkeley) 4/27/95
- * $FreeBSD: releng/11.3/include/unistd.h 336449 2018-07-18 09:54:32Z kib $
  */
 
 #ifndef _UNISTD_H_
@@ -397,7 +398,7 @@ int	 ftruncate(int, off_t);
 #endif
 
 #if __POSIX_VISIBLE >= 199506
-int	 getlogin_r(char *, int);
+int	 getlogin_r(char *, size_t);
 #endif
 
 /* 1003.1-2001 */
@@ -449,8 +450,6 @@ int	 symlink(const char * __restrict, const char * __restrict);
 /* X/Open System Interfaces */
 #if __XSI_VISIBLE
 char	*crypt(const char *, const char *);
-/* char	*ctermid(char *); */		/* XXX ??? */
-int	 encrypt(char *, int);
 long	 gethostid(void);
 int	 lockf(int, int, off_t);
 int	 nice(int);
@@ -485,14 +484,21 @@ pid_t	 vfork(void) __returns_twice;
 
 #if __BSD_VISIBLE
 struct timeval;				/* select(2) */
+
+struct crypt_data {
+	int	initialized;	/* For compatibility with glibc. */
+	char	__buf[256];	/* Buffer returned by crypt_r(). */
+};
+
 int	 acct(const char *);
 int	 async_daemon(void);
 int	 check_utility_compat(const char *);
+int	 close_range(unsigned int, unsigned int, int);
+ssize_t	 copy_file_range(int, off_t *, int, off_t *, size_t, unsigned int);
 const char *
 	 crypt_get_format(void);
+char	*crypt_r(const char *, const char *, struct crypt_data *);
 int	 crypt_set_format(const char *);
-int	 des_cipher(const char *, char *, long, int);
-int	 des_setkey(const char *key);
 int	 dup3(int, int, int);
 int	 eaccess(const char *, int);
 void	 endusershell(void);
@@ -501,6 +507,7 @@ int	 execvP(const char *, const char *, char * const *);
 int	 feature_present(const char *);
 char	*fflagstostr(u_long);
 int	 getdomainname(char *, int);
+int	 getentropy(void *, size_t);
 int	 getgrouplist(const char *, gid_t, gid_t *, int *);
 int	 getloginclass(char *, size_t);
 mode_t	 getmode(const void *, mode_t);
@@ -514,6 +521,7 @@ int	 iruserok(unsigned long, int, const char *, const char *);
 int	 iruserok_sa(const void *, int, int, const char *, const char *);
 int	 issetugid(void);
 void	__FreeBSD_libc_enter_restricted_mode(void);
+int	 kcmp(pid_t pid1, pid_t pid2, int type, uintptr_t idx1, uintptr_t idx2);
 long	 lpathconf(const char *, int);
 #ifndef _MKDTEMP_DECLARED
 char	*mkdtemp(char *);
@@ -545,25 +553,19 @@ char	*re_comp(const char *);
 int	 re_exec(const char *);
 int	 reboot(int);
 int	 revoke(const char *);
-pid_t	 rfork(int);
+pid_t	 rfork(int) __returns_twice;
 pid_t	 rfork_thread(int, void *, int (*)(void *), void *);
 int	 rresvport(int *);
 int	 rresvport_af(int *, int);
 int	 ruserok(const char *, int, const char *, const char *);
-#if __BSD_VISIBLE
 #ifndef _SELECT_DECLARED
 #define	_SELECT_DECLARED
 int	 select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-#endif
 #endif
 int	 setdomainname(const char *, int);
 int	 setgroups(int, const gid_t *);
 void	 sethostid(long);
 int	 sethostname(const char *, int);
-#ifndef _SETKEY_DECLARED
-int	 setkey(const char *);
-#define	_SETKEY_DECLARED
-#endif
 int	 setlogin(const char *);
 int	 setloginclass(const char *);
 void	*setmode(const char *);
@@ -577,12 +579,14 @@ int	 setruid(uid_t);
 void	 setusershell(void);
 int	 strtofflags(char **, u_long *, u_long *);
 int	 swapon(const char *);
-int	 swapoff(const char *);
+int	 swapoff(const char *, u_int);
 int	 syscall(int, ...);
 off_t	 __syscall(quad_t, ...);
 int	 undelete(const char *);
 int	 unwhiteout(const char *);
 void	*valloc(size_t);			/* obsoleted by malloc() */
+int	 funlinkat(int, const char *, int, int);
+pid_t	 _Fork(void);
 
 #ifndef _OPTRESET_DECLARED
 #define	_OPTRESET_DECLARED

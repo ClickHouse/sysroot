@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2005 Poul-Henning Kamp.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -21,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/devfs/devfs_int.h 277391 2015-01-19 17:36:52Z kib $
  */
 
 /*
@@ -57,6 +57,7 @@ struct cdev_priv {
 #define CDP_ACTIVE		(1 << 0)
 #define CDP_SCHED_DTR		(1 << 1)
 #define	CDP_UNREF_DTR		(1 << 2)
+#define CDP_ON_ACTIVE_LIST	(1 << 3)
 
 	u_int			cdp_inuse;
 	u_int			cdp_maxdirent;
@@ -68,6 +69,8 @@ struct cdev_priv {
 	void			*cdp_dtr_cb_arg;
 
 	LIST_HEAD(, cdev_privdata) cdp_fdpriv;
+
+	struct mtx		cdp_threadlock;
 };
 
 #define	cdev2priv(c)	__containerof(c, struct cdev_priv, cdp_c)
@@ -90,6 +93,9 @@ extern struct mtx devfs_de_interlock;
 extern struct sx clone_drain_lock;
 extern struct mtx cdevpriv_mtx;
 extern TAILQ_HEAD(cdev_priv_list, cdev_priv) cdevp_list;
+
+#define	dev_lock_assert_locked()	mtx_assert(&devmtx, MA_OWNED)
+#define	dev_lock_assert_unlocked()	mtx_assert(&devmtx, MA_NOTOWNED)
 
 #endif /* _KERNEL */
 

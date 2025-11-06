@@ -1,6 +1,8 @@
 /*	$OpenBSD: ftw.h,v 1.1 2003/07/21 21:13:18 millert Exp $	*/
 
-/*
+/*-
+ * SPDX-License-Identifier: ISC
+ *
  * Copyright (c) 2003 Todd C. Miller <Todd.Miller@courtesan.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -18,8 +20,6 @@
  * Sponsored in part by the Defense Advanced Research Projects
  * Agency (DARPA) and Air Force Research Laboratory, Air Force
  * Materiel Command, USAF, under agreement number F39502-99-1-0512.
- *
- * $FreeBSD: releng/11.3/include/ftw.h 134244 2004-08-24 13:00:55Z tjr $
  */
 
 #ifndef	_FTW_H

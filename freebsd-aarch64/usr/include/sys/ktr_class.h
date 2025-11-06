@@ -28,7 +28,6 @@
  * SUCH DAMAGE.
  *
  *	from BSDI $Id: ktr.h,v 1.10.2.7 2000/03/16 21:44:42 cp Exp $
- * $FreeBSD: releng/12.2/sys/sys/ktr_class.h 331245 2018-03-20 15:51:05Z markj $
  */
 
 #ifndef _SYS_KTR_CLASS_H_
@@ -58,7 +57,7 @@
 #define	KTR_SYSC	0x00002000		/* System call */
 #define	KTR_INIT	0x00004000		/* System initialization */
 #define	KTR_SPARE3	0x00008000		/* cxgb, drm2, ioat, ntb */
-#define	KTR_SPARE4	0x00010000		/* geom_sched */
+#define	KTR_SPARE4	0x00010000
 #define	KTR_EVH		0x00020000		/* Eventhandler */
 #define	KTR_VFS		0x00040000		/* VFS events */
 #define	KTR_VOP		0x00080000		/* Auto-generated vop events */

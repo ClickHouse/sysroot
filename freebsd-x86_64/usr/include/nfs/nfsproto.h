@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsproto.h  8.2 (Berkeley) 3/30/95
- * $FreeBSD: releng/11.3/sys/nfs/nfsproto.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NFS_NFSPROTO_H_
@@ -134,8 +135,6 @@
 #define	NFSERR_DEADLOCK		10045
 #define	NFSERR_FILE_OPEN	10046
 #define	NFSERR_STALEWRITEVERF	30001	/* Fake return for nfs_commit() */
-
-
 
 #define NFSERR_RETVOID		0x20000000 /* Return void, not error */
 #define NFSERR_AUTHERR		0x40000000 /* Mark an authentication error */

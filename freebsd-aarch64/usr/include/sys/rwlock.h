@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/rwlock.h 343419 2019-01-25 10:58:34Z kib $
  */
 
 #ifndef _SYS_RWLOCK_H_
@@ -209,7 +206,6 @@ void	__rw_assert(const volatile uintptr_t *c, int what, const char *file,
 #define	_rw_assert(rw, w, f, l)						\
 	__rw_assert(&(rw)->rw_lock, w, f, l)
 #endif
-
 
 /*
  * Public interface for lock operations.

@@ -36,8 +36,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Julian Elischer <julian@freebsd.org>
- *
- * $FreeBSD: releng/11.3/sys/netgraph/ng_message.h 193812 2009-06-09 07:07:20Z imp $
  * $Whistle: ng_message.h,v 1.12 1999/01/25 01:17:44 archie Exp $
  */
 
@@ -357,7 +355,6 @@ struct flow_manager {
 	  { "id",		&ng_parse_hint32_type	},	\
 	  { NULL }						\
 }
-
 
 /*
  * For netgraph nodes that are somehow associated with file descriptors

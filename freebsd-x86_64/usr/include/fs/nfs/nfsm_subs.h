@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -28,13 +30,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/nfs/nfsm_subs.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NFS_NFSM_SUBS_H_
 #define	_NFS_NFSM_SUBS_H_
-
 
 /*
  * These macros do strange and peculiar things to mbuf chains for
@@ -62,14 +61,27 @@ nfsm_build(struct nfsrv_descript *nd, int siz)
 	void *retp;
 	struct mbuf *mb2;
 
-	if (siz > M_TRAILINGSPACE(nd->nd_mb)) {
+	if ((nd->nd_flag & ND_EXTPG) == 0 &&
+	    siz > M_TRAILINGSPACE(nd->nd_mb)) {
 		NFSMCLGET(mb2, M_NOWAIT);
 		if (siz > MLEN)
 			panic("build > MLEN");
-		mbuf_setlen(mb2, 0);
-		nd->nd_bpos = NFSMTOD(mb2, caddr_t);
+		mb2->m_len = 0;
+		nd->nd_bpos = mtod(mb2, char *);
 		nd->nd_mb->m_next = mb2;
 		nd->nd_mb = mb2;
+	} else if ((nd->nd_flag & ND_EXTPG) != 0) {
+		if (siz > nd->nd_bextpgsiz) {
+			mb2 = mb_alloc_ext_plus_pages(PAGE_SIZE, M_WAITOK);
+			nd->nd_bpos = (char *)(void *)
+			    PHYS_TO_DMAP(mb2->m_epg_pa[0]);
+			nd->nd_bextpg = 0;
+			nd->nd_bextpgsiz = PAGE_SIZE - siz;
+			nd->nd_mb->m_next = mb2;
+			nd->nd_mb = mb2;
+		} else
+			nd->nd_bextpgsiz -= siz;
+		nd->nd_mb->m_epg_last_len += siz;
 	}
 	retp = (void *)(nd->nd_bpos);
 	nd->nd_mb->m_len += siz;
@@ -85,7 +97,7 @@ nfsm_dissect(struct nfsrv_descript *nd, int siz)
 	int tt1; 
 	void *retp;
 
-	tt1 = NFSMTOD(nd->nd_md, caddr_t) + nd->nd_md->m_len - nd->nd_dpos; 
+	tt1 = mtod(nd->nd_md, caddr_t) + nd->nd_md->m_len - nd->nd_dpos; 
 	if (tt1 >= siz) { 
 		retp = (void *)nd->nd_dpos; 
 		nd->nd_dpos += siz; 
@@ -101,7 +113,7 @@ nfsm_dissect_nonblock(struct nfsrv_descript *nd, int siz)
 	int tt1; 
 	void *retp;
 
-	tt1 = NFSMTOD(nd->nd_md, caddr_t) + nd->nd_md->m_len - nd->nd_dpos; 
+	tt1 = mtod(nd->nd_md, caddr_t) + nd->nd_md->m_len - nd->nd_dpos; 
 	if (tt1 >= siz) { 
 		retp = (void *)nd->nd_dpos; 
 		nd->nd_dpos += siz; 

@@ -1,12 +1,12 @@
 /*-
+ * SPDX-License-Identifier: Beerware
+ *
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
  * <phk@FreeBSD.ORG> wrote this file.  As long as you retain this notice you
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  * ----------------------------------------------------------------------------
- *
- * $FreeBSD: releng/11.3/sys/sys/timetc.h 305866 2016-09-16 10:04:28Z kib $
  */
 
 #ifndef _SYS_TIMETC_H_
@@ -93,5 +93,12 @@ void	cpu_tick_calibration(void);
 #ifdef SYSCTL_DECL
 SYSCTL_DECL(_kern_timecounter);
 #endif
+
+/**
+ * clockcalib(clk, clkname):
+ * Return the frequency of the provided timer, as calibrated against the
+ * current best-available timecounter.
+ */
+uint64_t clockcalib(uint64_t (*)(void), const char *);
 
 #endif /* !_SYS_TIMETC_H_ */

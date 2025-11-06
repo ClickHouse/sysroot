@@ -1,5 +1,4 @@
 /*	$NetBSD: svc_dg.h,v 1.1 2000/06/02 23:11:16 fvdl Exp $	*/
-/*	$FreeBSD: releng/12.2/include/rpc/svc_dg.h 326024 2017-11-20 19:45:28Z pfg $ */
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause

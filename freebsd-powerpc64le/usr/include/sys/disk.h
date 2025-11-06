@@ -8,8 +8,6 @@
  * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  * ----------------------------------------------------------------------------
  *
- * $FreeBSD$
- *
  */
 
 #ifndef _SYS_DISK_H_
@@ -56,12 +54,6 @@ void disk_err(struct bio *bp, const char *what, int blkdone, int nl);
 	 * Get the firmwares notion of number of heads per cylinder.  This
 	 * value is mostly used for compatibility with various ill designed
 	 * disk label formats.  Don't use it unless you have to.
-	 */
-
-#define	DIOCSKERNELDUMP_FREEBSD11 _IOW('d', 133, u_int)
-	/*
-	 * Enable/Disable (the argument is boolean) the device for kernel
-	 * core dumps.
 	 */
 
 #define	DIOCGFLUSH _IO('d', 135)		/* Flush write cache */

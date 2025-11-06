@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -28,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/nfs/nfs.h 347039 2019-05-03 02:17:52Z rmacklem $
  */
 
 #ifndef _NFS_NFS_H_
@@ -48,7 +48,7 @@
 #define	NFS_MAXRCVTIMEO	60		/* 1 minute in seconds */
 #define	NFS_MINIDEMTIMEO (5 * NFS_HZ)	/* Min timeout for non-idempotent ops*/
 #define	NFS_MAXREXMIT	100		/* Stop counting after this many */
-#define	NFSV4_CALLBACKTIMEO (2 * NFS_HZ) /* Timeout in ticks */
+#define	NFSV4_CALLBACKTIMEO 800		/* Timeout in msec */
 #define	NFSV4_CALLBACKRETRY 5		/* Number of retries before failure */
 #define	NFSV4_SLOTS	64		/* Number of slots, fore channel */
 #define	NFSV4_CBSLOTS	8		/* Number of slots, back channel */
@@ -96,6 +96,7 @@
 #define	NFSSESSIONHASHSIZE	20	/* Size of server session hash table */
 #endif
 #define	NFSSTATEHASHSIZE	10	/* Size of server stateid hash table */
+#define	NFSLAYOUTHIGHWATER	1000000	/* Upper limit for # of layouts */
 #ifndef	NFSCLDELEGHIGHWATER
 #define	NFSCLDELEGHIGHWATER	10000	/* limit for client delegations */
 #endif
@@ -141,6 +142,13 @@
 #define	NFS_READDIRBLKSIZ	DIRBLKSIZ	/* Minimal nm_readdirsize */
 
 /*
+ * The NFSv4 RFCs do not define an upper limit on the length of Owner and
+ * OwnerGroup strings.  Since FreeBSD handles a group name > 1024bytes in
+ * length, set a generous sanity limit of 10Kbytes.
+ */
+#define	NFSV4_MAXOWNERGROUPLEN	(10 * 1024)
+
+/*
  * Oddballs
  */
 #define	NFS_CMPFH(n, f, s) 						\
@@ -153,7 +161,7 @@
 	(t).tv_sec = time.tv_sec; (t).tv_nsec = 1000 * time.tv_usec; } while (0)
 #define	NFS_SRVMAXDATA(n) 						\
 		(((n)->nd_flag & (ND_NFSV3 | ND_NFSV4)) ? 		\
-		 NFS_SRVMAXIO : NFS_V2MAXDATA)
+		 nfs_srvmaxio : NFS_V2MAXDATA)
 #define	NFS64BITSSET	0xffffffffffffffffull
 #define	NFS64BITSMINUS1	0xfffffffffffffffeull
 
@@ -169,8 +177,45 @@ struct nfsd_addsock_args {
 
 /*
  * nfsd argument for new krpc.
+ * (New version supports pNFS, indicated by NFSSVC_NEWSTRUCT flag.)
  */
 struct nfsd_nfsd_args {
+	const char *principal;	/* GSS-API service principal name */
+	int	minthreads;	/* minimum service thread count */
+	int	maxthreads;	/* maximum service thread count */
+	int	version;	/* Allow multiple variants */
+	char	*addr;		/* pNFS DS addresses */
+	int	addrlen;	/* Length of addrs */
+	char	*dnshost;	/* DNS names for DS addresses */
+	int	dnshostlen;	/* Length of DNS names */
+	char	*dspath;	/* DS Mount path on MDS */
+	int	dspathlen;	/* Length of DS Mount path on MDS */
+	char	*mdspath;	/* MDS mount for DS path on MDS */
+	int	mdspathlen;	/* Length of MDS mount for DS path on MDS */
+	int	mirrorcnt;	/* Number of mirrors to create on DSs */
+};
+
+/*
+ * NFSDEV_MAXMIRRORS - Maximum level of mirroring for a DS.
+ * (Most will only put files on two DSs, but this setting allows up to 4.)
+ * NFSDEV_MAXVERS - maximum number of NFS versions supported by Flex File.
+ */
+#define	NFSDEV_MAXMIRRORS	4
+#define	NFSDEV_MAXVERS		4
+
+struct nfsd_pnfsd_args {
+	int	op;		/* Which pNFSd op to perform. */
+	char	*mdspath;	/* Path of MDS file. */
+	char	*dspath;	/* Path of recovered DS mounted on dir. */
+	char	*curdspath;	/* Path of current DS mounted on dir. */
+};
+
+#define	PNFSDOP_DELDSSERVER	1
+#define	PNFSDOP_COPYMR		2
+#define	PNFSDOP_FORCEDELDS	3
+
+/* Old version. */
+struct nfsd_nfsd_oargs {
 	const char *principal;	/* GSS-API service principal name */
 	int	minthreads;	/* minimum service thread count */
 	int	maxthreads;	/* maximum service thread count */
@@ -270,7 +315,7 @@ struct nfsreferral {
 	u_char		*nfr_srvlist;	/* List of servers */
 	int		nfr_srvcnt;	/* number of servers */
 	vnode_t		nfr_vp;	/* vnode for referral */
-	u_int32_t	nfr_dfileno;	/* assigned dir inode# */
+	uint64_t	nfr_dfileno;	/* assigned dir inode# */
 };
 
 /*
@@ -295,6 +340,8 @@ struct nfsreferral {
 #define	LCL_NFSV41		0x00020000
 #define	LCL_DONEBINDCONN	0x00040000
 #define	LCL_RECLAIMONEFS	0x00080000
+#define	LCL_NFSV42		0x00100000
+#define	LCL_TLSCB		0x00200000
 
 #define	LCL_GSS		LCL_KERBV	/* Or of all mechs */
 
@@ -391,6 +438,8 @@ typedef struct {
 		(b)->bits[1] &= ~NFSATTRBIT_NFSV41_1;			\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
 	}								\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSISSET_ATTRBIT(b, p)	((b)->bits[(p) / 32] & (1 << ((p) % 32)))
@@ -417,6 +466,8 @@ typedef struct {
 		(b)->bits[1] &= ~NFSATTRBIT_NFSV41_1;			\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
 	}								\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSCLRNOTSETABLE_ATTRBIT(b, n) do { 				\
@@ -425,6 +476,8 @@ typedef struct {
 	(b)->bits[2] &= NFSATTRBIT_SETABLE2;				\
 	if (((n)->nd_flag & ND_NFSV41) == 0)				\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSNONZERO_ATTRBIT(b)	((b)->bits[0] || (b)->bits[1] || (b)->bits[2])
@@ -465,6 +518,13 @@ typedef struct {
 	(b)->bits[0] = NFSGETATTRBIT_STATFS0;	 			\
 	(b)->bits[1] = NFSGETATTRBIT_STATFS1;				\
 	(b)->bits[2] = NFSGETATTRBIT_STATFS2;				\
+} while (0)
+
+#define	NFSROOTFS_GETATTRBIT(b)	do { 					\
+	(b)->bits[0] = NFSGETATTRBIT_STATFS0 | NFSATTRBIT_GETATTR0 |	\
+	    NFSATTRBM_LEASETIME;					\
+	(b)->bits[1] = NFSGETATTRBIT_STATFS1 | NFSATTRBIT_GETATTR1;	\
+	(b)->bits[2] = NFSGETATTRBIT_STATFS2 | NFSATTRBIT_GETATTR2;	\
 } while (0)
 
 #define	NFSISSETSTATFS_ATTRBIT(b) 					\
@@ -531,7 +591,6 @@ struct uio; struct buf; struct vattr; struct nameidata;	/* XXX */
 		((e) != EINTR && (e) != ERESTART && (e) != EWOULDBLOCK && \
 		((s) & PR_CONNREQUIRED) == 0)
 
-
 /*
  * This structure holds socket information for a connection. Used by the
  * client and the server for callbacks.
@@ -591,16 +650,16 @@ struct nfsgss_mechlist {
  * This structure is used by the server for describing each request.
  */
 struct nfsrv_descript {
-	mbuf_t			nd_mrep;	/* Request mbuf list */
-	mbuf_t			nd_md;		/* Current dissect mbuf */
-	mbuf_t			nd_mreq;	/* Reply mbuf list */
-	mbuf_t			nd_mb;		/* Current build mbuf */
+	struct mbuf		*nd_mrep;	/* Request mbuf list */
+	struct mbuf		*nd_md;		/* Current dissect mbuf */
+	struct mbuf		*nd_mreq;	/* Reply mbuf list */
+	struct mbuf		*nd_mb;		/* Current build mbuf */
 	NFSSOCKADDR_T		nd_nam;		/* and socket addr */
 	NFSSOCKADDR_T		nd_nam2;	/* return socket addr */
 	caddr_t			nd_dpos;	/* Current dissect pos */
 	caddr_t			nd_bpos;	/* Current build pos */
+	u_int64_t		nd_flag;	/* nd_flag */
 	u_int16_t		nd_procnum;	/* RPC # */
-	u_int32_t		nd_flag;	/* nd_flag */
 	u_int32_t		nd_repstat;	/* Reply status */
 	int			*nd_errp;	/* Pointer to ret status */
 	u_int32_t		nd_retxid;	/* Reply xid */
@@ -619,6 +678,13 @@ struct nfsrv_descript {
 	uint32_t		nd_slotid;	/* Slotid for this RPC */
 	SVCXPRT			*nd_xprt;	/* Server RPC handle */
 	uint32_t		*nd_sequence;	/* Sequence Op. ptr */
+	nfsv4stateid_t		nd_curstateid;	/* Current StateID */
+	nfsv4stateid_t		nd_savedcurstateid; /* Saved Current StateID */
+	uint32_t		nd_maxreq;	/* Max. request (session). */
+	uint32_t		nd_maxresp;	/* Max. reply (session). */
+	int			nd_bextpg;	/* Current ext_pgs page */
+	int			nd_bextpgsiz;	/* Bytes left in page */
+	int			nd_maxextsiz;	/* Max ext_pgs mbuf size */
 };
 
 #define	nd_princlen	nd_gssnamelen
@@ -655,6 +721,19 @@ struct nfsrv_descript {
 #define	ND_CACHETHIS		0x08000000
 #define	ND_LASTOP		0x10000000
 #define	ND_LOOPBADSESS		0x20000000
+#define	ND_DSSERVER		0x40000000
+#define	ND_CURSTATEID		0x80000000
+#define	ND_SAVEDCURSTATEID	0x100000000
+#define	ND_HASSLOTID		0x200000000
+#define	ND_NFSV42		0x400000000
+#define	ND_EXTPG		0x800000000
+#define	ND_TLS			0x1000000000
+#define	ND_TLSCERT		0x2000000000
+#define	ND_TLSCERTUSER		0x4000000000
+#define	ND_EXTLS		0x8000000000
+#define	ND_EXTLSCERT		0x10000000000
+#define	ND_EXTLSCERTUSER	0x20000000000
+#define	ND_ERELOOKUP		0x40000000000
 
 /*
  * ND_GSS should be the "or" of all GSS type authentications.
@@ -750,6 +829,9 @@ struct nfsslot {
 	uint32_t	nfssl_seq;
 	struct mbuf	*nfssl_reply;
 };
+
+/* Enumerated type for nfsuserd state. */
+typedef enum { NOTRUNNING=0, STARTSTOP=1, RUNNING=2 } nfsuserd_state;
 
 #endif	/* _KERNEL */
 

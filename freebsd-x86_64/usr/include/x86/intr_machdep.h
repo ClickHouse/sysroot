@@ -1,6 +1,7 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2003 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -22,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/x86/include/intr_machdep.h 342656 2018-12-31 22:09:08Z jhb $
  */
 
 #ifndef __X86_INTR_MACHDEP_H__
@@ -49,15 +48,11 @@
  * IRQ values returned by ACPI methods such as _CRS can be used
  * directly by the ACPI bus driver.
  *
- * MSI interrupts allocate a block of interrupts starting at either
- * the end of the I/O APIC range or 256, whichever is higher.  When
- * running under the Xen Hypervisor, an additional range of IRQ values
- * are available for binding to event channel events.  We use 256 as
- * the minimum IRQ value for MSI interrupts to attempt to leave 255
- * unused since 255 is used in PCI to indicate an invalid INTx IRQ.
+ * MSI interrupts allocate a block of interrupts starting at the end
+ * of the I/O APIC range.  When running under the Xen Hypervisor, an
+ * additional range of IRQ values are available for binding to event
+ * channel events.
  */
-#define	MINIMUM_MSI_INT	256
-
 extern u_int first_msi_irq;
 extern u_int num_io_irqs;
 extern u_int num_msi_irqs;
@@ -117,6 +112,8 @@ struct intsrc {
 	u_long *is_straycount;
 	u_int is_index;
 	u_int is_handlers;
+	u_int is_domain;
+	u_int is_cpu;
 };
 
 struct trapframe;
@@ -141,9 +138,9 @@ void	elcr_write_trigger(u_int irq, enum intr_trigger trigger);
 #ifdef SMP
 void	intr_add_cpu(u_int cpu);
 #endif
-int	intr_add_handler(const char *name, int vector, driver_filter_t filter, 
-			 driver_intr_t handler, void *arg, enum intr_type flags, 
-			 void **cookiep);    
+int	intr_add_handler(const char *name, int vector, driver_filter_t filter,
+    driver_intr_t handler, void *arg, enum intr_type flags, void **cookiep,
+    int domain);
 #ifdef SMP
 int	intr_bind(u_int vector, u_char cpu);
 #endif
@@ -151,7 +148,7 @@ int	intr_config_intr(int vector, enum intr_trigger trig,
     enum intr_polarity pol);
 int	intr_describe(u_int vector, void *ih, const char *descr);
 void	intr_execute_handlers(struct intsrc *isrc, struct trapframe *frame);
-u_int	intr_next_cpu(void);
+u_int	intr_next_cpu(int domain);
 struct intsrc *intr_lookup_source(int vector);
 int	intr_register_pic(struct pic *pic);
 int	intr_register_source(struct intsrc *isrc);

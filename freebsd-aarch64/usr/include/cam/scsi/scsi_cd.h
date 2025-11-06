@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000, 2002 Kenneth D. Merry
  * All rights reserved.
@@ -43,7 +43,6 @@
  * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
  *
  *	from: scsi_cd.h,v 1.10 1997/02/22 09:44:28 peter Exp $
- * $FreeBSD: releng/12.2/sys/cam/scsi/scsi_cd.h 352714 2019-09-25 19:46:17Z avg $
  */
 #ifndef	_SCSI_SCSI_CD_H
 #define _SCSI_SCSI_CD_H 1
@@ -886,4 +885,3 @@ void scsi_read_toc(struct ccb_scsiio *csio, uint32_t retries,
 __END_DECLS
 
 #endif /*_SCSI_SCSI_CD_H*/
-

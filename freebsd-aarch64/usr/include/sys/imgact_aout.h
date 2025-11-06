@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)exec.h	8.1 (Berkeley) 6/11/93
- * $FreeBSD: releng/12.2/sys/sys/imgact_aout.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef	_IMGACT_AOUT_H_
@@ -69,7 +68,6 @@
 	 N_GETMAGIC(ex) != ZMAGIC && N_GETMAGIC(ex) != QMAGIC && \
 	 N_GETMAGIC_NET(ex) != OMAGIC && N_GETMAGIC_NET(ex) != NMAGIC && \
 	 N_GETMAGIC_NET(ex) != ZMAGIC && N_GETMAGIC_NET(ex) != QMAGIC)
-
 
 /* Address of the bottom of the text segment. */
 /*

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)in.h	8.3 (Berkeley) 1/3/94
- * $FreeBSD: releng/11.3/sys/netinet/in.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NETINET_IN_H_
@@ -167,7 +168,7 @@ __END_DECLS
 #define	IPPROTO_BLT		30		/* Bulk Data Transfer */
 #define	IPPROTO_NSP		31		/* Network Services */
 #define	IPPROTO_INP		32		/* Merit Internodal */
-#define	IPPROTO_SEP		33		/* Sequential Exchange */
+#define	IPPROTO_DCCP		33		/* Datagram Congestion Control Protocol */
 #define	IPPROTO_3PC		34		/* Third Party Connect */
 #define	IPPROTO_IDPR		35		/* InterDomain Policy Routing */
 #define	IPPROTO_XTP		36		/* XTP */
@@ -289,7 +290,7 @@ __END_DECLS
  * if you trust the remote host to restrict these ports.
  *
  * The default range of ports and the high range can be changed by
- * sysctl(3).  (net.inet.ip.port{hi,low}{first,last}_auto)
+ * sysctl(3).  (net.inet.ip.portrange.{hi,low,}{first,last})
  *
  * Changing those values has bad security implications if you are
  * using a stateless firewall that is allowing packets outside of that
@@ -321,8 +322,8 @@ __END_DECLS
  * Default local port range, used by IP_PORTRANGE_DEFAULT
  */
 #define IPPORT_EPHEMERALFIRST	10000
-#define IPPORT_EPHEMERALLAST	65535 
- 
+#define IPPORT_EPHEMERALLAST	65535
+
 /*
  * Dynamic port range, used by IP_PORTRANGE_HIGH.
  */
@@ -340,10 +341,15 @@ __END_DECLS
 #define	IPPORT_MAX		65535
 
 /*
- * Definitions of bits in internet address integers.
- * On subnets, the decomposition of addresses to host and net parts
- * is done according to subnet mask, not the masks here.
+ * Historical definitions of bits in internet address integers
+ * (pre-CIDR).  Class A/B/C are long obsolete, and now deprecated.
+ * Hide these definitions from the kernel unless IN_HISTORICAL_NETS
+ * is defined.  Provide the historical definitions to user level for now.
  */
+#ifndef _KERNEL
+#define IN_HISTORICAL_NETS
+#endif
+#ifdef IN_HISTORICAL_NETS
 #define	IN_CLASSA(i)		(((in_addr_t)(i) & 0x80000000) == 0)
 #define	IN_CLASSA_NET		0xff000000
 #define	IN_CLASSA_NSHIFT	24
@@ -360,12 +366,17 @@ __END_DECLS
 #define	IN_CLASSC_NET		0xffffff00
 #define	IN_CLASSC_NSHIFT	8
 #define	IN_CLASSC_HOST		0x000000ff
+#endif /* IN_HISTORICAL_NETS */
 
-#define	IN_CLASSD(i)		(((in_addr_t)(i) & 0xf0000000) == 0xe0000000)
+#define	IN_NETMASK_DEFAULT	0xffffff00	/* mask when forced to guess */
+
+#define	IN_MULTICAST(i)		(((in_addr_t)(i) & 0xf0000000) == 0xe0000000)
+#ifdef IN_HISTORICAL_NETS
+#define	IN_CLASSD(i)		IN_MULTICAST(i)
 #define	IN_CLASSD_NET		0xf0000000	/* These ones aren't really */
 #define	IN_CLASSD_NSHIFT	28		/* net and host fields, but */
 #define	IN_CLASSD_HOST		0x0fffffff	/* routing needn't know.    */
-#define	IN_MULTICAST(i)		IN_CLASSD(i)
+#endif /* IN_HISTORICAL_NETS */
 
 #define	IN_EXPERIMENTAL(i)	(((in_addr_t)(i) & 0xf0000000) == 0xf0000000)
 #define	IN_BADCLASS(i)		(((in_addr_t)(i) & 0xf0000000) == 0xf0000000)
@@ -379,7 +390,7 @@ __END_DECLS
 			 (((in_addr_t)(i) & 0xffff0000) == 0xc0a80000))
 
 #define	IN_LOCAL_GROUP(i)	(((in_addr_t)(i) & 0xffffff00) == 0xe0000000)
- 
+
 #define	IN_ANY_LOCAL(i)		(IN_LINKLOCAL(i) || IN_LOCAL_GROUP(i))
 
 #define	INADDR_LOOPBACK		((in_addr_t)0x7f000001)
@@ -396,7 +407,9 @@ __END_DECLS
 #define	INADDR_ALLMDNS_GROUP	((in_addr_t)0xe00000fb)	/* 224.0.0.251 */
 #define	INADDR_MAX_LOCAL_GROUP	((in_addr_t)0xe00000ff)	/* 224.0.0.255 */
 
+#ifdef IN_HISTORICAL_NETS
 #define	IN_LOOPBACKNET		127			/* official! */
+#endif /* IN_HISTORICAL_NETS */
 
 #define	IN_RFC3021_MASK		((in_addr_t)0xfffffffe)
 
@@ -433,6 +446,8 @@ __END_DECLS
 #define	IP_BINDANY		24   /* bool: allow bind to any address */
 #define	IP_BINDMULTI		25   /* bool: allow multiple listeners on a tuple */
 #define	IP_RSS_LISTEN_BUCKET	26   /* int; set RSS listen bucket */
+#define	IP_ORIGDSTADDR		27   /* bool: receive IP dst addr/port w/dgram */
+#define	IP_RECVORIGDSTADDR      IP_ORIGDSTADDR
 
 /*
  * Options for controlling the firewall and dummynet.
@@ -479,6 +494,10 @@ __END_DECLS
 /* The following option is private; do not use it from user applications. */
 #define	IP_MSFILTER			74   /* set/get filter list */
 
+/* The following option deals with the 802.1Q Ethernet Priority Code Point */
+#define	IP_VLAN_PCP		75   /* int; set/get PCP used for packet, */
+				     /*      -1 use interface default */
+
 /* Protocol Independent Multicast API [RFC3678] */
 #define	MCAST_JOIN_GROUP		80   /* join an any-source group */
 #define	MCAST_LEAVE_GROUP		81   /* leave all sources for group */
@@ -501,13 +520,9 @@ __END_DECLS
 #define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member  */
 
 /*
- * The imo_membership vector for each socket is now dynamically allocated at
- * run-time, bounded by USHRT_MAX, and is reallocated when needed, sized
- * according to a power-of-two increment.
+ * Limit for IPv4 multicast memberships
  */
-#define	IP_MIN_MEMBERSHIPS	31
 #define	IP_MAX_MEMBERSHIPS	4095
-#define	IP_MAX_SOURCE_FILTER	1024	/* XXX to be unused */
 
 /*
  * Default resource limits for IPv4 multicast source filtering.
@@ -639,14 +654,16 @@ int	getsourcefilter(int, uint32_t, struct sockaddr *, socklen_t,
 #ifdef _KERNEL
 
 struct ifnet; struct mbuf;	/* forward declarations for Standard C */
+struct in_ifaddr;
 
 int	 in_broadcast(struct in_addr, struct ifnet *);
+int	 in_ifaddr_broadcast(struct in_addr, struct in_ifaddr *);
 int	 in_canforward(struct in_addr);
 int	 in_localaddr(struct in_addr);
 int	 in_localip(struct in_addr);
 int	 in_ifhasaddr(struct ifnet *, struct in_addr);
+struct in_ifaddr *in_findlocal(uint32_t, bool);
 int	 inet_aton(const char *, struct in_addr *); /* in libkern */
-char	*inet_ntoa(struct in_addr); /* in libkern */
 char	*inet_ntoa_r(struct in_addr ina, char *buf); /* in libkern */
 char	*inet_ntop(int, const void *, char *, socklen_t); /* in libkern */
 int	 inet_pton(int af, const char *, void *); /* in libkern */

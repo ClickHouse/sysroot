@@ -3,7 +3,7 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001-2002 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_bluetooth.h,v 1.4 2003/04/26 22:32:34 max Exp $
- * $FreeBSD: releng/12.2/sys/netgraph/bluetooth/include/ng_bluetooth.h 326272 2017-11-27 15:23:17Z pfg $
  */
 
 #ifndef _NETGRAPH_BLUETOOTH_H_
@@ -231,4 +230,3 @@ u_int32_t      bluetooth_sco_rtx_timeout       (void);
 #define BDADDR_LE_RANDOM 2
 
 #endif /* _NETGRAPH_BLUETOOTH_H_ */
-

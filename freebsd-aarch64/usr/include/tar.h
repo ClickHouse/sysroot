@@ -32,8 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tar.h	8.2 (Berkeley) 1/4/94
- *
- * $FreeBSD: releng/12.2/include/tar.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 #ifndef _TAR_H

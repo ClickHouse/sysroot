@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)uio.h	8.5 (Berkeley) 2/22/94
- * $FreeBSD: releng/12.2/sys/sys/uio.h 331621 2018-03-27 15:20:03Z brooks $
  */
 
 #ifndef _SYS_UIO_H_
@@ -80,12 +79,8 @@ struct vm_page;
 struct bus_dma_segment;
 
 struct uio *cloneuio(struct uio *uiop);
-int	copyinfrom(const void * __restrict src, void * __restrict dst,
-	    size_t len, int seg);
 int	copyiniov(const struct iovec *iovp, u_int iovcnt, struct iovec **iov,
 	    int error);
-int	copyinstrfrom(const void * __restrict src, void * __restrict dst,
-	    size_t len, size_t * __restrict copied, int seg);
 int	copyinuio(const struct iovec *iovp, u_int iovcnt, struct uio **uiop);
 int	copyout_map(struct thread *td, vm_offset_t *addr, size_t sz);
 int	copyout_unmap(struct thread *td, vm_offset_t addr, size_t sz);

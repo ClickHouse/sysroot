@@ -1,6 +1,5 @@
 /*
  * @(#)des_crypt.h	2.1 88/08/11 4.0 RPCSRC;	from 1.4 88/02/08 (C) 1986 SMI
- * $FreeBSD: releng/12.2/include/rpc/des_crypt.h 326024 2017-11-20 19:45:28Z pfg $
  *
  * des_crypt.h, des library routine interface
  * Copyright (C) 1986, Sun Microsystems, Inc.

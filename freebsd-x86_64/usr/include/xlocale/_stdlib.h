@@ -1,6 +1,7 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2011, 2012 The FreeBSD Foundation
- * All rights reserved.
  *
  * This software was developed by David Chisnall under sponsorship from
  * the FreeBSD Foundation.
@@ -25,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/include/xlocale/_stdlib.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 /*
@@ -55,5 +54,5 @@ size_t			 wcstombs_l(char * __restrict,
 int			 wctomb_l(char *, wchar_t, locale_t);
 
 int			 ___mb_cur_max_l(locale_t);
-#define MB_CUR_MAX_L(x) (___mb_cur_max_l(x))
+#define MB_CUR_MAX_L(x) ((size_t)___mb_cur_max_l(x))
 

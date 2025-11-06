@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2018, Matthew Macy <mmacy@freebsd.org>
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_EPOCH_H_
@@ -55,6 +53,7 @@ struct epoch_tracker {
 	TAILQ_ENTRY(epoch_tracker) et_link;
 	struct thread *et_td;
 	ck_epoch_section_t et_section;
+	uint8_t et_old_priority;
 #ifdef EPOCH_TRACE
 	struct epoch *et_epoch;
 	SLIST_ENTRY(epoch_tracker) et_tlink;
@@ -103,6 +102,7 @@ extern epoch_t net_epoch_preempt;
 #define	NET_EPOCH_EXIT(et)	epoch_exit_preempt(net_epoch_preempt, &(et))
 #define	NET_EPOCH_WAIT()	epoch_wait_preempt(net_epoch_preempt)
 #define	NET_EPOCH_CALL(f, c)	epoch_call(net_epoch_preempt, (f), (c))
+#define	NET_EPOCH_DRAIN_CALLBACKS() epoch_drain_callbacks(net_epoch_preempt)
 #define	NET_EPOCH_ASSERT()	MPASS(in_epoch(net_epoch_preempt))
 #define	NET_TASK_INIT(t, p, f, c) TASK_INIT_FLAGS(t, p, f, c, TASK_NETWORK)
 #define	NET_GROUPTASK_INIT(gtask, prio, func, ctx)			\

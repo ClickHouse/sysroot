@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/sys/fs/msdosfs/direntry.h 336687 2018-07-24 21:10:17Z emaste $ */
 /*	$NetBSD: direntry.h,v 1.14 1997/11/17 15:36:32 ws Exp $	*/
 
 /*-

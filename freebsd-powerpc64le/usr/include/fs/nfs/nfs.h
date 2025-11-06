@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NFS_NFS_H_
@@ -50,7 +48,7 @@
 #define	NFS_MAXRCVTIMEO	60		/* 1 minute in seconds */
 #define	NFS_MINIDEMTIMEO (5 * NFS_HZ)	/* Min timeout for non-idempotent ops*/
 #define	NFS_MAXREXMIT	100		/* Stop counting after this many */
-#define	NFSV4_CALLBACKTIMEO (2 * NFS_HZ) /* Timeout in ticks */
+#define	NFSV4_CALLBACKTIMEO 800		/* Timeout in msec */
 #define	NFSV4_CALLBACKRETRY 5		/* Number of retries before failure */
 #define	NFSV4_SLOTS	64		/* Number of slots, fore channel */
 #define	NFSV4_CBSLOTS	8		/* Number of slots, back channel */
@@ -144,6 +142,13 @@
 #define	NFS_READDIRBLKSIZ	DIRBLKSIZ	/* Minimal nm_readdirsize */
 
 /*
+ * The NFSv4 RFCs do not define an upper limit on the length of Owner and
+ * OwnerGroup strings.  Since FreeBSD handles a group name > 1024bytes in
+ * length, set a generous sanity limit of 10Kbytes.
+ */
+#define	NFSV4_MAXOWNERGROUPLEN	(10 * 1024)
+
+/*
  * Oddballs
  */
 #define	NFS_CMPFH(n, f, s) 						\
@@ -156,7 +161,7 @@
 	(t).tv_sec = time.tv_sec; (t).tv_nsec = 1000 * time.tv_usec; } while (0)
 #define	NFS_SRVMAXDATA(n) 						\
 		(((n)->nd_flag & (ND_NFSV3 | ND_NFSV4)) ? 		\
-		 NFS_SRVMAXIO : NFS_V2MAXDATA)
+		 nfs_srvmaxio : NFS_V2MAXDATA)
 #define	NFS64BITSSET	0xffffffffffffffffull
 #define	NFS64BITSMINUS1	0xfffffffffffffffeull
 
@@ -513,6 +518,13 @@ typedef struct {
 	(b)->bits[0] = NFSGETATTRBIT_STATFS0;	 			\
 	(b)->bits[1] = NFSGETATTRBIT_STATFS1;				\
 	(b)->bits[2] = NFSGETATTRBIT_STATFS2;				\
+} while (0)
+
+#define	NFSROOTFS_GETATTRBIT(b)	do { 					\
+	(b)->bits[0] = NFSGETATTRBIT_STATFS0 | NFSATTRBIT_GETATTR0 |	\
+	    NFSATTRBM_LEASETIME;					\
+	(b)->bits[1] = NFSGETATTRBIT_STATFS1 | NFSATTRBIT_GETATTR1;	\
+	(b)->bits[2] = NFSGETATTRBIT_STATFS2 | NFSATTRBIT_GETATTR2;	\
 } while (0)
 
 #define	NFSISSETSTATFS_ATTRBIT(b) 					\

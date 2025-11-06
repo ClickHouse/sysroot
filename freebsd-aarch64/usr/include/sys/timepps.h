@@ -9,12 +9,9 @@
  * ----------------------------------------------------------------------------
  *
  * Copyright (c) 2011 The FreeBSD Foundation
- * All rights reserved.
  *
  * Portions of this software were developed by Julien Ridoux at the University
  * of Melbourne under sponsorship from the FreeBSD Foundation.
- *
- * $FreeBSD: releng/12.2/sys/sys/timepps.h 326408 2017-11-30 20:33:45Z pfg $
  *
  * The is a FreeBSD version of the RFC 2783 API for Pulse Per Second 
  * timing interfaces.  
@@ -80,7 +77,6 @@ typedef struct {
 
 #define assert_offset_ntpfp     assert_off_tu.ntpfp
 #define clear_offset_ntpfp      clear_off_tu.ntpfp
-
 
 #define PPS_CAPTUREASSERT	0x01
 #define PPS_CAPTURECLEAR	0x02

@@ -1,5 +1,6 @@
-/*	$FreeBSD: releng/11.3/sys/netpfil/pf/pf_mtag.h 284777 2015-06-24 19:16:41Z eri $	*/
-/*
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001 Daniel Hartmeier
  * All rights reserved.
  *
@@ -40,10 +41,12 @@
 #define	PF_PACKET_LOOPED		0x08
 #define	PF_FASTFWD_OURS_PRESENT		0x10
 #define	PF_REASSEMBLED			0x20
+#define	PF_DUPLICATED			0x40
+#define	PF_TAG_SYNCOOKIE_RECREATED	0x80
 
 struct pf_mtag {
 	void		*hdr;		/* saved hdr pos in mbuf, for ECN */
-	u_int32_t	 qid;		/* queue id */
+	u_int16_t	 qid;		/* queue id */
 	u_int32_t	 qid_hash;	/* queue hashid used by WFQ like algos */
 	u_int16_t	 tag;		/* tag id */
 	u_int8_t	 flags;

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2010-2011 Alexander V. Chernikov <melifaro@ipfw.ru>
  * Copyright (c) 2004 Gleb Smirnoff <glebius@FreeBSD.org>
  * All rights reserved.
@@ -25,7 +27,6 @@
  * SUCH DAMAGE.
  *
  *	 $SourceForge: netflow.h,v 1.8 2004/09/16 17:05:11 glebius Exp $
- *	 $FreeBSD: releng/11.3/sys/netgraph/netflow/netflow.h 219182 2011-03-02 16:15:11Z glebius $
  */
 
 /* netflow timeouts in seconds */
@@ -142,7 +143,6 @@ struct netflow_v5_export_dgram {
 	struct netflow_v5_header	header;
 	struct netflow_v5_record	r[NETFLOW_V5_MAX_RECORDS];
 } __attribute__((__packed__));
-
 
 /* RFC3954 field definitions */
 #define NETFLOW_V9_FIELD_IN_BYTES		1	/* Input bytes count for a flow. Default 4, can be 8 */

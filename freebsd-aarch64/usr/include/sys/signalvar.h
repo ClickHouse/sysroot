@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)signalvar.h	8.6 (Berkeley) 2/19/95
- * $FreeBSD: releng/12.2/sys/sys/signalvar.h 353789 2019-10-21 01:24:21Z kevans $
  */
 
 #ifndef _SYS_SIGNALVAR_H_
@@ -256,7 +255,24 @@ typedef struct sigqueue {
 /* Flags for ksi_flags */
 #define	SQ_INIT	0x01
 
+/*
+ * Fast_sigblock
+ */
+#define	SIGFASTBLOCK_SETPTR	1
+#define	SIGFASTBLOCK_UNBLOCK	2
+#define	SIGFASTBLOCK_UNSETPTR	3
+
+#define	SIGFASTBLOCK_PEND	0x1
+#define	SIGFASTBLOCK_FLAGS	0xf
+#define	SIGFASTBLOCK_INC	0x10
+
+#ifndef _KERNEL
+int __sys_sigfastblock(int cmd, void *ptr);
+#endif
+
 #ifdef _KERNEL
+extern sigset_t fastblock_mask;
+extern bool sigfastblock_fetch_always;
 
 /* Return nonzero if process p has an unmasked pending signal. */
 #define	SIGPENDING(td)							\
@@ -265,20 +281,20 @@ typedef struct sigqueue {
 	 (!SIGISEMPTY((td)->td_proc->p_siglist) &&			\
 	    !sigsetmasked(&(td)->td_proc->p_siglist, &(td)->td_sigmask)))
 /*
- * Return the value of the pseudo-expression ((*set & ~*mask) != 0).  This
+ * Return the value of the pseudo-expression ((*set & ~*mask) == 0).  This
  * is an optimized version of SIGISEMPTY() on a temporary variable
  * containing SIGSETNAND(*set, *mask).
  */
-static __inline int
+static __inline bool
 sigsetmasked(sigset_t *set, sigset_t *mask)
 {
 	int i;
 
 	for (i = 0; i < _SIG_WORDS; i++) {
 		if (set->__bits[i] & ~mask->__bits[i])
-			return (0);
+			return (false);
 	}
-	return (1);
+	return (true);
 }
 
 #define	ksiginfo_init(ksi)			\
@@ -320,7 +336,7 @@ struct thread;
 #define	SIGIO_TRYLOCK()	mtx_trylock(&sigio_lock)
 #define	SIGIO_UNLOCK()	mtx_unlock(&sigio_lock)
 #define	SIGIO_LOCKED()	mtx_owned(&sigio_lock)
-#define	SIGIO_ASSERT(type)	mtx_assert(&sigio_lock, type)
+#define	SIGIO_ASSERT_LOCKED() mtx_assert(&sigio_lock, MA_OWNED)
 
 extern struct mtx	sigio_lock;
 
@@ -328,6 +344,7 @@ extern struct mtx	sigio_lock;
 #define	SIGPROCMASK_OLD		0x0001
 #define	SIGPROCMASK_PROC_LOCKED	0x0002
 #define	SIGPROCMASK_PS_LOCKED	0x0004
+#define	SIGPROCMASK_FASTBLK	0x0008
 
 /*
  * Modes for sigdeferstop().  Manages behaviour of
@@ -349,7 +366,7 @@ static inline int
 sigdeferstop(int mode)
 {
 
-	if (__predict_true(mode == SIGDEFERSTOP_NOP))
+	if (__predict_false(mode == SIGDEFERSTOP_NOP))
 		return (SIGDEFERSTOP_VAL_NCHG);
 	return (sigdeferstop_impl(mode));
 }
@@ -365,9 +382,8 @@ sigallowstop(int prev)
 
 int	cursig(struct thread *td);
 void	execsigs(struct proc *p);
-void	gsignal(int pgid, int sig, ksiginfo_t *ksi);
-void	killproc(struct proc *p, char *why);
-ksiginfo_t * ksiginfo_alloc(int wait);
+void	killproc(struct proc *p, const char *why);
+ksiginfo_t *ksiginfo_alloc(int mwait);
 void	ksiginfo_free(ksiginfo_t *ksi);
 int	pksignal(struct proc *p, int sig, ksiginfo_t *ksi);
 void	pgsigio(struct sigio **sigiop, int sig, int checkctty);
@@ -381,10 +397,15 @@ void	sigacts_copy(struct sigacts *dest, struct sigacts *src);
 void	sigacts_free(struct sigacts *ps);
 struct sigacts *sigacts_hold(struct sigacts *ps);
 int	sigacts_shared(struct sigacts *ps);
+int	sig_ast_checksusp(struct thread *td);
+int	sig_ast_needsigchk(struct thread *td);
 void	sig_drop_caught(struct proc *p);
 void	sigexit(struct thread *td, int sig) __dead2;
 int	sigev_findtd(struct proc *p, struct sigevent *sigev, struct thread **);
-int	sig_ffs(sigset_t *set);
+void	sigfastblock_clear(struct thread *td);
+void	sigfastblock_fetch(struct thread *td);
+void	sigfastblock_setpend(struct thread *td, bool resched);
+int	sig_intr(void);
 void	siginit(struct proc *p);
 void	signotify(struct thread *td);
 void	sigqueue_delete(struct sigqueue *queue, int sig);

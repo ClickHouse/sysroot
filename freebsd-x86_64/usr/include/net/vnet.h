@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2006-2009 University of Zagreb
  * Copyright (c) 2006-2009 FreeBSD Foundation
  * All rights reserved.
@@ -31,8 +33,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/net/vnet.h 302054 2016-06-21 13:48:49Z bz $
  */
 
 /*-
@@ -73,8 +73,9 @@ struct vnet {
 	u_int			 vnet_state;	/* SI_SUB_* */
 	void			*vnet_data_mem;
 	uintptr_t		 vnet_data_base;
-};
-#define	VNET_MAGIC_N	0x3e0d8f29
+	bool			 vnet_shutdown;	/* Shutdown in progress. */
+} __aligned(CACHE_LINE_SIZE);
+#define	VNET_MAGIC_N	0x5e4a6f28
 
 /*
  * These two virtual network stack allocator definitions are also required
@@ -91,6 +92,8 @@ struct vnet {
 
 #define	VNET_PCPUSTAT_DEFINE(type, name)	\
     VNET_DEFINE(counter_u64_t, name[sizeof(type) / sizeof(uint64_t)])
+#define	VNET_PCPUSTAT_DEFINE_STATIC(type, name)	\
+    VNET_DEFINE_STATIC(counter_u64_t, name[sizeof(type) / sizeof(uint64_t)])
 
 #define	VNET_PCPUSTAT_ALLOC(name, wait)	\
     COUNTER_ARRAY_ALLOC(VNET(name), \
@@ -137,7 +140,8 @@ array##_sysctl(SYSCTL_HANDLER_ARGS)					\
 		    sizeof(type) / sizeof(uint64_t));			\
 	return (SYSCTL_OUT(req, &s, sizeof(type)));			\
 }									\
-SYSCTL_PROC(parent, nbr, name, CTLFLAG_VNET | CTLTYPE_OPAQUE | CTLFLAG_RW, \
+SYSCTL_PROC(parent, nbr, name,						\
+    CTLFLAG_VNET | CTLTYPE_OPAQUE | CTLFLAG_RW | CTLFLAG_NEEDGIANT,	\
     NULL, 0, array ## _sysctl, "I", desc)
 #endif /* SYSCTL_OID */
 
@@ -195,14 +199,14 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	const char *saved_vnet_lpush = curthread->td_vnet_lpush;	\
 	curvnet = arg;							\
 	curthread->td_vnet_lpush = __func__;
- 
+
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)						\
 	if (saved_vnet)							\
 		vnet_log_recursion(saved_vnet, saved_vnet_lpush, __LINE__);
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
- 
+
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -218,12 +222,12 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	    __FILE__, __LINE__, __func__, curvnet, (arg)));		\
 	struct vnet *saved_vnet = curvnet;				\
 	curvnet = arg;	
- 
+
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
- 
+
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -231,6 +235,10 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	    __FILE__, __LINE__, __func__, curvnet, saved_vnet));	\
 	curvnet = saved_vnet;
 #endif /* VNET_DEBUG */
+
+#define	CURVNET_ASSERT_SET()						\
+	VNET_ASSERT(curvnet != NULL, ("vnet is not set at %s:%d %s()",  \
+	    __FILE__, __LINE__, __func__))
 
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
@@ -266,7 +274,21 @@ extern struct sx vnet_sxlock;
  */
 #define	VNET_NAME(n)		vnet_entry_##n
 #define	VNET_DECLARE(t, n)	extern t VNET_NAME(n)
-#define	VNET_DEFINE(t, n)	t VNET_NAME(n) __section(VNET_SETNAME) __used
+/* struct _hack is to stop this from being used with static data */
+#define	VNET_DEFINE(t, n)	\
+    struct _hack; t VNET_NAME(n) __section(VNET_SETNAME) __used
+#if defined(KLD_MODULE) && (defined(__aarch64__) || defined(__riscv) \
+		|| defined(__powerpc64__))
+/*
+ * As with DPCPU_DEFINE_STATIC we are unable to mark this data as static
+ * in modules on some architectures.
+ */
+#define	VNET_DEFINE_STATIC(t, n) \
+    t VNET_NAME(n) __section(VNET_SETNAME) __used
+#else
+#define	VNET_DEFINE_STATIC(t, n) \
+    static t VNET_NAME(n) __section(VNET_SETNAME) __used
+#endif
 #define	_VNET_PTR(b, n)		(__typeof(VNET_NAME(n))*)		\
 				    ((b) + (uintptr_t)&VNET_NAME(n))
 
@@ -308,6 +330,8 @@ struct vnet_sysinit {
 };
 
 #define	VNET_SYSINIT(ident, subsystem, order, func, arg)		\
+	CTASSERT((subsystem) > SI_SUB_VNET &&				\
+	    (subsystem) <= SI_SUB_VNET_DONE);				\
 	static struct vnet_sysinit ident ## _vnet_init = {		\
 		subsystem,						\
 		order,							\
@@ -320,6 +344,8 @@ struct vnet_sysinit {
 	    vnet_deregister_sysinit, &ident ## _vnet_init)
 
 #define	VNET_SYSUNINIT(ident, subsystem, order, func, arg)		\
+	CTASSERT((subsystem) > SI_SUB_VNET &&				\
+	    (subsystem) <= SI_SUB_VNET_DONE);				\
 	static struct vnet_sysinit ident ## _vnet_uninit = {		\
 		subsystem,						\
 		order,							\
@@ -330,12 +356,6 @@ struct vnet_sysinit {
 	    vnet_register_sysuninit, &ident ## _vnet_uninit);		\
 	SYSUNINIT(vnet_uninit_ ## ident, subsystem, order,		\
 	    vnet_deregister_sysuninit, &ident ## _vnet_uninit)
-
-/*
- * Run per-vnet sysinits or sysuninits during vnet creation/destruction.
- */
-void	 vnet_sysinit(void);
-void	 vnet_sysuninit(void);
 
 /*
  * Interfaces for managing per-vnet constructors and destructors.
@@ -379,6 +399,7 @@ do {									\
 #define	CURVNET_SET(arg)
 #define	CURVNET_SET_QUIET(arg)
 #define	CURVNET_RESTORE()
+#define	CURVNET_ASSERT_SET()						\
 
 #define	VNET_LIST_RLOCK()
 #define	VNET_LIST_RLOCK_NOSLEEP()
@@ -398,7 +419,8 @@ do {									\
  */
 #define	VNET_NAME(n)		n
 #define	VNET_DECLARE(t, n)	extern t n
-#define	VNET_DEFINE(t, n)	t n
+#define	VNET_DEFINE(t, n)	struct _hack; t n
+#define	VNET_DEFINE_STATIC(t, n)	static t n
 #define	_VNET_PTR(b, n)		&VNET_NAME(n)
 
 /*

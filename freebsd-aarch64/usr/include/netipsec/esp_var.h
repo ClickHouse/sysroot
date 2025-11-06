@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/esp_var.h 253088 2013-07-09 10:08:13Z ae $	*/
 /*	$OpenBSD: ip_esp.h,v 1.37 2002/06/09 16:26:10 itojun Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),

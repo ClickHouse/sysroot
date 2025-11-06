@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _LIBUTIL_H_
@@ -109,6 +107,8 @@ struct kinfo_vmentry *
 	kinfo_getvmmap(pid_t _pid, int *_cntp);
 struct kinfo_vmobject *
 	kinfo_getvmobject(int *_cntp);
+struct kinfo_vmobject *
+	kinfo_getswapvmobject(int *_cntp);
 struct kinfo_proc *
 	kinfo_getallproc(int *_cntp);
 struct kinfo_proc *

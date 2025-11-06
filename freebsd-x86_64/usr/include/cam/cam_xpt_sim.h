@@ -2,6 +2,8 @@
  * Data structures and definitions for dealing with the 
  * Common Access Method Transport (xpt) layer.
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/cam_xpt_sim.h 256843 2013-10-21 12:00:26Z mav $
  */
 
 #ifndef _CAM_CAM_XPT_SIM_H
@@ -50,4 +50,3 @@ void		xpt_done_direct(union ccb *done_ccb);
 #endif
 
 #endif /* _CAM_CAM_XPT_SIM_H */
-

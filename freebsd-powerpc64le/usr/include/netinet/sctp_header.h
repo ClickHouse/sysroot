@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifndef _NETINET_SCTP_HEADER_H_
 #define _NETINET_SCTP_HEADER_H_
 
@@ -86,7 +83,7 @@ struct sctp_supported_addr_param {
 /* heartbeat info parameter */
 struct sctp_heartbeat_info_param {
 	struct sctp_paramhdr ph;
-	uint32_t time_value_1;
+	time_t time_value_1;
 	uint32_t time_value_2;
 	uint32_t random_value1;
 	uint32_t random_value2;

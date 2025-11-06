@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)errno.h	8.5 (Berkeley) 1/21/94
- * $FreeBSD: releng/12.2/sys/sys/errno.h 357296 2020-01-30 16:11:19Z mav $
  */
 
 #ifndef _SYS_ERRNO_H_
@@ -187,7 +186,7 @@ __END_DECLS
 #define	ELAST		97		/* Must be equal largest errno */
 #endif /* _POSIX_SOURCE */
 
-#if defined(_KERNEL) || defined(_WANT_KERNEL_ERRNO)
+#if defined(_KERNEL) || defined(_WANT_KERNEL_ERRNO) || defined(_STANDALONE)
 /* pseudo-errors returned inside kernel to modify return to process */
 #define	ERESTART	(-1)		/* restart syscall */
 #define	EJUSTRETURN	(-2)		/* don't modify regs, just return */

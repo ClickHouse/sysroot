@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)paths.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/12.2/include/paths.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 #ifndef _PATHS_H_
@@ -37,8 +36,11 @@
 
 #include <sys/cdefs.h>
 
+#define	_PATH_LOCALBASE	"/usr/local"
+
 /* Default search path. */
-#define	_PATH_DEFPATH	"/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+#define	_PATH_DEFPATH	"/sbin:/bin:/usr/sbin:/usr/bin:" \
+  			_PATH_LOCALBASE "/sbin:" _PATH_LOCALBASE "/bin"
 /* All standard utilities path. */
 #define	_PATH_STDPATH	"/usr/bin:/bin:/usr/sbin:/sbin"
 /* Locate system binaries. */

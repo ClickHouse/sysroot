@@ -36,8 +36,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Julian Elischer <julian@freebsd.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_socket.h 163462 2006-10-17 11:03:55Z glebius $
  * $Whistle: ng_socket.h,v 1.5 1999/01/20 00:22:14 archie Exp $
  */
 
@@ -66,4 +64,3 @@ struct sockaddr_ng {
 };
 
 #endif /* _NETGRAPH_NG_SOCKET_H_ */
-

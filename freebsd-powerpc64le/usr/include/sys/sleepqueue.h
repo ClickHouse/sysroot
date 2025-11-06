@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2004 John Baldwin <jhb@FreeBSD.org>
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_SLEEPQUEUE_H_
@@ -85,6 +83,7 @@ struct thread;
 #define	SLEEPQ_LK		0x04		/* Used by a lockmgr. */
 #define	SLEEPQ_INTERRUPTIBLE	0x100		/* Sleep is interruptible. */
 #define	SLEEPQ_UNFAIR		0x200		/* Unfair wakeup order. */
+#define	SLEEPQ_DROP		0x400		/* Return without lock held. */
 
 void	init_sleepqueues(void);
 int	sleepq_abort(struct thread *td, int intrval);
@@ -100,6 +99,7 @@ void	sleepq_release(const void *wchan);
 void	sleepq_remove(struct thread *td, const void *wchan);
 int	sleepq_remove_matching(struct sleepqueue *sq, int queue,
 	    bool (*matches)(struct thread *), int pri);
+void	sleepq_remove_nested(struct thread *td);
 int	sleepq_signal(const void *wchan, int flags, int pri, int queue);
 void	sleepq_set_timeout_sbt(const void *wchan, sbintime_t sbt,
 	    sbintime_t pr, int flags);

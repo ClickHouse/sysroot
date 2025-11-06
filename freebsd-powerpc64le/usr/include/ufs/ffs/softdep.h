@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright 1998, 2000 Marshall Kirk McKusick. All Rights Reserved.
  *
@@ -38,7 +38,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)softdep.h	9.7 (McKusick) 6/21/00
- * $FreeBSD$
  */
 
 #include <sys/queue.h>
@@ -213,10 +212,10 @@ struct worklist {
 	struct mount		*wk_mp;		/* Mount we live in */
 	unsigned int		wk_type:8,	/* type of request */
 				wk_state:24;	/* state flags */
+	LIST_ENTRY(worklist)	wk_all;		/* list of deps of this type */
 #ifdef INVARIANTS
 	const char		*wk_func;	/* func where added / removed */
 	int			wk_line;	/* line where added / removed */
-	LIST_ENTRY(worklist)	wk_all;		/* list of deps of this type */
 #endif
 };
 #define	WK_DATA(wk) ((void *)(wk))
@@ -1063,7 +1062,7 @@ struct mount_softdeps {
 	struct	bmsafemap_hashhead *sd_bmhash;	/* bmsafemap hash table */
 	u_long	sd_bmhashsize;			/* bmsafemap hash table size-1*/
 	struct	indir_hashhead *sd_indirhash;	/* indir hash table */
-	u_long	sd_indirhashsize;		/* indir hash table size-1 */
+	uint64_t sd_indirhashsize;		/* indir hash table size-1 */
 	int	sd_on_journal;			/* Items on the journal list */
 	int	sd_on_worklist;			/* Items on the worklist */
 	int	sd_deps;			/* Total dependency count */
@@ -1074,10 +1073,8 @@ struct mount_softdeps {
 	struct	thread *sd_flushtd;		/* thread handling flushing */
 	TAILQ_ENTRY(mount_softdeps) sd_next;	/* List of softdep filesystem */
 	struct	ufsmount *sd_ump;		/* our ufsmount structure */
-	u_long	sd_curdeps[D_LAST + 1];		/* count of current deps */
-#ifdef INVARIANTS
+	uint64_t sd_curdeps[D_LAST + 1];	/* count of current deps */
 	struct	workhead sd_alldeps[D_LAST + 1];/* Lists of all deps */
-#endif
 };
 /*
  * Flags for communicating with the syncer thread.

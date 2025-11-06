@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright 1998, 2000 Marshall Kirk McKusick. All Rights Reserved.
  *
  * The soft updates code is derived from the appendix of a University
@@ -36,7 +38,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)softdep.h	9.7 (McKusick) 6/21/00
- * $FreeBSD: releng/11.3/sys/ufs/ffs/softdep.h 320057 2017-06-17 17:10:50Z kib $
  */
 
 #include <sys/queue.h>
@@ -144,37 +145,45 @@
 
 #define	ALLCOMPLETE	(ATTACHED | COMPLETE | DEPCOMPLETE)
 
+#define PRINT_SOFTDEP_FLAGS "\20\27writesucceeded\26unlinkonlist" \
+	"\25unlinkprev\24unlinknext\23unlinked\22ondeplist\21iowaiting" \
+	"\20onworklist\17extdata\16ufs1fmt\15inprogress\14newblock" \
+	"\13delayedfree\12iostarted\11goingaway\10dirchg\7rmdir\6mkdir_body" \
+	"\5mkdir_parent\4depcomplete\3complete\2undone\1attached"
+
 /*
  * Values for each of the soft dependency types.
  */
-#define	D_PAGEDEP	0
-#define	D_INODEDEP	1
-#define	D_BMSAFEMAP	2
-#define	D_NEWBLK	3
-#define	D_ALLOCDIRECT	4
-#define	D_INDIRDEP	5
-#define	D_ALLOCINDIR	6
-#define	D_FREEFRAG	7
-#define	D_FREEBLKS	8
-#define	D_FREEFILE	9
-#define	D_DIRADD	10
-#define	D_MKDIR		11
-#define	D_DIRREM	12
-#define	D_NEWDIRBLK	13
-#define	D_FREEWORK	14
-#define	D_FREEDEP	15
-#define	D_JADDREF	16
-#define	D_JREMREF	17
-#define	D_JMVREF	18
-#define	D_JNEWBLK	19
-#define	D_JFREEBLK	20
-#define	D_JFREEFRAG	21
-#define	D_JSEG		22
-#define	D_JSEGDEP	23
-#define	D_SBDEP		24
-#define	D_JTRUNC	25
-#define	D_JFSYNC	26
-#define	D_SENTINEL	27
+#define	D_UNUSED	0
+#define	D_FIRST		D_PAGEDEP
+#define	D_PAGEDEP	1
+#define	D_INODEDEP	2
+#define	D_BMSAFEMAP	3
+#define	D_NEWBLK	4
+#define	D_ALLOCDIRECT	5
+#define	D_INDIRDEP	6
+#define	D_ALLOCINDIR	7
+#define	D_FREEFRAG	8
+#define	D_FREEBLKS	9
+#define	D_FREEFILE	10
+#define	D_DIRADD	11
+#define	D_MKDIR		12
+#define	D_DIRREM	13
+#define	D_NEWDIRBLK	14
+#define	D_FREEWORK	15
+#define	D_FREEDEP	16
+#define	D_JADDREF	17
+#define	D_JREMREF	18
+#define	D_JMVREF	19
+#define	D_JNEWBLK	20
+#define	D_JFREEBLK	21
+#define	D_JFREEFRAG	22
+#define	D_JSEG		23
+#define	D_JSEGDEP	24
+#define	D_SBDEP		25
+#define	D_JTRUNC	26
+#define	D_JFSYNC	27
+#define	D_SENTINEL	28
 #define	D_LAST		D_SENTINEL
 
 /*
@@ -203,6 +212,11 @@ struct worklist {
 	struct mount		*wk_mp;		/* Mount we live in */
 	unsigned int		wk_type:8,	/* type of request */
 				wk_state:24;	/* state flags */
+	LIST_ENTRY(worklist)	wk_all;		/* list of deps of this type */
+#ifdef INVARIANTS
+	const char		*wk_func;	/* func where added / removed */
+	int			wk_line;	/* line where added / removed */
+#endif
 };
 #define	WK_DATA(wk) ((void *)(wk))
 #define	WK_PAGEDEP(wk) ((struct pagedep *)(wk))
@@ -343,6 +357,7 @@ struct inodedep {
 	struct	fs *id_fs;		/* associated filesystem */
 	ino_t	id_ino;			/* dependent inode */
 	nlink_t	id_nlinkdelta;		/* saved effective link count */
+	nlink_t	id_nlinkwrote;		/* i_nlink that we wrote to disk */
 	nlink_t	id_savednlink;		/* Link saved during rollback */
 	LIST_ENTRY(inodedep) id_deps;	/* bmsafemap's list of inodedep's */
 	struct	bmsafemap *id_bmsafemap; /* related bmsafemap (if pending) */
@@ -467,17 +482,17 @@ struct allocdirect {
  * A single "indirdep" structure manages all allocation dependencies for
  * pointers in an indirect block. The up-to-date state of the indirect
  * block is stored in ir_savedata. The set of pointers that may be safely
- * written to the disk is stored in ir_safecopy. The state field is used
+ * written to the disk is stored in ir_savebp. The state field is used
  * only to track whether the buffer is currently being written (in which
- * case it is not safe to update ir_safecopy). Ir_deplisthd contains the
+ * case it is not safe to update ir_savebp). Ir_deplisthd contains the
  * list of allocindir structures, one for each block that needs to be
  * written to disk. Once the block and its bitmap allocation have been
  * written the safecopy can be updated to reflect the allocation and the
  * allocindir structure freed. If ir_state indicates that an I/O on the
- * indirect block is in progress when ir_safecopy is to be updated, the
+ * indirect block is in progress when ir_savebp is to be updated, the
  * update is deferred by placing the allocindir on the ir_donehd list.
  * When the I/O on the indirect block completes, the entries on the
- * ir_donehd list are processed by updating their corresponding ir_safecopy
+ * ir_donehd list are processed by updating their corresponding ir_savebp
  * pointers and then freeing the allocindir structure.
  */
 struct indirdep {
@@ -547,6 +562,7 @@ struct freefrag {
 	long	ff_fragsize;		/* size of fragment being deleted */
 	ino_t	ff_inum;		/* owning inode number */
 	enum	vtype ff_vtype;		/* owning inode's file type */
+	int	ff_key;			/* trim key when deleted */
 };
 
 /*
@@ -1046,7 +1062,7 @@ struct mount_softdeps {
 	struct	bmsafemap_hashhead *sd_bmhash;	/* bmsafemap hash table */
 	u_long	sd_bmhashsize;			/* bmsafemap hash table size-1*/
 	struct	indir_hashhead *sd_indirhash;	/* indir hash table */
-	u_long	sd_indirhashsize;		/* indir hash table size-1 */
+	uint64_t sd_indirhashsize;		/* indir hash table size-1 */
 	int	sd_on_journal;			/* Items on the journal list */
 	int	sd_on_worklist;			/* Items on the worklist */
 	int	sd_deps;			/* Total dependency count */
@@ -1057,7 +1073,8 @@ struct mount_softdeps {
 	struct	thread *sd_flushtd;		/* thread handling flushing */
 	TAILQ_ENTRY(mount_softdeps) sd_next;	/* List of softdep filesystem */
 	struct	ufsmount *sd_ump;		/* our ufsmount structure */
-	u_long	sd_curdeps[D_LAST + 1];		/* count of current deps */
+	uint64_t sd_curdeps[D_LAST + 1];	/* count of current deps */
+	struct	workhead sd_alldeps[D_LAST + 1];/* Lists of all deps */
 };
 /*
  * Flags for communicating with the syncer thread.
@@ -1066,6 +1083,8 @@ struct mount_softdeps {
 #define FLUSH_CLEANUP	0x0002	/* need to clear out softdep structures */
 #define	FLUSH_STARTING	0x0004	/* flush thread not yet started */
 #define	FLUSH_RC_ACTIVE	0x0008	/* a thread is flushing the mount point */
+#define	FLUSH_DI_ACTIVE	0x0010	/* a thread is processing delayed
+				   inactivations */
 
 /*
  * Keep the old names from when these were in the ufsmount structure.
@@ -1098,3 +1117,4 @@ struct mount_softdeps {
 #define	softdep_flags			um_softdep->sd_flags
 #define	softdep_flushtd			um_softdep->sd_flushtd
 #define	softdep_curdeps			um_softdep->sd_curdeps
+#define	softdep_alldeps			um_softdep->sd_alldeps

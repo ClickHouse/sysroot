@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2008, Jeffrey Roberson <jeff@freebsd.org>
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/_bitset.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS__BITSET_H_
@@ -42,17 +42,29 @@
 
 #define	__bitset_words(_s)	(__howmany(_s, _BITSET_BITS))
 
-#define	BITSET_DEFINE(t, _s)						\
-struct t {								\
+#define	__BITSET_DEFINE(_t, _s)						\
+struct _t {								\
         long    __bits[__bitset_words((_s))];				\
 }
 
 /*
  * Helper to declare a bitset without it's size being a constant.
  *
- * Sadly we cannot declare a bitset struct with '__bits[]', because it's
+ * Sadly we cannot declare a bitset struct with 'bits[]', because it's
  * the only member of the struct and the compiler complains.
  */
-#define BITSET_DEFINE_VAR(t)	BITSET_DEFINE(t, 1)
+#define __BITSET_DEFINE_VAR(_t)	__BITSET_DEFINE(_t, 1)
+
+/*
+ * Define a default type that can be used while manually specifying size
+ * to every call.
+ */
+
+#if defined(_KERNEL) || defined(_WANT_FREEBSD_BITSET)
+__BITSET_DEFINE(bitset, 1);
+
+#define	BITSET_DEFINE(_t, _s)	__BITSET_DEFINE(_t, _s)
+#define	BITSET_DEFINE_VAR(_t)	__BITSET_DEFINE_VAR(_t)
+#endif /* defined(_KERNEL) || defined(_WANT_FREEBSD_BITSET) */
 
 #endif /* !_SYS__BITSET_H_ */

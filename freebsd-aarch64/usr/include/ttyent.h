@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ttyent.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/12.2/include/ttyent.h 330054 2018-02-27 10:54:15Z trasz $
  */
 
 #ifndef	_TTYENT_H_

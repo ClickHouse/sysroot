@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -29,9 +31,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_auth.h 347154 2019-05-05 12:28:39Z tuexen $");
 
 #ifndef _NETINET_SCTP_AUTH_H_
 #define _NETINET_SCTP_AUTH_H_
@@ -93,8 +92,6 @@ typedef struct sctp_authinformation {
 	uint16_t recv_keyid;	/* last recv keyid (cached) */
 } sctp_authinfo_t;
 
-
-
 /*
  * Macros
  */
@@ -152,7 +149,6 @@ extern void
 sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t keyid,
     int so_locked);
 
-
 /* hmac list handling */
 extern sctp_hmaclist_t *sctp_alloc_hmaclist(uint16_t num_hmacs);
 extern void sctp_free_hmaclist(sctp_hmaclist_t *list);
@@ -176,9 +172,6 @@ extern uint32_t sctp_get_hmac_digest_len(uint16_t hmac_algo);
 extern uint32_t
 sctp_hmac(uint16_t hmac_algo, uint8_t *key, uint32_t keylen,
     uint8_t *text, uint32_t textlen, uint8_t *digest);
-extern int
-sctp_verify_hmac(uint16_t hmac_algo, uint8_t *key, uint32_t keylen,
-    uint8_t *text, uint32_t textlen, uint8_t *digest, uint32_t digestlen);
 extern uint32_t
 sctp_compute_hmac(uint16_t hmac_algo, sctp_key_t *key,
     uint8_t *text, uint32_t textlen, uint8_t *digest);
@@ -219,7 +212,7 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *ch,
     struct mbuf *m, uint32_t offset);
 extern void
 sctp_notify_authentication(struct sctp_tcb *stcb,
-    uint32_t indication, uint16_t keyid, uint16_t alt_keyid, int so_locked);
+    uint32_t indication, uint16_t keyid, int so_locked);
 extern int
 sctp_validate_init_auth_params(struct mbuf *m, int offset,
     int limit);

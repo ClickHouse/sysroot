@@ -34,8 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nlist.h	8.2 (Berkeley) 1/21/94
- *
- * $FreeBSD: releng/12.2/sys/sys/nlist_aout.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _SYS_NLIST_AOUT_H_

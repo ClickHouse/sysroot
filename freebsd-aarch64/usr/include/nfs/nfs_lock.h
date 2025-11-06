@@ -27,7 +27,6 @@
  * SUCH DAMAGE.
  *
  *      from nfs_lock.h,v 2.2 1998/04/28 19:38:41 don Exp
- * $FreeBSD: releng/12.2/sys/nfs/nfs_lock.h 326272 2017-11-27 15:23:17Z pfg $
  */
 
 /*

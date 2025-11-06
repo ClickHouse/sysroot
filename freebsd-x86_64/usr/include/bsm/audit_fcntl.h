@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2009 Apple Inc.
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE. 
- *
- * $FreeBSD: releng/11.3/sys/bsm/audit_fcntl.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef	_BSM_AUDIT_FCNTL_H_

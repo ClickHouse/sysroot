@@ -1,6 +1,5 @@
-/* $FreeBSD: releng/12.2/lib/libusb/libusb20_desc.h 326219 2017-11-26 02:00:33Z pfg $ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  * Copyright (c) 2007-2008 Daniel Drake.  All rights reserved.

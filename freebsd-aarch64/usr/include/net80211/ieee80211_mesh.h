@@ -1,8 +1,7 @@
 /*- 
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 The FreeBSD Foundation 
- * All rights reserved. 
  * 
  * This software was developed by Rui Paulo under sponsorship from the
  * FreeBSD Foundation. 
@@ -28,7 +27,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  * SUCH DAMAGE. 
  * 
- * $FreeBSD: releng/12.2/sys/net80211/ieee80211_mesh.h 326272 2017-11-27 15:23:17Z pfg $
  */
 #ifndef _NET80211_IEEE80211_MESH_H_
 #define _NET80211_IEEE80211_MESH_H_
@@ -90,7 +88,6 @@ enum {
 
 /* Authentication Protocol Identifier */
 enum {
-	
 	IEEE80211_MESHCONF_AUTH_DISABLED	= 0,
 	/* Simultaneous Authenticaction of Equals */
 	IEEE80211_MESHCONF_AUTH_SEA		= 1,

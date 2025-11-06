@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2000-2001 Boris Popov
  * All rights reserved.
  *
@@ -22,14 +24,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netsmb/smb.h 206361 2010-04-07 16:50:38Z joel $
  */
 
 /*
  * Common definitions and structures for SMB/CIFS protocol
  */
- 
+
 #ifndef _NETSMB_SMB_H_
 #define _NETSMB_SMB_H_
 

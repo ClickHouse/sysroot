@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)stdio.h	8.5 (Berkeley) 4/29/95
- * $FreeBSD: releng/12.2/include/stdio.h 357852 2020-02-13 03:13:29Z kevans $
  */
 
 #ifndef	_STDIO_H_
@@ -269,7 +268,6 @@ long	 ftell(FILE *);
 size_t	 fwrite(const void * __restrict, size_t, size_t, FILE * __restrict);
 int	 getc(FILE *);
 int	 getchar(void);
-char	*gets(char *);
 #if __EXT1_VISIBLE
 char	*gets_s(char *, rsize_t);
 #endif

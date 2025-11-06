@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1999 Michael Smith <msmith@freebsd.org>
  * All rights reserved.
  *
@@ -22,24 +24,16 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/eventhandler.h 331727 2018-03-29 04:41:45Z mjoras $
  */
 
 #ifndef _SYS_EVENTHANDLER_H_
 #define _SYS_EVENTHANDLER_H_
 
+#include <sys/_eventhandler.h>
 #include <sys/lock.h>
 #include <sys/ktr.h>
 #include <sys/mutex.h>
 #include <sys/queue.h>
-
-struct eventhandler_entry {
-	TAILQ_ENTRY(eventhandler_entry)	ee_link;
-	int				ee_priority;
-#define	EHE_DEAD_PRIORITY	(-1)
-	void				*ee_arg;
-};
 
 #ifdef VIMAGE
 struct eventhandler_entry_vimage {
@@ -57,8 +51,6 @@ struct eventhandler_list {
 	TAILQ_ENTRY(eventhandler_list)	el_link;
 	TAILQ_HEAD(,eventhandler_entry)	el_entries;
 };
-
-typedef struct eventhandler_entry	*eventhandler_tag;
 
 #define	EHL_LOCK(p)		mtx_lock(&(p)->el_lock)
 #define	EHL_UNLOCK(p)		mtx_unlock(&(p)->el_lock)
@@ -99,15 +91,12 @@ typedef struct eventhandler_entry	*eventhandler_tag;
  * to pre-define a symbol for the eventhandler list. This symbol can be used by
  * EVENTHANDLER_DIRECT_INVOKE, which has the advantage of not needing to do a
  * locked search of the global list of eventhandler lists. At least
- * EVENTHANDLER_LIST_DEFINE must be be used for EVENTHANDLER_DIRECT_INVOKE to
+ * EVENTHANDLER_LIST_DEFINE must be used for EVENTHANDLER_DIRECT_INVOKE to
  * work. EVENTHANDLER_LIST_DECLARE is only needed if the call to
  * EVENTHANDLER_DIRECT_INVOKE is in a different compilation unit from
  * EVENTHANDLER_LIST_DEFINE. If the events are even relatively high frequency
  * it is suggested that you directly define a list for them.
  */
-#define	EVENTHANDLER_LIST_DECLARE(name)					\
-extern struct eventhandler_list *_eventhandler_list_ ## name		\
-
 #define	EVENTHANDLER_LIST_DEFINE(name)					\
 struct eventhandler_list *_eventhandler_list_ ## name ;			\
 static void _ehl_init_ ## name (void * ctx __unused)			\
@@ -127,18 +116,6 @@ SYSINIT(name ## _ehl_init, SI_SUB_EVENTHANDLER, SI_ORDER_ANY,		\
 		_EVENTHANDLER_INVOKE(name, _el , ## __VA_ARGS__);	\
 	}								\
 } while (0)
-
-/*
- * Event handlers need to be declared, but do not need to be defined. The
- * declaration must be in scope wherever the handler is to be invoked.
- */
-#define EVENTHANDLER_DECLARE(name, type)				\
-struct eventhandler_entry_ ## name 					\
-{									\
-	struct eventhandler_entry	ee;				\
-	type				eh_func;			\
-};									\
-struct __hack
 
 #define EVENTHANDLER_DEFINE(name, func, arg, priority)			\
 	static eventhandler_tag name ## _tag;				\
@@ -315,6 +292,13 @@ typedef void (*ada_probe_veto_fn)(void *, struct cam_path *,
     struct ata_params *, int *);
 EVENTHANDLER_DECLARE(ada_probe_veto, ada_probe_veto_fn);
 
+/* Swap device events */
+struct swdevt;
+typedef void (*swapon_fn)(void *, struct swdevt *);
+typedef void (*swapoff_fn)(void *, struct swdevt *);
+EVENTHANDLER_DECLARE(swapon, swapon_fn);
+EVENTHANDLER_DECLARE(swapoff, swapoff_fn);
+
 /* newbus device events */
 enum evhdev_detach {
 	EVHDEV_DETACH_BEGIN,    /* Before detach() is called */
@@ -325,5 +309,10 @@ typedef void (*device_attach_fn)(void *, device_t);
 typedef void (*device_detach_fn)(void *, device_t, enum evhdev_detach);
 EVENTHANDLER_DECLARE(device_attach, device_attach_fn);
 EVENTHANDLER_DECLARE(device_detach, device_detach_fn);
+
+/* Interface address addition and removal event */
+struct ifaddr;
+typedef void (*rt_addrmsg_fn)(void *, struct ifaddr *, int);
+EVENTHANDLER_DECLARE(rt_addrmsg, rt_addrmsg_fn);
 
 #endif /* _SYS_EVENTHANDLER_H_ */

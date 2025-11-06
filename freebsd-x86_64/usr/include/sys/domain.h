@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)domain.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/11.3/sys/sys/domain.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_DOMAIN_H_
@@ -43,6 +44,7 @@
 struct	mbuf;
 struct	ifnet;
 struct	socket;
+struct	rib_head;
 
 struct domain {
 	int	dom_family;		/* AF_xxx */
@@ -57,10 +59,10 @@ struct domain {
 		(struct socket *);
 	struct	protosw *dom_protosw, *dom_protoswNPROTOSW;
 	struct	domain *dom_next;
-	int	(*dom_rtattach)		/* initialize routing table */
-		(void **, int);
-	int	(*dom_rtdetach)		/* clean up routing table */
-		(void **, int);
+	struct rib_head *(*dom_rtattach)	/* initialize routing table */
+		(uint32_t);
+	void	(*dom_rtdetach)		/* clean up routing table */
+		(struct rib_head *);
 	void	*(*dom_ifattach)(struct ifnet *);
 	void	(*dom_ifdetach)(struct ifnet *, void *);
 	int	(*dom_ifmtu)(struct ifnet *);
@@ -71,6 +73,7 @@ struct domain {
 extern int	domain_init_status;
 extern struct	domain *domains;
 void		domain_add(void *);
+void		domain_remove(void *);
 void		domain_init(void *);
 #ifdef VIMAGE
 void		vnet_domain_init(void *);
@@ -80,6 +83,8 @@ void		vnet_domain_uninit(void *);
 #define	DOMAIN_SET(name)						\
 	SYSINIT(domain_add_ ## name, SI_SUB_PROTO_DOMAIN,		\
 	    SI_ORDER_FIRST, domain_add, & name ## domain);		\
+	SYSUNINIT(domain_remove_ ## name, SI_SUB_PROTO_DOMAIN,		\
+	    SI_ORDER_FIRST, domain_remove, & name ## domain);		\
 	SYSINIT(domain_init_ ## name, SI_SUB_PROTO_DOMAIN,		\
 	    SI_ORDER_SECOND, domain_init, & name ## domain);
 #ifdef VIMAGE

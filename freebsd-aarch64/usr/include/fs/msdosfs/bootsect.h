@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/sys/fs/msdosfs/bootsect.h 318548 2017-05-19 18:13:41Z emaste $ */
 /*	$NetBSD: bootsect.h,v 1.9 1997/11/17 15:36:17 ws Exp $	*/
 
 /*-

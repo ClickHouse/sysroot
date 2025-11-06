@@ -37,8 +37,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_tty.h 184760 2008-11-08 02:05:41Z mav $
  * $Whistle: ng_tty.h,v 1.7 1999/01/20 00:22:15 archie Exp $
  */
 

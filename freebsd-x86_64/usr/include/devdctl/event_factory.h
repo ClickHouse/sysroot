@@ -28,8 +28,6 @@
  * POSSIBILITY OF SUCH DAMAGES.
  *
  * Authors: Justin T. Gibbs     (Spectra Logic Corporation)
- *
- * $FreeBSD: releng/11.3/lib/libdevdctl/event_factory.h 300906 2016-05-28 17:43:40Z asomers $
  */
 
 /**

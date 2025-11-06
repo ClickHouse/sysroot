@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2018 by Delphix. All rights reserved.
  */
 
 #ifndef	_SYS_NVPAIR_H
@@ -29,10 +29,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/errno.h>
-
-#if defined(_KERNEL) && !defined(_BOOT)
-#include <sys/kmem.h>
-#endif
 
 #ifdef	__cplusplus
 extern "C" {
@@ -66,7 +62,7 @@ typedef enum {
 	DATA_TYPE_UINT8,
 	DATA_TYPE_BOOLEAN_ARRAY,
 	DATA_TYPE_INT8_ARRAY,
-#if !defined(_KERNEL)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 	DATA_TYPE_UINT8_ARRAY,
 	DATA_TYPE_DOUBLE
 #else
@@ -132,7 +128,7 @@ typedef struct nv_alloc {
 } nv_alloc_t;
 
 struct nv_alloc_ops {
-	int (*nv_ao_init)(nv_alloc_t *, __va_list);
+	int (*nv_ao_init)(nv_alloc_t *, va_list);
 	void (*nv_ao_fini)(nv_alloc_t *);
 	void *(*nv_ao_alloc)(nv_alloc_t *, size_t);
 	void (*nv_ao_free)(nv_alloc_t *, void *, size_t);
@@ -142,8 +138,9 @@ struct nv_alloc_ops {
 extern const nv_alloc_ops_t *nv_fixed_ops;
 extern nv_alloc_t *nv_alloc_nosleep;
 
-#if defined(_KERNEL) && !defined(_BOOT)
+#if defined(_KERNEL)
 extern nv_alloc_t *nv_alloc_sleep;
+extern nv_alloc_t *nv_alloc_pushpage;
 #endif
 
 int nv_alloc_init(nv_alloc_t *, const nv_alloc_ops_t *, /* args */ ...);
@@ -194,7 +191,7 @@ int nvlist_add_uint64_array(nvlist_t *, const char *, uint64_t *, uint_t);
 int nvlist_add_string_array(nvlist_t *, const char *, char *const *, uint_t);
 int nvlist_add_nvlist_array(nvlist_t *, const char *, nvlist_t **, uint_t);
 int nvlist_add_hrtime(nvlist_t *, const char *, hrtime_t);
-#if !defined(_KERNEL)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 int nvlist_add_double(nvlist_t *, const char *, double);
 #endif
 
@@ -231,7 +228,7 @@ int nvlist_lookup_nvlist_array(nvlist_t *, const char *,
     nvlist_t ***, uint_t *);
 int nvlist_lookup_hrtime(nvlist_t *, const char *, hrtime_t *);
 int nvlist_lookup_pairs(nvlist_t *, int, ...);
-#if !defined(_KERNEL)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 int nvlist_lookup_double(nvlist_t *, const char *, double *);
 #endif
 
@@ -272,7 +269,7 @@ int nvpair_value_uint64_array(nvpair_t *, uint64_t **, uint_t *);
 int nvpair_value_string_array(nvpair_t *, char ***, uint_t *);
 int nvpair_value_nvlist_array(nvpair_t *, nvlist_t ***, uint_t *);
 int nvpair_value_hrtime(nvpair_t *, hrtime_t *);
-#if !defined(_KERNEL)
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 int nvpair_value_double(nvpair_t *, double *);
 #endif
 
@@ -316,20 +313,30 @@ void fnvlist_add_nvlist_array(nvlist_t *, const char *, nvlist_t **, uint_t);
 void fnvlist_remove(nvlist_t *, const char *);
 void fnvlist_remove_nvpair(nvlist_t *, nvpair_t *);
 
-nvpair_t *fnvlist_lookup_nvpair(nvlist_t *nvl, const char *name);
-boolean_t fnvlist_lookup_boolean(nvlist_t *nvl, const char *name);
-boolean_t fnvlist_lookup_boolean_value(nvlist_t *nvl, const char *name);
-uchar_t fnvlist_lookup_byte(nvlist_t *nvl, const char *name);
-int8_t fnvlist_lookup_int8(nvlist_t *nvl, const char *name);
-int16_t fnvlist_lookup_int16(nvlist_t *nvl, const char *name);
-int32_t fnvlist_lookup_int32(nvlist_t *nvl, const char *name);
-int64_t fnvlist_lookup_int64(nvlist_t *nvl, const char *name);
-uint8_t fnvlist_lookup_uint8_t(nvlist_t *nvl, const char *name);
-uint16_t fnvlist_lookup_uint16(nvlist_t *nvl, const char *name);
-uint32_t fnvlist_lookup_uint32(nvlist_t *nvl, const char *name);
-uint64_t fnvlist_lookup_uint64(nvlist_t *nvl, const char *name);
-char *fnvlist_lookup_string(nvlist_t *nvl, const char *name);
-nvlist_t *fnvlist_lookup_nvlist(nvlist_t *nvl, const char *name);
+nvpair_t *fnvlist_lookup_nvpair(nvlist_t *, const char *);
+boolean_t fnvlist_lookup_boolean(nvlist_t *, const char *);
+boolean_t fnvlist_lookup_boolean_value(nvlist_t *, const char *);
+uchar_t fnvlist_lookup_byte(nvlist_t *, const char *);
+int8_t fnvlist_lookup_int8(nvlist_t *, const char *);
+int16_t fnvlist_lookup_int16(nvlist_t *, const char *);
+int32_t fnvlist_lookup_int32(nvlist_t *, const char *);
+int64_t fnvlist_lookup_int64(nvlist_t *, const char *);
+uint8_t fnvlist_lookup_uint8(nvlist_t *, const char *);
+uint16_t fnvlist_lookup_uint16(nvlist_t *, const char *);
+uint32_t fnvlist_lookup_uint32(nvlist_t *, const char *);
+uint64_t fnvlist_lookup_uint64(nvlist_t *, const char *);
+char *fnvlist_lookup_string(nvlist_t *, const char *);
+nvlist_t *fnvlist_lookup_nvlist(nvlist_t *, const char *);
+boolean_t *fnvlist_lookup_boolean_array(nvlist_t *, const char *, uint_t *);
+uchar_t *fnvlist_lookup_byte_array(nvlist_t *, const char *, uint_t *);
+int8_t *fnvlist_lookup_int8_array(nvlist_t *, const char *, uint_t *);
+uint8_t *fnvlist_lookup_uint8_array(nvlist_t *, const char *, uint_t *);
+int16_t *fnvlist_lookup_int16_array(nvlist_t *, const char *, uint_t *);
+uint16_t *fnvlist_lookup_uint16_array(nvlist_t *, const char *, uint_t *);
+int32_t *fnvlist_lookup_int32_array(nvlist_t *, const char *, uint_t *);
+uint32_t *fnvlist_lookup_uint32_array(nvlist_t *, const char *, uint_t *);
+int64_t *fnvlist_lookup_int64_array(nvlist_t *, const char *, uint_t *);
+uint64_t *fnvlist_lookup_uint64_array(nvlist_t *, const char *, uint_t *);
 
 boolean_t fnvpair_value_boolean_value(nvpair_t *nvp);
 uchar_t fnvpair_value_byte(nvpair_t *nvp);
@@ -337,7 +344,7 @@ int8_t fnvpair_value_int8(nvpair_t *nvp);
 int16_t fnvpair_value_int16(nvpair_t *nvp);
 int32_t fnvpair_value_int32(nvpair_t *nvp);
 int64_t fnvpair_value_int64(nvpair_t *nvp);
-uint8_t fnvpair_value_uint8_t(nvpair_t *nvp);
+uint8_t fnvpair_value_uint8(nvpair_t *nvp);
 uint16_t fnvpair_value_uint16(nvpair_t *nvp);
 uint32_t fnvpair_value_uint32(nvpair_t *nvp);
 uint64_t fnvpair_value_uint64(nvpair_t *nvp);

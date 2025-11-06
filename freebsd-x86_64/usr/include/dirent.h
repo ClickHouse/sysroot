@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)dirent.h	8.2 (Berkeley) 7/28/94
- * $FreeBSD: releng/11.3/include/dirent.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _DIRENT_H_
@@ -40,6 +41,25 @@
 #include <sys/cdefs.h>
 #include <sys/_types.h>
 #include <sys/dirent.h>
+
+#if __BSD_VISIBLE
+
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
+#endif
+
+#ifndef _SSIZE_T_DECLARED
+typedef	__ssize_t	ssize_t;
+#define	_SSIZE_T_DECLARED
+#endif
+
+#ifndef _OFF_T_DECLARED
+typedef	__off_t		off_t;
+#define	_OFF_T_DECLARED
+#endif
+
+#endif /* __BSD_VISIBLE */
 
 #if __XSI_VISIBLE
 
@@ -87,10 +107,11 @@ int	 alphasort(const struct dirent **, const struct dirent **);
 int	 dirfd(DIR *);
 #endif
 #if __BSD_VISIBLE
+int	 versionsort(const struct dirent **, const struct dirent **);
 DIR	*__opendir2(const char *, int);
 int	 fdclosedir(DIR *);
-int	 getdents(int, char *, int);
-int	 getdirentries(int, char *, int, long *);
+ssize_t	 getdents(int, char *, size_t);
+ssize_t	 getdirentries(int, char *, size_t, off_t *);
 #endif
 DIR	*opendir(const char *);
 DIR	*fdopendir(int);
@@ -109,6 +130,11 @@ int	 scandir_b(const char *, struct dirent ***,
 	    int (^)(const struct dirent *),
 	    int (^)(const struct dirent **, const struct dirent **));
 #endif
+#endif
+#if __BSD_VISIBLE
+int	 scandirat(int, const char *, struct dirent ***,
+	    int (*)(const struct dirent *), int (*)(const struct dirent **,
+	    const struct dirent **));
 #endif
 #if __XSI_VISIBLE
 void	 seekdir(DIR *, long);

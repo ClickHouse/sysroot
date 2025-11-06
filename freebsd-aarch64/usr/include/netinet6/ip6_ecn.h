@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	$KAME: ip_ecn.h,v 1.5 2000/03/27 04:58:38 sumikawa Exp $
- * $FreeBSD: releng/12.2/sys/netinet6/ip6_ecn.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 /*

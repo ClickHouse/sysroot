@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 2002 Mike Barcroft <mike@FreeBSD.org>
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,7 +35,6 @@
  *
  *	From: @(#)ansi.h	8.2 (Berkeley) 1/4/94
  *	From: @(#)types.h	8.3 (Berkeley) 1/5/94
- * $FreeBSD: releng/11.3/sys/x86/include/_types.h 332135 2018-04-06 19:17:59Z kevans $
  */
 
 #ifndef _MACHINE__TYPES_H_
@@ -60,15 +61,9 @@ typedef	unsigned int		__uint32_t;
 typedef	long			__int64_t;
 typedef	unsigned long		__uint64_t;
 #else
-#ifndef lint
 __extension__
-#endif
-/* LONGLONG */
 typedef	long long		__int64_t;
-#ifndef lint
 __extension__
-#endif
-/* LONGLONG */
 typedef	unsigned long long	__uint64_t;
 #endif
 
@@ -139,38 +134,12 @@ typedef	__uint64_t	__vm_size_t;
 #else
 typedef	__uint32_t	__u_register_t;
 typedef	__uint32_t	__vm_offset_t;
-#ifdef PAE
 typedef	__uint64_t	__vm_paddr_t;
-#else
-typedef	__uint32_t	__vm_paddr_t;
-#endif
 typedef	__uint32_t	__vm_size_t;
 #endif
 typedef	int		___wchar_t;
 
 #define	__WCHAR_MIN	__INT_MIN	/* min value for a wchar_t */
 #define	__WCHAR_MAX	__INT_MAX	/* max value for a wchar_t */
-
-/*
- * Unusual type definitions.
- */
-#ifdef __GNUCLIKE_BUILTIN_VARARGS
-typedef	__builtin_va_list	__va_list;	/* internally known to gcc */
-#else
-#ifdef __LP64__
-struct __s_va_list {
-	__uint32_t	_pad1[2];	/* gp_offset, fp_offset */
-	__uint64_t	_pad2[2];	/* overflow_arg_area, reg_save_area */
-};
-typedef	struct __s_va_list	__va_list;
-#else
-typedef	char *			__va_list;
-#endif
-#endif
-#if defined(__GNUC_VA_LIST_COMPATIBILITY) && !defined(__GNUC_VA_LIST) \
-    && !defined(__NO_GNUC_VA_LIST)
-#define __GNUC_VA_LIST
-typedef __va_list		__gnuc_va_list;	/* compatibility w/GNU headers*/
-#endif
 
 #endif /* !_MACHINE__TYPES_H_ */

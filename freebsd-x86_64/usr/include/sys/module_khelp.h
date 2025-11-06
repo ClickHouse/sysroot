@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2010 Lawrence Stewart <lstewart@freebsd.org>
  * Copyright (c) 2010 The FreeBSD Foundation
  * All rights reserved.
@@ -32,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/module_khelp.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_MODULE_KHELP_H_
@@ -85,7 +85,7 @@ struct khelp_modevent_data {
 		.evhand = khelp_modevent,				\
 		.priv = &kmd_##hname					\
 	};								\
-	DECLARE_MODULE(hname, h_##hname, SI_SUB_KLD, SI_ORDER_ANY);	\
+	DECLARE_MODULE(hname, h_##hname, SI_SUB_KHELP, SI_ORDER_ANY);	\
 	MODULE_VERSION(hname, version)
 
 #define	KHELP_DECLARE_MOD(hname, hdata, hhooks, version)		\

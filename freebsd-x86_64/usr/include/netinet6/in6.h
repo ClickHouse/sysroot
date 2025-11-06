@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
@@ -41,7 +43,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -58,7 +60,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)in.h	8.3 (Berkeley) 1/3/94
- * $FreeBSD: releng/11.3/sys/netinet6/in6.h 337799 2018-08-14 18:10:25Z jtl $
  */
 
 #ifndef __KAME_NETINET_IN_H_INCLUDED_
@@ -101,7 +102,7 @@ struct in6_addr {
 };
 
 #define s6_addr   __u6_addr.__u6_addr8
-#ifdef _KERNEL	/* XXX nonstandard */
+#if defined(_KERNEL) || defined(_STANDALONE) /* XXX nonstandard */
 #define s6_addr8  __u6_addr.__u6_addr8
 #define s6_addr16 __u6_addr.__u6_addr16
 #define s6_addr32 __u6_addr.__u6_addr32
@@ -217,18 +218,10 @@ extern const struct in6_addr in6addr_linklocal_allv2routers;
 
 /*
  * Equality
- * NOTE: Some of kernel programming environment (for example, openbsd/sparc)
- * does not supply memcmp().  For userland memcmp() is preferred as it is
- * in ANSI standard.
  */
-#ifdef _KERNEL
-#define IN6_ARE_ADDR_EQUAL(a, b)			\
-    (bcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
-#else
 #if __BSD_VISIBLE
 #define IN6_ARE_ADDR_EQUAL(a, b)			\
     (memcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
-#endif
 #endif
 
 /*
@@ -373,8 +366,9 @@ extern const struct in6_addr in6addr_linklocal_allv2routers;
  * IP6 route structure
  */
 #if __BSD_VISIBLE
+struct nhop_object;
 struct route_in6 {
-	struct	rtentry *ro_rt;
+	struct nhop_object *ro_nh;
 	struct	llentry *ro_lle;
 	/*
 	 * ro_prepend and ro_plen are only used for bpf to pass in a
@@ -497,6 +491,9 @@ struct route_in6 {
 #define	IPV6_RECVFLOWID		70 /* bool; receive IP6 flowid/flowtype w/ datagram */
 #define	IPV6_RECVRSSBUCKETID	71 /* bool; receive IP6 RSS bucket id w/ datagram */
 
+#define	IPV6_ORIGDSTADDR	72 /* bool: allow getting dstaddr /port info */
+#define	IPV6_RECVORIGDSTADDR	IPV6_ORIGDSTADDR
+
 /*
  * The following option is private; do not use it from user applications.
  * It is deliberately defined to the same value as IP_MSFILTER.
@@ -504,6 +501,10 @@ struct route_in6 {
 #define	IPV6_MSFILTER		74 /* struct __msfilterreq;
 				    * set/get multicast source filter list.
 				    */
+
+/* The following option deals with the 802.1Q Ethernet Priority Code Point */
+#define	IPV6_VLAN_PCP		75  /* int; set/get PCP used for packet, */
+				    /*      -1 use interface default */
 
 /* to define items, should talk with KAME guys first, for *BSD compatibility */
 
@@ -518,11 +519,8 @@ struct route_in6 {
 #define IPV6_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member */
 
 /*
- * The im6o_membership vector for each socket is now dynamically allocated at
- * run-time, bounded by USHRT_MAX, and is reallocated when needed, sized
- * according to a power-of-two increment.
+ * Limit for IPv6 multicast memberships
  */
-#define	IPV6_MIN_MEMBERSHIPS	31
 #define	IPV6_MAX_MEMBERSHIPS	4095
 
 /*
@@ -661,10 +659,10 @@ struct ip6_mtuinfo {
 struct cmsghdr;
 struct ip6_hdr;
 
+int	in6_cksum(struct mbuf *, uint8_t, uint32_t, uint32_t);
+int	in6_cksum_partial(struct mbuf *, uint8_t, uint32_t, uint32_t, uint32_t);
 int	in6_cksum_pseudo(struct ip6_hdr *, uint32_t, uint8_t, uint16_t);
-int	in6_cksum(struct mbuf *, u_int8_t, u_int32_t, u_int32_t);
-int	in6_cksum_partial(struct mbuf *, u_int8_t, u_int32_t, u_int32_t,
-			  u_int32_t);
+
 int	in6_localaddr(struct in6_addr *);
 int	in6_localip(struct in6_addr *);
 int	in6_ifhasaddr(struct ifnet *, struct in6_addr *);

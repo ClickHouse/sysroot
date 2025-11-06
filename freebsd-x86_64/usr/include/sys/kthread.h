@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1999 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/kthread.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_KTHREAD_H_
@@ -58,7 +58,7 @@ void	kproc_start(const void *);
 int	kproc_suspend(struct proc *, int);
 void	kproc_suspend_check(struct proc *);
 
-/* create a thread inthe given process. create the process if needed */
+/* create a thread in the given process. create the process if needed */
 int     kproc_kthread_add(void (*)(void *), void *,
 	    struct proc **,
 	    struct thread **,
@@ -74,6 +74,5 @@ void	kthread_shutdown(void *, int);
 void	kthread_start(const void *);
 int	kthread_suspend(struct thread *, int);
 void	kthread_suspend_check(void);
-
 
 #endif /* !_SYS_KTHREAD_H_ */

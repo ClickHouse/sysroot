@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)syslimits.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/11.3/sys/sys/syslimits.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_SYSLIMITS_H_
@@ -46,11 +47,14 @@
  * Do not add any new variables here.  (See the comment at the end of
  * the file for why.)
  */
-#define	ARG_MAX			262144	/* max bytes for an exec function */
+#ifndef __ILP32__
+#define	ARG_MAX	      (2 * 256 * 1024)	/* max bytes for an exec function */
+#else
+#define	ARG_MAX		  (256 * 1024)	/* max bytes for KVA-starved archs */
+#endif
 #ifndef CHILD_MAX
 #define	CHILD_MAX		   40	/* max simultaneous processes */
 #endif
-#define	LINK_MAX		32767	/* max file link count */
 #define	MAX_CANON		  255	/* max bytes in term canon input line */
 #define	MAX_INPUT		  255	/* max bytes in terminal input */
 #define	NAME_MAX		  255	/* max bytes in a file name */

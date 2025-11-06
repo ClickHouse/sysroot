@@ -1,5 +1,6 @@
-/*	$FreeBSD: releng/11.3/include/rpc/auth_kerb.h 331722 2018-03-29 02:50:57Z eadler $ */
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2009, Sun Microsystems, Inc.
  * All rights reserved.
  *

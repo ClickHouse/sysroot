@@ -293,7 +293,7 @@ ASN1EXP void   ASN1CALL free_DigestResponse  (DigestResponse *);
 
 /*
 NTLMInit ::= SEQUENCE {
-  flags           [0] INTEGER (0..-1),
+  flags           [0] INTEGER (0..4294967295),
   hostname        [1]   UTF8String OPTIONAL,
   domain          [1]   UTF8String OPTIONAL,
 }
@@ -314,7 +314,7 @@ ASN1EXP void   ASN1CALL free_NTLMInit  (NTLMInit *);
 
 /*
 NTLMInitReply ::= SEQUENCE {
-  flags           [0] INTEGER (0..-1),
+  flags           [0] INTEGER (0..4294967295),
   opaque          [1] OCTET STRING,
   targetname      [2]   UTF8String,
   challange       [3] OCTET STRING,
@@ -339,7 +339,7 @@ ASN1EXP void   ASN1CALL free_NTLMInitReply  (NTLMInitReply *);
 
 /*
 NTLMRequest ::= SEQUENCE {
-  flags           [0] INTEGER (0..-1),
+  flags           [0] INTEGER (0..4294967295),
   opaque          [1] OCTET STRING,
   username        [2]   UTF8String,
   targetname      [3]   UTF8String,
@@ -371,7 +371,7 @@ ASN1EXP void   ASN1CALL free_NTLMRequest  (NTLMRequest *);
 /*
 NTLMResponse ::= SEQUENCE {
   success         [0] BOOLEAN,
-  flags           [1] INTEGER (0..-1),
+  flags           [1] INTEGER (0..4294967295),
   sessionkey      [2] OCTET STRING OPTIONAL,
   tickets         [3] SEQUENCE OF OCTET STRING OPTIONAL,
 }
@@ -398,7 +398,7 @@ ASN1EXP void   ASN1CALL free_NTLMResponse  (NTLMResponse *);
 NTLMRequest2 ::= SEQUENCE {
   loginUserName         [0]   UTF8String,
   loginDomainName       [1]   UTF8String,
-  flags                 [2] INTEGER (0..-1),
+  flags                 [2] INTEGER (0..4294967295),
   lmchallenge           [3] OCTET STRING,
   ntChallengeResponce   [4] OCTET STRING,
   lmChallengeResponce   [5] OCTET STRING,
@@ -424,7 +424,7 @@ ASN1EXP void   ASN1CALL free_NTLMRequest2  (NTLMRequest2 *);
 /*
 NTLMReply ::= SEQUENCE {
   success         [0] BOOLEAN,
-  flags           [1] INTEGER (0..-1),
+  flags           [1] INTEGER (0..4294967295),
   sessionkey      [2] OCTET STRING OPTIONAL,
 }
 */

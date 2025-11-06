@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/keysock.h 330771 2018-03-11 18:03:55Z ae $	*/
 /*	$KAME: keysock.h,v 1.8 2000/03/27 05:11:06 sumikawa Exp $	*/
 
 /*-

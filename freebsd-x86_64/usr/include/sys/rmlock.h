@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2007 Stephan Uphoff <ups@FreeBSD.org>
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/rmlock.h 343420 2019-01-25 11:01:11Z kib $
  */
 
 #ifndef _SYS_RMLOCK_H_
@@ -46,6 +46,7 @@
 #define	RM_RECURSE	0x00000002
 #define	RM_SLEEPABLE	0x00000004
 #define	RM_NEW		0x00000008
+#define	RM_DUPOK	0x00000010
 
 void	rm_init(struct rmlock *rm, const char *name);
 void	rm_init_flags(struct rmlock *rm, const char *name, int opts);
@@ -129,6 +130,47 @@ struct rm_args {
 #define	rm_assert(rm, what)	_rm_assert((rm), (what), LOCK_FILE, LOCK_LINE)
 #else
 #define	rm_assert(rm, what)
+#endif
+
+void	rms_init(struct rmslock *rms, const char *name);
+void	rms_destroy(struct rmslock *rms);
+void	rms_rlock(struct rmslock *rms);
+int	rms_try_rlock(struct rmslock *rms);
+void	rms_runlock(struct rmslock *rms);
+void	rms_wlock(struct rmslock *rms);
+void	rms_wunlock(struct rmslock *rms);
+void	rms_unlock(struct rmslock *rms);
+
+static inline int
+rms_wowned(struct rmslock *rms)
+{
+
+	return (rms->owner == curthread);
+}
+
+#ifdef INVARIANTS
+/*
+ * For assertion purposes.
+ *
+ * Main limitation is that we at best can tell there are readers, but not
+ * whether curthread is one of them.
+ */
+static inline int
+rms_rowned(struct rmslock *rms)
+{
+
+	return (rms->debug_readers > 0);
+}
+
+static inline int
+rms_owned_any(struct rmslock *rms)
+{
+
+	if (rms_wowned(rms))
+		return (1);
+
+	return (rms_rowned(rms));
+}
 #endif
 
 #endif /* _KERNEL */

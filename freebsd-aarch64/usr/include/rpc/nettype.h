@@ -1,5 +1,4 @@
 /*	$NetBSD: nettype.h,v 1.2 2000/07/06 03:17:19 christos Exp $	*/
-/*	$FreeBSD: releng/12.2/include/rpc/nettype.h 326024 2017-11-20 19:45:28Z pfg $ */
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause

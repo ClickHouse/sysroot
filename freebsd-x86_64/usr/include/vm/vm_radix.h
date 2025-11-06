@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2013 EMC Corp.
  * Copyright (c) 2011 Jeffrey Roberson <jeff@freebsd.org>
  * Copyright (c) 2008 Mayur Shardul <mayur.shardul@gmail.com>
@@ -24,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/vm/vm_radix.h 327785 2018-01-10 20:39:26Z markj $
  */
 
 #ifndef _VM_RADIX_H_
@@ -41,6 +41,7 @@ boolean_t	vm_radix_is_singleton(struct vm_radix *rtree);
 vm_page_t	vm_radix_lookup(struct vm_radix *rtree, vm_pindex_t index);
 vm_page_t	vm_radix_lookup_ge(struct vm_radix *rtree, vm_pindex_t index);
 vm_page_t	vm_radix_lookup_le(struct vm_radix *rtree, vm_pindex_t index);
+vm_page_t	vm_radix_lookup_unlocked(struct vm_radix *rtree, vm_pindex_t index);
 void		vm_radix_reclaim_allnodes(struct vm_radix *rtree);
 vm_page_t	vm_radix_remove(struct vm_radix *rtree, vm_pindex_t index);
 vm_page_t	vm_radix_replace(struct vm_radix *rtree, vm_page_t newpage);

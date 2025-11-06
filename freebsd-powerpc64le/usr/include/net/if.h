@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)if.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD$
  */
 
 #ifndef _NET_IF_H_
@@ -163,6 +162,7 @@ struct if_data {
 #define	IFF_DYING	0x200000	/* (n) interface is winding down */
 #define	IFF_RENAMING	0x400000	/* (n) interface is being renamed */
 #define	IFF_NOGROUP	0x800000	/* (n) interface is not part of any groups */
+#define	IFF_NETLINK_1	0x1000000	/* (n) used by netlink */
 
 /*
  * Old names for driver flags so that user space tools can continue to use
@@ -245,7 +245,7 @@ struct if_data {
 #define	IFCAP_HWSTATS		0x800000 /* manages counters internally */
 #define	IFCAP_TXRTLMT		0x1000000 /* hardware supports TX rate limiting */
 #define	IFCAP_HWRXTSTMP		0x2000000 /* hardware rx timestamping */
-#define	IFCAP_NOMAP		0x4000000 /* can TX unmapped mbufs */
+#define	IFCAP_MEXTPG		0x4000000 /* understands M_EXTPG mbufs */
 #define	IFCAP_TXTLS4		0x8000000 /* can do TLS encryption and segmentation for TCP */
 #define	IFCAP_TXTLS6		0x10000000 /* can do TLS encryption and segmentation for TCP6 */
 #define	IFCAP_VXLAN_HWCSUM	0x20000000 /* can do IFCAN_HWCSUM on VXLANs */
@@ -286,7 +286,7 @@ struct if_msghdr {
  * extensible after ifm_data_off or within ifm_data.  Both the if_msghdr and
  * if_data now have a member field detailing the struct length in addition to
  * the routing message length.  Macros are provided to find the start of
- * ifm_data and the start of the socket address strucutres immediately following
+ * ifm_data and the start of the socket address structures immediately following
  * struct if_msghdrl given a pointer to struct if_msghdrl.
  */
 #define	IF_MSGHDRL_IFM_DATA(_l) \
@@ -328,7 +328,7 @@ struct ifa_msghdr {
  * extensible after ifam_metric or within ifam_data.  Both the ifa_msghdrl and
  * if_data now have a member field detailing the struct length in addition to
  * the routing message length.  Macros are provided to find the start of
- * ifm_data and the start of the socket address strucutres immediately following
+ * ifm_data and the start of the socket address structures immediately following
  * struct ifa_msghdrl given a pointer to struct ifa_msghdrl.
  */
 #define	IFA_MSGHDRL_IFAM_DATA(_l) \
@@ -530,10 +530,8 @@ struct ifgroupreq {
 		char	ifgru_group[IFNAMSIZ];
 		struct	ifg_req *ifgru_groups;
 	} ifgr_ifgru;
-#ifndef _KERNEL
 #define ifgr_group	ifgr_ifgru.ifgru_group
 #define ifgr_groups	ifgr_ifgru.ifgru_groups
-#endif
 };
 
 /*

@@ -1,6 +1,5 @@
 /*-
  * Copyright (c) 2016 The FreeBSD Foundation
- * All rights reserved.
  *
  * This software was developed by Konstantin Belousov <kib@FreeBSD.org>
  * under sponsorship from the FreeBSD Foundation.
@@ -25,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/amd64/include/efi.h 338592 2018-09-11 18:31:57Z kib $
  */
 
 #ifndef __AMD64_INCLUDE_EFI_H_
@@ -47,10 +44,33 @@
 
 #ifdef _KERNEL
 #include <isa/rtc.h>
+#define ARCH_MAY_USE_EFI
 
 #define	EFI_TIME_LOCK()		mtx_lock(&atrtc_time_lock)
 #define	EFI_TIME_UNLOCK()	mtx_unlock(&atrtc_time_lock)
 #define	EFI_TIME_OWNED()	mtx_assert(&atrtc_time_lock, MA_OWNED)
+
+#define	EFI_RT_HANDLE_FAULTS_DEFAULT	1
 #endif
+
+struct efirt_callinfo {
+	const char	*ec_name;
+	register_t	ec_efi_status;
+	register_t	ec_fptr;
+	register_t	ec_argcnt;
+	register_t	ec_arg1;
+	register_t	ec_arg2;
+	register_t	ec_arg3;
+	register_t	ec_arg4;
+	register_t	ec_arg5;
+	register_t	ec_rbx;
+	register_t	ec_rsp;
+	register_t	ec_rbp;
+	register_t	ec_r12;
+	register_t	ec_r13;
+	register_t	ec_r14;
+	register_t	ec_r15;
+	register_t	ec_rflags;
+};
 
 #endif /* __AMD64_INCLUDE_EFI_H_ */

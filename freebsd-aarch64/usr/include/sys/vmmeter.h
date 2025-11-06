@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)vmmeter.h	8.2 (Berkeley) 7/10/94
- * $FreeBSD: releng/12.2/sys/sys/vmmeter.h 361350 2020-05-21 22:47:39Z markj $
  */
 
 #ifndef _SYS_VMMETER_H_

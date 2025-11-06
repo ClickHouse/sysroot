@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2010, David Xu <davidxu@freebsd.org>
  * All rights reserved.
  *
@@ -23,8 +25,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD: releng/11.3/sys/sys/_umtx.h 331722 2018-03-29 02:50:57Z eadler $
- *
  */
 
 #ifndef _SYS__UMTX_H_
@@ -32,6 +32,10 @@
 
 #include <sys/_types.h>
 #include <sys/_timespec.h>
+
+struct umtx {
+	volatile unsigned long	u_owner;	/* Owner of the mutex. */
+};
 
 struct umutex {
 	volatile __lwpid_t	m_owner;	/* Owner of the mutex */

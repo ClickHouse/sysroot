@@ -1,7 +1,9 @@
 /*-
- * Copyright (c) 2018 Netflix
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2014 Roger Pau Monné <roger.pau@citrix.com>
  * All rights reserved.
+ * Copyright (c) 2018 Netflix, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,12 +25,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/boot.h 344378 2019-02-20 19:19:24Z kevans $
  */
 
 #ifndef _SYS_BOOT_H_
 #define _SYS_BOOT_H_
+
+#define PATH_KERNEL	"/boot/kernel/kernel"
 
 int boot_env_to_howto(void);
 void boot_howto_to_env(int howto);

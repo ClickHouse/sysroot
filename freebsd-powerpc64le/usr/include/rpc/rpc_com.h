@@ -1,5 +1,4 @@
 /*	$NetBSD: rpc_com.h,v 1.3 2000/12/10 04:10:08 christos Exp $	*/
-/*	$FreeBSD$ */
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
@@ -59,7 +58,6 @@
 
 __BEGIN_DECLS
 extern u_int __rpc_get_a_size(int);
-extern int __rpc_dtbsize(void);
 extern int _rpc_dtablesize(void);
 extern struct netconfig * __rpcgettp(int);
 extern  int  __rpc_get_default_domain(char **);

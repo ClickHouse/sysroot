@@ -31,8 +31,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: releng/12.2/include/timers.h 326192 2017-11-25 17:09:43Z pfg $
- *
  * Description : Basic timers header.
  *
  *  1.00 94/06/13 proven

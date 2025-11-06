@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/geom/geom_flashmap.h 346559 2019-04-22 15:09:47Z ian $
  */
 
 #ifndef _GEOM_GEOM_FLASHMAP_H_
@@ -36,4 +34,3 @@ struct g_flashmap {
 };
 
 #endif
-

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
@@ -39,7 +41,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -56,7 +58,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tcp_var.h	8.4 (Berkeley) 5/24/95
- * $FreeBSD: releng/11.3/sys/netinet6/tcp6_var.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NETINET_TCP6_VAR_H_
@@ -72,9 +73,10 @@ VNET_DECLARE(int, tcp_v6mssdflt);	/* XXX */
 
 struct	ip6_hdr;
 void	tcp6_ctlinput(int, struct sockaddr *, void *);
+void 	tcp6_ctlinput_viaudp(int, struct sockaddr *, void *, void *);
 void	tcp6_init(void);
 int	tcp6_input(struct mbuf **, int *, int);
-struct	rtentry *tcp_rtlookup6(struct in_conninfo *);
+int	tcp6_input_with_port(struct mbuf **, int *, int, uint16_t);
 
 extern struct	pr_usrreqs tcp6_usrreqs;
 

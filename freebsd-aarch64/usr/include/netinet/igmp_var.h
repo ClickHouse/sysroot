@@ -33,7 +33,6 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)igmp_var.h	8.1 (Berkeley) 7/19/93
- * $FreeBSD: releng/12.2/sys/netinet/igmp_var.h 333175 2018-05-02 19:36:29Z shurd $
  */
 
 #ifndef _NETINET_IGMP_VAR_H_
@@ -54,6 +53,7 @@
 struct igmpstat {
 	/*
 	 * Structure header (to insulate ABI changes).
+	 * XXX: unset inside the kernel, exported via sysctl_igmp_stat().
 	 */
 	uint32_t igps_version;		/* version of this structure */
 	uint32_t igps_len;		/* length of this structure */
@@ -184,8 +184,12 @@ struct igmp_ifinfo {
 };
 
 #ifdef _KERNEL
-#define	IGMPSTAT_ADD(name, val)		V_igmpstat.name += (val)
-#define	IGMPSTAT_INC(name)		IGMPSTAT_ADD(name, 1)
+#include <sys/counter.h>
+
+VNET_PCPUSTAT_DECLARE(struct igmpstat, igmpstat);
+#define	IGMPSTAT_ADD(name, val)	\
+    VNET_PCPUSTAT_ADD(struct igmpstat, igmpstat, name, (val))
+#define	IGMPSTAT_INC(name)	IGMPSTAT_ADD(name, 1)
 
 /*
  * Subsystem lock macros.

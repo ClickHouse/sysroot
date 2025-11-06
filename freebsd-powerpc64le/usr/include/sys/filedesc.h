@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)filedesc.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD$
  */
 
 #ifndef _SYS_FILEDESC_H_
@@ -214,6 +213,7 @@ enum {
 #define	falloc(td, resultfp, resultfd, flags) \
 	falloc_caps(td, resultfp, resultfd, flags, NULL)
 
+struct mount;
 struct thread;
 
 static __inline void
@@ -230,6 +230,7 @@ void	filecaps_free(struct filecaps *fcaps);
 
 int	closef(struct file *fp, struct thread *td);
 void	closef_nothread(struct file *fp);
+int	descrip_check_write_mp(struct filedesc *fdp, struct mount *mp);
 int	dupfdopen(struct thread *td, struct filedesc *fdp, int dfd, int mode,
 	    int openerror, int *indxp);
 int	falloc_caps(struct thread *td, struct file **resultfp, int *resultfd,
@@ -263,7 +264,12 @@ struct	filedesc *fdshare(struct filedesc *fdp);
 struct filedesc_to_leader *
 	filedesc_to_leader_alloc(struct filedesc_to_leader *old,
 	    struct filedesc *fdp, struct proc *leader);
+struct filedesc_to_leader *
+	filedesc_to_leader_share(struct filedesc_to_leader *fdtol,
+	    struct filedesc *fdp);
 int	getvnode(struct thread *td, int fd, cap_rights_t *rightsp,
+	    struct file **fpp);
+int	getvnode_path(struct thread *td, int fd, cap_rights_t *rightsp,
 	    struct file **fpp);
 void	mountcheckdirs(struct vnode *olddp, struct vnode *newdp);
 
@@ -271,10 +277,7 @@ int	fget_cap_locked(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
 	    struct file **fpp, struct filecaps *havecapsp);
 int	fget_cap(struct thread *td, int fd, cap_rights_t *needrightsp,
 	    struct file **fpp, struct filecaps *havecapsp);
-
 /* Return a referenced file from an unlocked descriptor. */
-int	fget_unlocked_seq(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
-	    struct file **fpp, seqc_t *seqp);
 int	fget_unlocked(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
 	    struct file **fpp);
 /* Return a file pointer without a ref. FILEDESC_IS_ONLY_USER must be true.  */
@@ -339,6 +342,7 @@ void	pwd_set_rootvnode(void);
 
 struct pwd *pwd_hold_pwddesc(struct pwddesc *pdp);
 bool	pwd_hold_smr(struct pwd *pwd);
+struct pwd *pwd_hold_proc(struct proc *p);
 struct pwd *pwd_hold(struct thread *td);
 void	pwd_drop(struct pwd *pwd);
 static inline void

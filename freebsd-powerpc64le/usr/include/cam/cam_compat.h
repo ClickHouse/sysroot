@@ -1,7 +1,7 @@
 /*-
  * CAM ioctl compatibility shims
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Scott Long
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _CAM_CAM_COMPAT_H
@@ -219,6 +217,13 @@ struct dev_match_result_0x18 {
 
 #define	CAMIOCOMMAND_0x18	_IOC(IOC_INOUT, CAM_VERSION_0x18, 2, CAM_0X18_LEN)
 #define CAMGETPASSTHRU_0x18	_IOC(IOC_INOUT, CAM_VERSION_0x18, 3, CAM_0X18_LEN)
+
+/* Version 0x19 compatibility */
+#define CAM_VERSION_0x19	0x19
+#define CAMIOCOMMAND_0x19	_IOWR(CAM_VERSION_0x19, 2, union ccb)
+#define CAMGETPASSTHRU_0x19	_IOWR(CAM_VERSION_0x19, 3, union ccb)
+#define CAMIOQUEUE_0x19		_IO(CAM_VERSION_0x19, 4)
+#define CAMIOGET_0x19		_IO(CAM_VERSION_0x19, 5)
 
 #endif
 #endif

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2011 NetApp, Inc.
  * All rights reserved.
  *
@@ -22,12 +24,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/amd64/include/vmm_dev.h 348201 2019-05-23 21:23:18Z rgrimes $
  */
 
 #ifndef	_VMM_DEV_H_
 #define	_VMM_DEV_H_
+
+struct vm_snapshot_meta;
 
 #ifdef _KERNEL
 void	vmmdev_init(void);
@@ -45,12 +47,24 @@ struct vm_memmap {
 #define	VM_MEMMAP_F_WIRED	0x01
 #define	VM_MEMMAP_F_IOMMU	0x02
 
+struct vm_munmap {
+	vm_paddr_t	gpa;
+	size_t		len;
+};
+
 #define	VM_MEMSEG_NAME(m)	((m)->name[0] != '\0' ? (m)->name : NULL)
 struct vm_memseg {
 	int		segid;
 	size_t		len;
-	char		name[SPECNAMELEN + 1];
+	char		name[VM_MAX_SUFFIXLEN + 1];
 };
+
+struct vm_memseg_fbsd12 {
+	int		segid;
+	size_t		len;
+	char		name[64];
+};
+_Static_assert(sizeof(struct vm_memseg_fbsd12) == 80, "COMPAT_FREEBSD12 ABI");
 
 struct vm_register {
 	int		cpuid;
@@ -62,6 +76,13 @@ struct vm_seg_desc {			/* data or code segment */
 	int		cpuid;
 	int		regnum;		/* enum vm_reg_name */
 	struct seg_desc desc;
+};
+
+struct vm_register_set {
+	int		cpuid;
+	unsigned int	count;
+	const int	*regnums;	/* enum vm_reg_name */
+	uint64_t	*regvals;
 };
 
 struct vm_run {
@@ -124,7 +145,7 @@ struct vm_pptdev_mmio {
 };
 
 struct vm_pptdev_msi {
-	int		vcpu;
+	int		vcpu;		/* unused */
 	int		bus;
 	int		slot;
 	int		func;
@@ -134,7 +155,7 @@ struct vm_pptdev_msi {
 };
 
 struct vm_pptdev_msix {
-	int		vcpu;
+	int		vcpu;		/* unused */
 	int		bus;
 	int		slot;
 	int		func;
@@ -151,6 +172,7 @@ struct vm_nmi {
 #define	MAX_VM_STATS	64
 struct vm_stats {
 	int		cpuid;				/* in */
+	int		index;				/* in */
 	int		num_entries;			/* out */
 	struct timeval	tv;
 	uint64_t	statbuf[MAX_VM_STATS];
@@ -200,6 +222,7 @@ struct vm_cpuset {
 };
 #define	VM_ACTIVE_CPUS		0
 #define	VM_SUSPENDED_CPUS	1
+#define	VM_DEBUG_CPUS		2
 
 struct vm_intinfo {
 	int		vcpuid;
@@ -223,6 +246,15 @@ struct vm_cpu_topology {
 	uint16_t	maxcpus;
 };
 
+struct vm_readwrite_kernemu_device {
+	int		vcpuid;
+	unsigned	access_width : 3;
+	unsigned	_unused : 29;
+	uint64_t	gpa;
+	uint64_t	value;
+};
+_Static_assert(sizeof(struct vm_readwrite_kernemu_device) == 24, "ABI");
+
 enum {
 	/* general routines */
 	IOCNUM_ABIVERS = 0,
@@ -241,12 +273,18 @@ enum {
 	IOCNUM_GET_MEMSEG = 15,
 	IOCNUM_MMAP_MEMSEG = 16,
 	IOCNUM_MMAP_GETNEXT = 17,
+	IOCNUM_GLA2GPA_NOFAULT = 18,
+	IOCNUM_MUNMAP_MEMSEG = 19,
 
 	/* register/state accessors */
 	IOCNUM_SET_REGISTER = 20,
 	IOCNUM_GET_REGISTER = 21,
 	IOCNUM_SET_SEGMENT_DESCRIPTOR = 22,
 	IOCNUM_GET_SEGMENT_DESCRIPTOR = 23,
+	IOCNUM_SET_REGISTER_SET = 24,
+	IOCNUM_GET_REGISTER_SET = 25,
+	IOCNUM_GET_KERNEMU_DEV = 26,
+	IOCNUM_SET_KERNEMU_DEV = 27,
 
 	/* interrupt injection */
 	IOCNUM_GET_INTINFO = 28,
@@ -268,6 +306,8 @@ enum {
 	IOCNUM_MAP_PPTDEV_MMIO = 42,
 	IOCNUM_PPTDEV_MSI = 43,
 	IOCNUM_PPTDEV_MSIX = 44,
+	IOCNUM_PPTDEV_DISABLE_MSIX = 45,
+	IOCNUM_UNMAP_PPTDEV_MMIO = 46,
 
 	/* statistics */
 	IOCNUM_VM_STATS = 50, 
@@ -291,12 +331,19 @@ enum {
 	/* vm_cpuset */
 	IOCNUM_ACTIVATE_CPU = 90,
 	IOCNUM_GET_CPUSET = 91,
+	IOCNUM_SUSPEND_CPU = 92,
+	IOCNUM_RESUME_CPU = 93,
 
 	/* RTC */
 	IOCNUM_RTC_READ = 100,
 	IOCNUM_RTC_WRITE = 101,
 	IOCNUM_RTC_SETTIME = 102,
 	IOCNUM_RTC_GETTIME = 103,
+
+	/* checkpoint */
+	IOCNUM_SNAPSHOT_REQ = 113,
+
+	IOCNUM_RESTORE_TIME = 115
 };
 
 #define	VM_RUN		\
@@ -305,14 +352,20 @@ enum {
 	_IOW('v', IOCNUM_SUSPEND, struct vm_suspend)
 #define	VM_REINIT	\
 	_IO('v', IOCNUM_REINIT)
+#define	VM_ALLOC_MEMSEG_FBSD12	\
+	_IOW('v', IOCNUM_ALLOC_MEMSEG, struct vm_memseg_fbsd12)
 #define	VM_ALLOC_MEMSEG	\
 	_IOW('v', IOCNUM_ALLOC_MEMSEG, struct vm_memseg)
+#define	VM_GET_MEMSEG_FBSD12	\
+	_IOWR('v', IOCNUM_GET_MEMSEG, struct vm_memseg_fbsd12)
 #define	VM_GET_MEMSEG	\
 	_IOWR('v', IOCNUM_GET_MEMSEG, struct vm_memseg)
 #define	VM_MMAP_MEMSEG	\
 	_IOW('v', IOCNUM_MMAP_MEMSEG, struct vm_memmap)
 #define	VM_MMAP_GETNEXT	\
 	_IOWR('v', IOCNUM_MMAP_GETNEXT, struct vm_memmap)
+#define	VM_MUNMAP_MEMSEG	\
+	_IOW('v', IOCNUM_MUNMAP_MEMSEG, struct vm_munmap)
 #define	VM_SET_REGISTER \
 	_IOW('v', IOCNUM_SET_REGISTER, struct vm_register)
 #define	VM_GET_REGISTER \
@@ -321,6 +374,16 @@ enum {
 	_IOW('v', IOCNUM_SET_SEGMENT_DESCRIPTOR, struct vm_seg_desc)
 #define	VM_GET_SEGMENT_DESCRIPTOR \
 	_IOWR('v', IOCNUM_GET_SEGMENT_DESCRIPTOR, struct vm_seg_desc)
+#define	VM_SET_REGISTER_SET \
+	_IOW('v', IOCNUM_SET_REGISTER_SET, struct vm_register_set)
+#define	VM_GET_REGISTER_SET \
+	_IOWR('v', IOCNUM_GET_REGISTER_SET, struct vm_register_set)
+#define	VM_SET_KERNEMU_DEV \
+	_IOW('v', IOCNUM_SET_KERNEMU_DEV, \
+	    struct vm_readwrite_kernemu_device)
+#define	VM_GET_KERNEMU_DEV \
+	_IOWR('v', IOCNUM_GET_KERNEMU_DEV, \
+	    struct vm_readwrite_kernemu_device)
 #define	VM_INJECT_EXCEPTION	\
 	_IOW('v', IOCNUM_INJECT_EXCEPTION, struct vm_exception)
 #define	VM_LAPIC_IRQ 		\
@@ -359,6 +422,10 @@ enum {
 	_IOW('v', IOCNUM_PPTDEV_MSI, struct vm_pptdev_msi)
 #define	VM_PPTDEV_MSIX \
 	_IOW('v', IOCNUM_PPTDEV_MSIX, struct vm_pptdev_msix)
+#define	VM_PPTDEV_DISABLE_MSIX \
+	_IOW('v', IOCNUM_PPTDEV_DISABLE_MSIX, struct vm_pptdev)
+#define	VM_UNMAP_PPTDEV_MMIO \
+	_IOW('v', IOCNUM_UNMAP_PPTDEV_MMIO, struct vm_pptdev_mmio)
 #define VM_INJECT_NMI \
 	_IOW('v', IOCNUM_INJECT_NMI, struct vm_nmi)
 #define	VM_STATS \
@@ -379,10 +446,16 @@ enum {
 	_IOWR('v', IOCNUM_GET_GPA_PMAP, struct vm_gpa_pte)
 #define	VM_GLA2GPA	\
 	_IOWR('v', IOCNUM_GLA2GPA, struct vm_gla2gpa)
+#define	VM_GLA2GPA_NOFAULT \
+	_IOWR('v', IOCNUM_GLA2GPA_NOFAULT, struct vm_gla2gpa)
 #define	VM_ACTIVATE_CPU	\
 	_IOW('v', IOCNUM_ACTIVATE_CPU, struct vm_activate_cpu)
 #define	VM_GET_CPUS	\
 	_IOW('v', IOCNUM_GET_CPUSET, struct vm_cpuset)
+#define	VM_SUSPEND_CPU \
+	_IOW('v', IOCNUM_SUSPEND_CPU, struct vm_activate_cpu)
+#define	VM_RESUME_CPU \
+	_IOW('v', IOCNUM_RESUME_CPU, struct vm_activate_cpu)
 #define	VM_SET_INTINFO	\
 	_IOW('v', IOCNUM_SET_INTINFO, struct vm_intinfo)
 #define	VM_GET_INTINFO	\
@@ -397,4 +470,8 @@ enum {
 	_IOR('v', IOCNUM_RTC_GETTIME, struct vm_rtc_time)
 #define	VM_RESTART_INSTRUCTION \
 	_IOW('v', IOCNUM_RESTART_INSTRUCTION, int)
+#define VM_SNAPSHOT_REQ \
+	_IOWR('v', IOCNUM_SNAPSHOT_REQ, struct vm_snapshot_meta)
+#define VM_RESTORE_TIME \
+	_IOWR('v', IOCNUM_RESTORE_TIME, int)
 #endif

@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/sys/sys/msg.h 330298 2018-03-02 22:13:29Z brooks $ */
 /*	$NetBSD: msg.h,v 1.4 1994/06/29 06:44:43 cgd Exp $	*/
 
 /*-
@@ -152,6 +151,9 @@ struct msqid_kernel {
 
 #ifdef _KERNEL
 extern struct msginfo	msginfo;
+
+int	kern_get_msqids(struct thread *td, struct msqid_kernel **res,
+	    size_t *sz);
 
 #else /* _KERNEL */
 

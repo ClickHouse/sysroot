@@ -66,7 +66,6 @@
 
 #ifndef RPC_HDR
 %#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD: releng/12.2/include/rpcsvc/ypxfrd.x 351691 2019-09-02 08:20:02Z kib $");
 #endif
 
 /* XXX cribbed from yp.x */

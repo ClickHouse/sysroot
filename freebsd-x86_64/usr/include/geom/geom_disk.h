@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2003 Poul-Henning Kamp
  * All rights reserved.
  *
@@ -30,8 +32,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/geom/geom_disk.h 329316 2018-02-15 15:33:17Z avg $
  */
 
 #ifndef _GEOM_GEOM_DISK_H_
@@ -67,9 +67,15 @@ struct devstat;
 
 typedef enum {
 	DISK_INIT_NONE,
+	DISK_INIT_CREATE,
 	DISK_INIT_START,
 	DISK_INIT_DONE
 } disk_init_level;
+
+struct disk_alias {
+	LIST_ENTRY(disk_alias)	da_next;
+	const char		*da_alias;
+};
 
 struct disk {
 	/* Fields which are private to geom_disk */
@@ -102,8 +108,8 @@ struct disk {
 	u_int			d_fwheads;
 	u_int			d_maxsize;
 	off_t			d_delmaxsize;
-	u_int			d_stripeoffset;
-	u_int			d_stripesize;
+	off_t			d_stripeoffset;
+	off_t			d_stripesize;
 	char			d_ident[DISK_IDENT_SIZE];
 	char			d_descr[DISK_IDENT_SIZE];
 	uint16_t		d_hba_vendor;
@@ -111,9 +117,15 @@ struct disk {
 	uint16_t		d_hba_subvendor;
 	uint16_t		d_hba_subdevice;
 	uint16_t		d_rotation_rate;
+	char			d_attachment[DISK_IDENT_SIZE];
 
 	/* Fields private to the driver */
 	void			*d_drv1;
+
+	/* Fields private to geom_disk, to be moved on next version bump */
+	LIST_HEAD(,disk_alias)	d_aliases;
+	struct g_event		*d_cevent;
+	struct g_event		*d_devent;
 };
 
 #define	DISKFLAG_RESERVED		0x0001	/* Was NEEDSGIANT */
@@ -133,6 +145,7 @@ void disk_attr_changed(struct disk *dp, const char *attr, int flag);
 void disk_media_changed(struct disk *dp, int flag);
 void disk_media_gone(struct disk *dp, int flag);
 int disk_resize(struct disk *dp, int flag);
+void disk_add_alias(struct disk *disk, const char *);
 
 #define DISK_VERSION_00		0x58561059
 #define DISK_VERSION_01		0x5856105a
@@ -140,7 +153,8 @@ int disk_resize(struct disk *dp, int flag);
 #define DISK_VERSION_03		0x5856105c
 #define DISK_VERSION_04		0x5856105d
 #define DISK_VERSION_05		0x5856105e
-#define DISK_VERSION		DISK_VERSION_05
+#define DISK_VERSION_06		0x5856105f
+#define DISK_VERSION		DISK_VERSION_06
 
 #endif /* _KERNEL */
 #endif /* _GEOM_GEOM_DISK_H_ */

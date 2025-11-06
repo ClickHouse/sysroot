@@ -1,5 +1,7 @@
 /* -*- mode: asm -*- */
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1993 The Regents of the University of California.
  * All rights reserved.
  *
@@ -18,7 +20,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,8 +35,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/amd64/include/asmacros.h 335857 2018-07-02 07:58:57Z kib $
  */
 
 #ifndef _MACHINE_ASMACROS_H_
@@ -194,6 +194,7 @@
 
 	.macro	PTI_UENTRY has_err
 	swapgs
+	lfence
 	cmpq	$~0,PCPU(UCR3)
 	je	1f
 	pushq	%rax
@@ -202,17 +203,16 @@
 1:
 	.endm
 
-	.macro	PTI_ENTRY name, cont, has_err=0
+	.macro	PTI_ENTRY name, contk, contu, has_err=0
 	ALIGN_TEXT
 	.globl	X\name\()_pti
 	.type	X\name\()_pti,@function
 X\name\()_pti:
-	/* %rax, %rdx and possibly err not yet pushed */
-	testb	$SEL_RPL_MASK,PTI_CS-(2+1-\has_err)*8(%rsp)
-	jz	\cont
+	/* %rax, %rdx, and possibly err are not yet pushed */
+	testb	$SEL_RPL_MASK,PTI_CS-PTI_ERR-((1-\has_err)*8)(%rsp)
+	jz	\contk
 	PTI_UENTRY \has_err
-	swapgs
-	jmp	\cont
+	jmp	\contu
 	.endm
 
 	.macro	PTI_INTRENTRY vec_name
@@ -235,6 +235,7 @@ X\vec_name:
 	jz	.L\vec_name\()_u		/* Yes, dont swapgs again */
 	swapgs
 .L\vec_name\()_u:
+	lfence
 	subq	$TF_RIP,%rsp	/* skip dummy tf_err and tf_trapno */
 	movq	%rdi,TF_RDI(%rsp)
 	movq	%rsi,TF_RSI(%rsp)
@@ -253,7 +254,9 @@ X\vec_name:
 	movq	%r15,TF_R15(%rsp)
 	SAVE_SEGS
 	movl	$TF_HASSEGS,TF_FLAGS(%rsp)
-	cld
+	pushfq
+	andq	$~(PSL_D|PSL_AC),(%rsp)
+	popfq
 	testb	$SEL_RPL_MASK,TF_CS(%rsp)  /* come from kernel ? */
 	jz	1f		/* yes, leave PCB_FULL_IRET alone */
 	movq	PCPU(CURPCB),%r8

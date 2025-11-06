@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1984, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ptrace.h	8.2 (Berkeley) 1/4/94
- * $FreeBSD: releng/11.3/sys/sys/ptrace.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef	_SYS_PTRACE_H_
@@ -70,6 +71,9 @@
 #define	PT_SET_EVENT_MASK 26	/* set mask of optional events */
 
 #define	PT_GET_SC_ARGS	27	/* fetch syscall args */
+#define	PT_GET_SC_RET	28	/* fetch syscall results */
+
+#define PT_COREDUMP	29	/* create a coredump */
 
 #define PT_GETREGS      33	/* get general-purpose registers */
 #define PT_SETREGS      34	/* set general-purpose registers */
@@ -80,6 +84,9 @@
 
 #define	PT_VM_TIMESTAMP	40	/* Get VM version (timestamp) */
 #define	PT_VM_ENTRY	41	/* Get VM map (entry) */
+#define	PT_GETREGSET	42	/* Get a target register set */
+#define	PT_SETREGSET	43	/* Set a target register set */
+#define	PT_SC_REMOTE	44	/* Execute a syscall */
 
 #define PT_FIRSTMACH    64	/* for machine-specific requests */
 #include <machine/ptrace.h>	/* machine-specific requests, if any */
@@ -153,6 +160,12 @@ struct ptrace_lwpinfo32 {
 };
 #endif
 
+/* Argument structure for PT_GET_SC_RET. */
+struct ptrace_sc_ret {
+	register_t	sr_retval[2];	/* Only valid if sr_error == 0. */
+	int		sr_error;
+};
+
 /* Argument structure for PT_VM_ENTRY. */
 struct ptrace_vm_entry {
 	int		pve_entry;	/* Entry number used for iteration. */
@@ -167,7 +180,41 @@ struct ptrace_vm_entry {
 	char		*pve_path;	/* Path name of object. */
 };
 
+/* Argument structure for PT_COREDUMP */
+struct ptrace_coredump {
+	int		pc_fd;		/* File descriptor to write dump to. */
+	uint32_t	pc_flags;	/* Flags PC_* */
+	off_t		pc_limit;	/* Maximum size of the coredump,
+					   0 for no limit. */
+};
+
+/* Flags for PT_COREDUMP pc_flags */
+#define	PC_COMPRESS	0x00000001	/* Allow compression */
+#define	PC_ALL		0x00000002	/* Include non-dumpable entries */
+
+struct ptrace_sc_remote {
+	struct ptrace_sc_ret pscr_ret;
+	u_int	pscr_syscall;
+	u_int	pscr_nargs;
+	register_t	*pscr_args;
+};
+
 #ifdef _KERNEL
+
+#include <sys/proc.h>
+
+struct thr_coredump_req {
+	struct vnode	*tc_vp;		/* vnode to write coredump to. */
+	off_t		tc_limit;	/* max coredump file size. */
+	int		tc_flags;	/* user flags */
+	int		tc_error;	/* request result */
+};
+
+struct thr_syscall_req {
+	struct ptrace_sc_ret ts_ret;
+	u_int	ts_nargs;
+	struct syscall_args ts_sa;
+};
 
 int	ptrace_set_pc(struct thread *_td, unsigned long _addr);
 int	ptrace_single_step(struct thread *_td);
@@ -210,6 +257,11 @@ int	proc_write_fpregs32(struct thread *_td, struct fpreg32 *_fpreg32);
 int	proc_read_dbregs32(struct thread *_td, struct dbreg32 *_dbreg32);
 int	proc_write_dbregs32(struct thread *_td, struct dbreg32 *_dbreg32);
 #endif
+
+void	ptrace_unsuspend(struct proc *p);
+
+extern bool allow_ptrace;
+
 #else /* !_KERNEL */
 
 #include <sys/cdefs.h>

@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 IPNET Internet Communication Company
  * Copyright (c) 2011 - 2012 Rozhuk Ivan <rozhuk.im@gmail.com>
@@ -27,8 +27,6 @@
  * SUCH DAMAGE.
  *
  * Author: Ruslan Ermilov <ru@FreeBSD.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_vlan.h 326272 2017-11-27 15:23:17Z pfg $
  */
 
 #ifndef _NETGRAPH_NG_VLAN_H_
@@ -92,7 +90,6 @@ struct ng_vlan_filter {
 	{ NULL }						\
 }
 #endif
-
 
 /* Structure returned by NGM_VLAN_GET_TABLE. */
 struct ng_vlan_table {

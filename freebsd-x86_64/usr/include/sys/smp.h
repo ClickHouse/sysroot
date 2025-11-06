@@ -1,12 +1,12 @@
 /*-
+ * SPDX-License-Identifier: Beerware
+ *
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
  * <phk@FreeBSD.org> wrote this file.  As long as you retain this notice you
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  * ----------------------------------------------------------------------------
- *
- * $FreeBSD: releng/11.3/sys/sys/smp.h 331909 2018-04-03 07:31:22Z avg $
  */
 
 #ifndef _SYS_SMP_H_
@@ -79,6 +79,8 @@ struct cpu_group {
 	struct cpu_group *cg_child;	/* Optional children groups. */
 	cpuset_t	cg_mask;	/* Mask of cpus in this group. */
 	int32_t		cg_count;	/* Count of cpus in this group. */
+	int32_t		cg_first;	/* First cpu in this group. */
+	int32_t		cg_last;	/* Last cpu in this group. */
 	int16_t		cg_children;	/* Number of children groups. */
 	int8_t		cg_level;	/* Shared cache level. */
 	int8_t		cg_flags;	/* Traversal modifiers. */
@@ -103,6 +105,7 @@ typedef struct cpu_group *cpu_group_t;
 #define	CG_FLAG_HTT	0x01		/* Schedule the alternate core last. */
 #define	CG_FLAG_SMT	0x02		/* New age htt, less crippled. */
 #define	CG_FLAG_THREAD	(CG_FLAG_HTT | CG_FLAG_SMT)	/* Any threading. */
+#define	CG_FLAG_NODE	0x04		/* NUMA node. */
 
 /*
  * Convenience routines for building and traversing topologies.
@@ -120,8 +123,25 @@ struct topo_node * topo_next_node(struct topo_node *top,
 struct topo_node * topo_next_nonchild_node(struct topo_node *top,
     struct topo_node *node);
 void topo_set_pu_id(struct topo_node *node, cpuid_t id);
-int topo_analyze(struct topo_node *topo_root, int all, int *pkg_count,
-    int *cores_per_pkg, int *thrs_per_core);
+
+enum topo_level {
+	TOPO_LEVEL_PKG = 0,
+	/*
+	 * Some systems have useful sub-package core organizations.  On these,
+	 * a package has one or more subgroups.  Each subgroup contains one or
+	 * more cache groups (cores that share a last level cache).
+	 */
+	TOPO_LEVEL_GROUP,
+	TOPO_LEVEL_CACHEGROUP,
+	TOPO_LEVEL_CORE,
+	TOPO_LEVEL_THREAD,
+	TOPO_LEVEL_COUNT	/* Must be last */
+};
+struct topo_analysis {
+	int entities[TOPO_LEVEL_COUNT];
+};
+int topo_analyze(struct topo_node *topo_root, int all,
+    struct topo_analysis *results);
 
 #define	TOPO_FOREACH(i, root)	\
 	for (i = root; i != NULL; i = topo_next_node(root, i))
@@ -135,7 +155,6 @@ struct cpu_group *smp_topo_2level(int l2share, int l2count, int l1share,
 struct cpu_group *smp_topo_find(struct cpu_group *top, int cpu);
 
 extern void (*cpustop_restartfunc)(void);
-extern int smp_cpus;
 /* The suspend/resume cpusets are x86 only, but minimize ifdefs. */
 extern volatile cpuset_t resuming_cpus;	/* woken up cpus in suspend pen */
 extern volatile cpuset_t started_cpus;	/* cpus to let out of stop pen */
@@ -148,8 +167,11 @@ extern cpuset_t logical_cpus_mask;
 
 extern u_int mp_maxid;
 extern int mp_maxcpus;
+extern int mp_ncores;
 extern int mp_ncpus;
+extern int smp_cpus;
 extern volatile int smp_started;
+extern int smp_threads_per_core;
 
 extern cpuset_t all_cpus;
 extern cpuset_t cpuset_domain[MAXMEMDOM]; 	/* CPUs in each NUMA domain. */
@@ -243,13 +265,8 @@ extern	struct mtx smp_ipi_mtx;
 
 int	quiesce_all_cpus(const char *, int);
 int	quiesce_cpus(cpuset_t, const char *, int);
-/*
- * smp_no_rendevous_barrier was renamed to smp_no_rendezvous_barrier
- * in __FreeBSD_version 1101508, with the old name remaining in 11.x
- * as an alias for compatibility.  The old name will be gone in 12.0
- * (__FreeBSD_version >= 1200028).
- */
-void	smp_no_rendevous_barrier(void *);
+void	quiesce_all_critical(void);
+void	cpus_fence_seq_cst(void);
 void	smp_no_rendezvous_barrier(void *);
 void	smp_rendezvous(void (*)(void *), 
 		       void (*)(void *),
@@ -260,6 +277,19 @@ void	smp_rendezvous_cpus(cpuset_t,
 		       void (*)(void *),
 		       void (*)(void *),
 		       void *arg);
+
+struct smp_rendezvous_cpus_retry_arg {
+	cpuset_t cpus;
+};
+void	smp_rendezvous_cpus_retry(cpuset_t,
+		       void (*)(void *),
+		       void (*)(void *),
+		       void (*)(void *),
+		       void (*)(void *, int),
+		       struct smp_rendezvous_cpus_retry_arg *);
+
+void	smp_rendezvous_cpus_done(struct smp_rendezvous_cpus_retry_arg *);
+
 #endif /* !LOCORE */
 #endif /* _KERNEL */
 #endif /* _SYS_SMP_H_ */

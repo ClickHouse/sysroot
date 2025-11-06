@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)namei.h	8.5 (Berkeley) 1/9/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_NAMEI_H_
@@ -38,6 +37,7 @@
 #include <sys/caprights.h>
 #include <sys/filedesc.h>
 #include <sys/queue.h>
+#include <sys/_seqc.h>
 #include <sys/_uio.h>
 
 enum nameiop { LOOKUP, CREATE, DELETE, RENAME };
@@ -111,6 +111,12 @@ struct nameidata {
 	 */
 	struct componentname ni_cnd;
 	struct nameicap_tracker_head ni_cap_tracker;
+	/*
+	 * Private helper data for UFS, must be at the end.  See
+	 * NDINIT_PREFILL().
+	 */
+	seqc_t	ni_dvp_seqc;
+	seqc_t	ni_vp_seqc;
 };
 
 #ifdef _KERNEL
@@ -144,10 +150,12 @@ int	cache_fplookup(struct nameidata *ndp, enum cache_fpl_status *status,
 #define	WANTPARENT	0x0010	/* want parent vnode returned unlocked */
 #define	FAILIFEXISTS	0x0020	/* return EEXIST if found */
 #define	FOLLOW		0x0040	/* follow symbolic links */
+#define	EMPTYPATH	0x0080	/* Allow empty path for *at */
 #define	LOCKSHARED	0x0100	/* Shared lock leaf */
 #define	NOFOLLOW	0x0000	/* do not follow symbolic links (pseudo) */
 #define	RBENEATH	0x100000000ULL /* No escape, even tmp, from start dir */
 #define	MODMASK		0xf000001ffULL	/* mask of operational modifiers */
+
 /*
  * Namei parameter descriptors.
  *
@@ -176,7 +184,7 @@ int	cache_fplookup(struct nameidata *ndp, enum cache_fpl_status *status,
 #define	NOCAPCHECK	0x00100000 /* do not perform capability checks */
 /* UNUSED		0x00200000 */
 /* UNUSED		0x00400000 */
-/* UNUSED		0x00800000 */
+#define	WANTIOCTLCAPS	0x00800000 /* leave ioctl caps for the caller */
 #define	HASBUF		0x01000000 /* has allocated pathname buffer */
 #define	NOEXECCHECK	0x02000000 /* do not perform exec check on dir */
 #define	MAKEENTRY	0x04000000 /* entry is to be added to name cache */
@@ -198,6 +206,7 @@ int	cache_fplookup(struct nameidata *ndp, enum cache_fpl_status *status,
  */
 #define	NIRES_ABS	0x00000001 /* Path was absolute */
 #define	NIRES_STRICTREL	0x00000002 /* Restricted lookup result */
+#define	NIRES_EMPTYPATH	0x00000004 /* EMPTYPATH used */
 
 /*
  * Flags in ni_lcf, valid for the duration of the namei call.
@@ -221,7 +230,8 @@ int	cache_fplookup(struct nameidata *ndp, enum cache_fpl_status *status,
  * Note the constant pattern may *hide* bugs.
  */
 #ifdef INVARIANTS
-#define NDINIT_PREFILL(arg)	memset(arg, 0xff, sizeof(*arg))
+#define NDINIT_PREFILL(arg)	memset(arg, 0xff, offsetof(struct nameidata,	\
+    ni_dvp_seqc))
 #define NDINIT_DBG(arg)		{ (arg)->ni_debugflags = NAMEI_DBG_INITED; }
 #define NDREINIT_DBG(arg)	{						\
 	if (((arg)->ni_debugflags & NAMEI_DBG_INITED) == 0)			\
@@ -258,8 +268,14 @@ do {										\
 #define NDREINIT(ndp)	do {							\
 	struct nameidata *_ndp = (ndp);						\
 	NDREINIT_DBG(_ndp);							\
+	filecaps_free(&_ndp->ni_filecaps);					\
 	_ndp->ni_resflags = 0;							\
 	_ndp->ni_startdir = NULL;						\
+} while (0)
+
+#define	NDPREINIT(ndp) do {							\
+	(ndp)->ni_dvp_seqc = SEQC_MOD;						\
+	(ndp)->ni_vp_seqc = SEQC_MOD;						\
 } while (0)
 
 #define NDF_NO_DVP_RELE		0x00000001
@@ -272,6 +288,10 @@ do {										\
 #define NDF_NO_FREE_PNBUF	0x00000020
 #define NDF_ONLY_PNBUF		(~NDF_NO_FREE_PNBUF)
 
+#define NDFREE_IOCTLCAPS(ndp) do {						\
+	struct nameidata *_ndp = (ndp);						\
+	filecaps_free(&_ndp->ni_filecaps);					\
+} while (0)
 void NDFREE_PNBUF(struct nameidata *);
 void NDFREE(struct nameidata *, const u_int);
 #define NDFREE(ndp, flags) do {						\

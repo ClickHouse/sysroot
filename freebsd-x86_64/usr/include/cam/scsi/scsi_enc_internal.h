@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2000 Matthew Jacob
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/scsi/scsi_enc_internal.h 256843 2013-10-21 12:00:26Z mav $
  */
 
 /*
@@ -34,29 +34,25 @@
 #ifndef	__SCSI_ENC_INTERNAL_H__
 #define	__SCSI_ENC_INTERNAL_H__
 
+#include <sys/sysctl.h>
+
 typedef struct enc_element {
-	uint32_t
-		 enctype	: 8,	/* enclosure type */
-		 subenclosure : 8,	/* subenclosure id */
-		 svalid	: 1,		/* enclosure information valid */
-		 overall_status_elem: 1,/*
-					 * This object represents generic
-					 * status about all objects of this
-					 * type.
-					 */
-		 priv	: 14;		/* private data, per object */
+	u_int	 elm_idx;		/* index of element */
+	uint8_t	 elm_type;		/* element type */
+	uint8_t	 subenclosure;		/* subenclosure id */
+	uint8_t	 type_elm_idx;		/* index of element within type */
+	uint8_t	 svalid;		/* enclosure information valid */
 	uint8_t	 encstat[4];		/* state && stats */
+	u_int	 physical_path_len;	/* Length of device path data. */
 	uint8_t *physical_path;		/* Device physical path data. */
-	u_int    physical_path_len;	/* Length of device path data. */
 	void    *elm_private;		/* per-type object data */
+	uint16_t priv;
 } enc_element_t;
 
 typedef enum {
 	ENC_NONE,
-	ENC_SES_SCSI2,
 	ENC_SES,
 	ENC_SES_PASSTHROUGH,
-	ENC_SEN,
 	ENC_SAFT,
 	ENC_SEMB_SES,
 	ENC_SEMB_SAFT
@@ -90,13 +86,13 @@ typedef int (enc_softc_init_t)(enc_softc_t *);
 typedef void (enc_softc_invalidate_t)(enc_softc_t *);
 typedef void (enc_softc_cleanup_t)(enc_softc_t *);
 typedef int (enc_init_enc_t)(enc_softc_t *); 
-typedef int (enc_get_enc_status_t)(enc_softc_t *, int);
 typedef int (enc_set_enc_status_t)(enc_softc_t *, encioc_enc_status_t, int);
 typedef int (enc_get_elm_status_t)(enc_softc_t *, encioc_elm_status_t *, int);
 typedef int (enc_set_elm_status_t)(enc_softc_t *, encioc_elm_status_t *, int);
 typedef int (enc_get_elm_desc_t)(enc_softc_t *, encioc_elm_desc_t *); 
 typedef int (enc_get_elm_devnames_t)(enc_softc_t *, encioc_elm_devnames_t *); 
-typedef int (enc_handle_string_t)(enc_softc_t *, encioc_string_t *, int);
+typedef int (enc_handle_string_t)(enc_softc_t *, encioc_string_t *,
+				  unsigned long);
 typedef void (enc_device_found_t)(enc_softc_t *);
 typedef void (enc_poll_status_t)(enc_softc_t *);
 
@@ -104,7 +100,6 @@ struct enc_vec {
 	enc_softc_invalidate_t	*softc_invalidate;
 	enc_softc_cleanup_t	*softc_cleanup;
 	enc_init_enc_t		*init_enc;
-	enc_get_enc_status_t	*get_enc_status;
 	enc_set_enc_status_t	*set_enc_status;
 	enc_get_elm_status_t	*get_elm_status;
 	enc_set_elm_status_t	*set_elm_status;
@@ -165,7 +160,8 @@ struct enc_softc {
 
 	struct enc_fsm_state 	*enc_fsm_states;
 
-	struct intr_config_hook  enc_boot_hold_ch;
+#define 	ENC_ANNOUNCE_SZ		400
+	char			announce_buf[ENC_ANNOUNCE_SZ];
 };
 
 static inline enc_cache_t *
@@ -201,6 +197,9 @@ enc_softc_init_t	ses_softc_init;
 /* SAF-TE interface */
 enc_softc_init_t	safte_softc_init;
 
+SYSCTL_DECL(_kern_cam_enc);
+extern int enc_verbose;
+
 /* Helper macros */
 MALLOC_DECLARE(M_SCSIENC);
 #define	ENC_CFLAGS		CAM_RETRY_SELTO
@@ -213,7 +212,7 @@ MALLOC_DECLARE(M_SCSIENC);
 #else
 #define	ENC_DLOG		if (0) enc_log
 #endif
-#define	ENC_VLOG		if (bootverbose) enc_log
+#define	ENC_VLOG		if (enc_verbose) enc_log
 #define	ENC_MALLOC(amt)		malloc(amt, M_SCSIENC, M_NOWAIT)
 #define	ENC_MALLOCZ(amt)	malloc(amt, M_SCSIENC, M_ZERO|M_NOWAIT)
 /* Cast away const avoiding GCC warnings. */

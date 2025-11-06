@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netinet/ip_ecn.h 326023 2017-11-20 19:43:44Z pfg $	*/
 /*	$KAME: ip_ecn.h,v 1.8 2002/01/07 11:34:47 kjc Exp $	*/
 
 /*-

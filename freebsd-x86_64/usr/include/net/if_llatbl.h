@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2004 Luigi Rizzo, Alessandro Cerri. All rights reserved.
  * Copyright (c) 2004-2008 Qing Li. All rights reserved.
  * Copyright (c) 2008 Kip Macy. All rights reserved.
@@ -25,28 +27,21 @@
  * SUCH DAMAGE.
  */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/net/if_llatbl.h 337462 2018-08-08 16:17:50Z ae $");
-
 #ifndef	_NET_IF_LLATBL_H_
 #define	_NET_IF_LLATBL_H_
 
+#include <sys/_eventhandler.h>
 #include <sys/_rwlock.h>
 #include <netinet/in.h>
+#include <sys/epoch.h>
+#include <sys/ck.h>
 
 struct ifnet;
 struct sysctl_req;
 struct rt_msghdr;
 struct rt_addrinfo;
-
 struct llentry;
-LIST_HEAD(llentries, llentry);
-
-extern struct rwlock lltable_rwlock;
-#define	LLTABLE_RLOCK()		rw_rlock(&lltable_rwlock)
-#define	LLTABLE_RUNLOCK()	rw_runlock(&lltable_rwlock)
-#define	LLTABLE_WLOCK()		rw_wlock(&lltable_rwlock)
-#define	LLTABLE_WUNLOCK()	rw_wunlock(&lltable_rwlock)
-#define	LLTABLE_LOCK_ASSERT()	rw_assert(&lltable_rwlock, RA_LOCKED)
+CK_LIST_HEAD(llentries, llentry);
 
 #define	LLE_MAX_LINKHDR		24	/* Full IB header */
 /*
@@ -54,14 +49,15 @@ extern struct rwlock lltable_rwlock;
  * a shared lock
  */
 struct llentry {
-	LIST_ENTRY(llentry)	 lle_next;
+	CK_LIST_ENTRY(llentry)	 lle_next;
 	union {
 		struct in_addr	addr4;
 		struct in6_addr	addr6;
 	} r_l3addr;
 	char			r_linkdata[LLE_MAX_LINKHDR]; /* L2 data */
 	uint8_t			r_hdrlen;	/* length for LL header */
-	uint8_t			spare0[3];
+	uint8_t			r_family;	/* Upper layer proto family */
+	uint8_t			spare0[2];
 	uint16_t		r_flags;	/* LLE runtime flags */
 	uint16_t		r_skip_req;	/* feedback from fast path */
 
@@ -81,11 +77,15 @@ struct llentry {
 	time_t			lle_hittime;	/* Time when r_skip_req was unset */
 	int			 lle_refcnt;
 	char			*ll_addr;	/* link-layer address */
+	CK_SLIST_HEAD(llentry_children_head,llentry)	lle_children;	/* child encaps */
+	CK_SLIST_ENTRY(llentry)	lle_child_next;	/* child encaps */
+	struct llentry		*lle_parent;	/* parent for a child */
 
-	LIST_ENTRY(llentry)	lle_chain;	/* chain of deleted items */
+	CK_LIST_ENTRY(llentry)	lle_chain;	/* chain of deleted items */
 	struct callout		lle_timer;
 	struct rwlock		 lle_lock;
 	struct mtx		req_mtx;
+	struct epoch_context lle_epoch_ctx;
 };
 
 #define	LLE_WLOCK(lle)		rw_wlock(&(lle)->lle_lock)
@@ -105,6 +105,8 @@ struct llentry {
 #define	LLE_REQ_UNLOCK(lle)	mtx_unlock(&(lle)->req_mtx)
 
 #define LLE_IS_VALID(lle)	(((lle) != NULL) && ((lle) != (void *)-1))
+
+#define	LLE_SF(_fam, _flags)	(((_flags) & 0xFFFF) | ((_fam) << 16))
 
 #define	LLE_ADDREF(lle) do {					\
 	LLE_WLOCK_ASSERT(lle);					\
@@ -153,8 +155,8 @@ typedef int (llt_match_prefix_t)(const struct sockaddr *,
 typedef void (llt_free_entry_t)(struct lltable *, struct llentry *);
 typedef void (llt_fill_sa_entry_t)(const struct llentry *, struct sockaddr *);
 typedef void (llt_free_tbl_t)(struct lltable *);
-typedef void (llt_link_entry_t)(struct lltable *, struct llentry *);
-typedef void (llt_unlink_entry_t)(struct llentry *);
+typedef int (llt_link_entry_t)(struct lltable *, struct llentry *);
+typedef int (llt_unlink_entry_t)(struct llentry *);
 typedef void (llt_mark_used_t)(struct llentry *);
 
 typedef int (llt_foreach_cb_t)(struct lltable *, struct llentry *, void *);
@@ -164,6 +166,8 @@ struct lltable {
 	SLIST_ENTRY(lltable)	llt_link;
 	int			llt_af;
 	int			llt_hsize;
+	int			llt_entries;
+	int			llt_maxentries;
 	struct llentries	*lle_head;
 	struct ifnet		*llt_ifp;
 
@@ -195,6 +199,7 @@ MALLOC_DECLARE(M_LLTABLE);
 #define	LLE_REDIRECT	0x0010	/* installed by redirect; has host rtentry */
 #define	LLE_PUB		0x0020	/* publish entry ??? */
 #define	LLE_LINKED	0x0040	/* linked to lookup structure */
+#define	LLE_CHILD	0x0080	/* Child LLE storing different AF encap */
 /* LLE request flags */
 #define	LLE_EXCLUSIVE	0x2000	/* return lle xlocked  */
 #define	LLE_UNLOCKED	0x4000	/* return lle unlocked */
@@ -213,14 +218,15 @@ void		lltable_free(struct lltable *);
 void		lltable_link(struct lltable *llt);
 void		lltable_prefix_free(int, struct sockaddr *,
 		    struct sockaddr *, u_int);
-#if 0
-void		lltable_drain(int);
-#endif
 int		lltable_sysctl_dumparp(int, struct sysctl_req *);
+size_t		lltable_append_entry_queue(struct llentry *,
+		    struct mbuf *, size_t);
+
+struct lltable *in_lltable_get(struct ifnet *ifp);
+struct lltable *in6_lltable_get(struct ifnet *ifp);
+struct lltable *lltable_get(struct ifnet *ifp, int family);
 
 size_t		llentry_free(struct llentry *);
-struct llentry  *llentry_alloc(struct ifnet *, struct lltable *,
-		    struct sockaddr_storage *);
 
 /* helper functions */
 size_t lltable_drop_entry_queue(struct llentry *);
@@ -237,11 +243,15 @@ struct llentry *lltable_alloc_entry(struct lltable *llt, u_int flags,
 void lltable_free_entry(struct lltable *llt, struct llentry *lle);
 int lltable_delete_addr(struct lltable *llt, u_int flags,
     const struct sockaddr *l3addr);
-void lltable_link_entry(struct lltable *llt, struct llentry *lle);
-void lltable_unlink_entry(struct lltable *llt, struct llentry *lle);
+int lltable_link_entry(struct lltable *llt, struct llentry *lle);
+int lltable_unlink_entry(struct lltable *llt, struct llentry *lle);
+void lltable_link_child_entry(struct llentry *parent_lle, struct llentry *child_lle);
+void lltable_unlink_child_entry(struct llentry *child_lle);
 void lltable_fill_sa_entry(const struct llentry *lle, struct sockaddr *sa);
 struct ifnet *lltable_get_ifp(const struct lltable *llt);
 int lltable_get_af(const struct lltable *llt);
+
+bool lltable_acquire_wlock(struct ifnet *ifp, struct llentry *lle);
 
 int lltable_foreach_lle(struct lltable *llt, llt_foreach_cb_t *f,
     void *farg);
@@ -255,22 +265,26 @@ lla_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3addr)
 	return (llt->llt_lookup(llt, flags, l3addr));
 }
 
+void llentry_request_feedback(struct llentry *lle);
+void llentry_mark_used(struct llentry *lle);
+time_t llentry_get_hittime(struct llentry *lle);
+int llentry_get_upper_family(const struct llentry *lle, int default_family);
+
 /*
  * Notify the LLE code that the entry was used by datapath.
  */
 static __inline void
-llentry_mark_used(struct llentry *lle)
+llentry_provide_feedback(struct llentry *lle)
 {
 
-	if (lle->r_skip_req == 0)
+	if (__predict_true(lle->r_skip_req == 0))
 		return;
-	if ((lle->r_flags & RLLE_VALID) != 0)
-		lle->lle_tbl->llt_mark_used(lle);
+	llentry_mark_used(lle);
 }
+struct llentry *llentry_lookup_family(struct llentry *lle, int family);
 
 int		lla_rt_output(struct rt_msghdr *, struct rt_addrinfo *);
 
-#include <sys/eventhandler.h>
 enum {
 	LLENTRY_RESOLVED,
 	LLENTRY_TIMEDOUT,

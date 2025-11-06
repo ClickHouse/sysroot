@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1996, by Peter Wemm and Steve Passe
  * All rights reserved.
  *
@@ -21,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/x86/include/apicreg.h 323608 2017-09-15 09:00:45Z kib $
  */
 
 #ifndef _X86_APICREG_H_
@@ -108,11 +108,9 @@
  * 3F0             Reserved
  */
 
-
 /******************************************************************************
  * global defines, etc.
  */
-
 
 /******************************************************************************
  * LOCAL APIC structure
@@ -284,7 +282,6 @@ typedef struct IOAPIC ioapic_t;
 
 #endif  /* !LOCORE */
 
-
 /******************************************************************************
  * various code 'logical' values
  */
@@ -409,7 +406,6 @@ typedef struct IOAPIC ioapic_t;
 #define APIC_LVT_RIRR		0x00004000
 #define APIC_LVT_TM		0x00008000
 #define APIC_LVT_M		0x00010000
-
 
 /* fields in LVT Timer */
 #define APIC_LVTT_VECTOR	0x000000ff

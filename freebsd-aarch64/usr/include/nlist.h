@@ -34,8 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nlist.h	8.2 (Berkeley) 1/21/94
- *
- * $FreeBSD: releng/12.2/include/nlist.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 #ifndef _NLIST_H_

@@ -292,7 +292,6 @@ strsvisx(char *, const char *, size_t, int, const char *);
 
 
 
-#define svis rk_svis
 ROKEN_LIB_FUNCTION char * ROKEN_LIB_CALL
 svis(char *, int, int, int, const char *);
 

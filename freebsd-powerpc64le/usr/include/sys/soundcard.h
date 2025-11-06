@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -484,7 +482,7 @@ struct sysex_info {
  * This structure is also used with ioctl(SNDCTL_PGMR_IFACE) which allows
  * a patch manager daemon to read and write device parameters. This
  * ioctl available through /dev/sequencer also. Avoid using it since it's
- * extremely hardware dependent. In addition access trough /dev/sequencer
+ * extremely hardware dependent. In addition access through /dev/sequencer
  * may confuse the patch manager daemon.
  */
 
@@ -1746,7 +1744,7 @@ typedef struct oss_sysinfo
 	int	openedaudio[8];	/* Bit mask telling which audio devices
 				   are busy */
 
-	int	numsynths;	/* # of availavle synth devices */
+	int	numsynths;	/* # of available synth devices */
 	int	nummidis;	/* # of available MIDI ports */
 	int	numtimers;	/* # of available timer devices */
 	int	nummixers;	/* # of mixer devices */

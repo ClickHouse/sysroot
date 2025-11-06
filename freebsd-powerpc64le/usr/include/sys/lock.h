@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Berkeley Software Design, Inc. All rights reserved.
  *
@@ -28,7 +28,6 @@
  * SUCH DAMAGE.
  *
  *	from BSDI Id: mutex.h,v 2.7.2.35 2000/04/27 03:10:26 cp
- * $FreeBSD$
  */
 
 #ifndef _SYS_LOCK_H_
@@ -237,6 +236,7 @@ int	witness_list_locks(struct lock_list_entry **,
 	    int (*)(const char *, ...));
 int	witness_warn(int, struct lock_object *, const char *, ...);
 void	witness_assert(const struct lock_object *, int, const char *, int);
+int	witness_is_owned(const struct lock_object *lock);
 void	witness_display_spinlock(struct lock_object *, struct thread *,
 	    int (*)(const char *, ...));
 int	witness_line(struct lock_object *);

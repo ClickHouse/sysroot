@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  * Copyright (c) 2003 Poul-Henning Kamp
  * All rights reserved.
@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/lib/libgeom/libgeom.h 326219 2017-11-26 02:00:33Z pfg $
  */
 #ifndef _LIBGEOM_H_
 #define _LIBGEOM_H_
@@ -56,6 +54,7 @@ void geom_stats_snapshot_reset(void *);
 struct devstat *geom_stats_snapshot_next(void *);
 
 char *geom_getxml(void);
+char *geom_getxml_geom(const char *, const char *, int);
 
 /* geom_xml2tree.c */
 
@@ -137,6 +136,7 @@ struct gprovider {
 struct gident * geom_lookupid(struct gmesh *, const void *);
 int geom_xml2tree(struct gmesh *, char *);
 int geom_gettree(struct gmesh *);
+int geom_gettree_geom(struct gmesh *, const char *, const char *, int);
 void geom_deletetree(struct gmesh *);
 
 /* geom_ctl.c */
@@ -149,6 +149,8 @@ void gctl_dump(struct gctl_req *, FILE *);
 void gctl_free(struct gctl_req *);
 struct gctl_req *gctl_get_handle(void);
 const char *gctl_issue(struct gctl_req *);
+void gctl_add_param(struct gctl_req *req, const char *name, int len,
+    void *value, int flag);
 void gctl_ro_param(struct gctl_req *, const char *, int, const void *);
 void gctl_rw_param(struct gctl_req *, const char *, int, void *);
 

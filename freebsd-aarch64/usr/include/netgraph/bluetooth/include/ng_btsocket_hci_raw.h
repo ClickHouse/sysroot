@@ -3,7 +3,7 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001-2002 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_btsocket_hci_raw.h,v 1.3 2003/03/25 23:53:32 max Exp $
- * $FreeBSD: releng/12.2/sys/netgraph/bluetooth/include/ng_btsocket_hci_raw.h 326272 2017-11-27 15:23:17Z pfg $
  */
 
 #ifndef _NETGRAPH_BTSOCKET_HCI_RAW_H_
@@ -87,6 +86,5 @@ int  ng_btsocket_hci_raw_send       (struct socket *, int, struct mbuf *,
 int  ng_btsocket_hci_raw_sockaddr   (struct socket *, struct sockaddr **);
 
 #endif /* _KERNEL */
- 
-#endif /* ndef _NETGRAPH_BTSOCKET_HCI_RAW_H_ */
 
+#endif /* ndef _NETGRAPH_BTSOCKET_HCI_RAW_H_ */

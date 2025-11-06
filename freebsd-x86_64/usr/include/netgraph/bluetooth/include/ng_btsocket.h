@@ -3,6 +3,8 @@
  */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001-2002 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
  *
@@ -28,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_btsocket.h,v 1.8 2003/04/26 22:32:10 max Exp $
- * $FreeBSD: releng/11.3/sys/netgraph/bluetooth/include/ng_btsocket.h 290038 2015-10-27 03:42:26Z takawata $
  */
 
 #ifndef _NETGRAPH_BTSOCKET_H_
@@ -228,10 +229,6 @@ struct sockaddr_l2cap_compat {
 	bdaddr_t	l2cap_bdaddr;	/* address */
 };
 
-#define BDADDR_BREDR 0
-#define BDADDR_LE_PUBLIC 1
-#define BDADDR_LE_RANDOM 2
-
 struct sockaddr_l2cap {
 	u_char		l2cap_len;	/* total length */
 	u_char		l2cap_family;	/* address family */
@@ -241,11 +238,9 @@ struct sockaddr_l2cap {
 	u_int8_t	l2cap_bdaddr_type; /*address type*/
 };
 
-
 #if !defined(L2CAP_SOCKET_CHECKED) && !defined(_KERNEL)
 #warning "Make sure new member of socket address initialized"
 #endif
-
 
 /* L2CAP socket options */
 #define SOL_L2CAP		0x1609	/* socket option level */
@@ -377,4 +372,3 @@ struct ng_btsocket_rfcomm_fc_info {
 #define NG_BTSOCKET_INFO_LEVEL	4
 
 #endif /* _NETGRAPH_BTSOCKET_H_ */
-

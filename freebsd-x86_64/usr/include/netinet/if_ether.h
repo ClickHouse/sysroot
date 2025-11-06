@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_ether.h	8.3 (Berkeley) 5/2/95
- * $FreeBSD: releng/11.3/sys/netinet/if_ether.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NETINET_IF_ETHER_H_
@@ -115,9 +116,6 @@ extern u_char	ether_ipmulticast_max[ETHER_ADDR_LEN];
 struct ifaddr;
 struct llentry;
 
-int	arpresolve_addr(struct ifnet *ifp, int flags,
-	    const struct sockaddr *dst, char *desten, uint32_t *pflags,
-	    struct llentry **plle);
 int	arpresolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
 	    const struct sockaddr *dst, u_char *desten, uint32_t *pflags,
 	    struct llentry **plle);

@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)types.h	8.6 (Berkeley) 2/19/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_TYPES_H_
@@ -271,8 +270,8 @@ typedef	__vm_size_t	vm_size_t;
 typedef __rman_res_t    rman_res_t;
 
 #ifdef _KERNEL
-typedef	int		boolean_t;
-typedef	struct device	*device_t;
+typedef	unsigned int	boolean_t;
+typedef	struct _device	*device_t;
 typedef	__intfptr_t	intfptr_t;
 
 /*
@@ -379,7 +378,7 @@ __bitcount64(__uint64_t _x)
  * The major and minor numbers are encoded in dev_t as MMMmmmMm (where
  * letters correspond to bytes).  The encoding of the lower 4 bytes is
  * constrained by compatibility with 16-bit and 32-bit dev_t's.  The
- * encoding of of the upper 4 bytes is the least unnatural one consistent
+ * encoding of the upper 4 bytes is the least unnatural one consistent
  * with this and other constraints.  Also, the decoding of the m bytes by
  * minor() is unnatural to maximize compatibility subject to not discarding
  * bits.  The upper m byte is shifted into the position of the lower M byte

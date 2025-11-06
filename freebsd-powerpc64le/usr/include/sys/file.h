@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)file.h	8.3 (Berkeley) 1/9/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_FILE_H_
@@ -129,6 +128,8 @@ typedef int fo_add_seals_t(struct file *fp, int flags);
 typedef int fo_get_seals_t(struct file *fp, int *flags);
 typedef int fo_fallocate_t(struct file *fp, off_t offset, off_t len,
 		    struct thread *td);
+typedef int fo_cmp_t(struct file *fp, struct file *fp1, struct thread *td);
+typedef int fo_spare_t(struct file *fp);
 typedef	int fo_flags_t;
 
 struct fileops {
@@ -150,6 +151,8 @@ struct fileops {
 	fo_add_seals_t	*fo_add_seals;
 	fo_get_seals_t	*fo_get_seals;
 	fo_fallocate_t	*fo_fallocate;
+	fo_cmp_t	*fo_cmp;
+	fo_spare_t	*fo_spares[7];	/* Spare slots */
 	fo_flags_t	fo_flags;	/* DFLAG_* below */
 };
 
@@ -170,6 +173,7 @@ struct fileops {
  * none	not locked
  */
 
+#if __BSD_VISIBLE
 struct fadvise_info {
 	int		fa_advice;	/* (f) FADV_* type. */
 	off_t		fa_start;	/* (f) Region start. */
@@ -209,12 +213,14 @@ struct file {
 
 #define	FOFFSET_LOCKED       0x1
 #define	FOFFSET_LOCK_WAITING 0x2
+#endif /* __BSD_VISIBLE */
 
 #endif /* _KERNEL || _WANT_FILE */
 
 /*
  * Userland version of struct file, for sysctl
  */
+#if __BSD_VISIBLE
 struct xfile {
 	ksize_t	xf_size;	/* size of struct xfile */
 	pid_t	xf_pid;		/* owning process */
@@ -234,11 +240,13 @@ struct xfile {
 	int	_xf_int_pad3;
 	int64_t	_xf_int64_pad[6];
 };
+#endif /* __BSD_VISIBLE */
 
 #ifdef _KERNEL
 
 extern struct fileops vnops;
 extern struct fileops badfileops;
+extern struct fileops path_fileops;
 extern struct fileops socketops;
 extern int maxfiles;		/* kernel limit on number of open files */
 extern int maxfilesperproc;	/* per process limit on number of open files */
@@ -253,6 +261,7 @@ int fget_write(struct thread *td, int fd, cap_rights_t *rightsp,
 int fget_fcntl(struct thread *td, int fd, cap_rights_t *rightsp,
     int needfcntl, struct file **fpp);
 int _fdrop(struct file *fp, struct thread *td);
+int fget_remote(struct thread *td, struct proc *p, int fd, struct file **fpp);
 
 fo_rdwr_t	invfo_rdwr;
 fo_truncate_t	invfo_truncate;
@@ -262,11 +271,13 @@ fo_kqfilter_t	invfo_kqfilter;
 fo_chmod_t	invfo_chmod;
 fo_chown_t	invfo_chown;
 fo_sendfile_t	invfo_sendfile;
-
+fo_stat_t	vn_statfile;
 fo_sendfile_t	vn_sendfile;
 fo_seek_t	vn_seek;
 fo_fill_kinfo_t	vn_fill_kinfo;
+fo_kqfilter_t	vn_kqfilter_opath;
 int vn_fill_kinfo_vnode(struct vnode *vp, struct kinfo_file *kif);
+int file_kcmp_generic(struct file *fp1, struct file *fp2, struct thread *td);
 
 void finit(struct file *, u_int, short, void *, struct fileops *);
 void finit_vnode(struct file *, u_int, void *, struct fileops *);
@@ -281,6 +292,7 @@ int fgetvp_read(struct thread *td, int fd, cap_rights_t *rightsp,
 int fgetvp_write(struct thread *td, int fd, cap_rights_t *rightsp,
     struct vnode **vpp);
 int fgetvp_lookup_smr(int fd, struct nameidata *ndp, struct vnode **vpp, bool *fsearch);
+int fgetvp_lookup(int fd, struct nameidata *ndp, struct vnode **vpp);
 
 static __inline __result_use_check bool
 fhold(struct file *fp)
@@ -468,6 +480,15 @@ fo_fallocate(struct file *fp, off_t offset, off_t len, struct thread *td)
 	if (fp->f_ops->fo_fallocate == NULL)
 		return (ENODEV);
 	return ((*fp->f_ops->fo_fallocate)(fp, offset, len, td));
+}
+
+static __inline int
+fo_cmp(struct file *fp1, struct file *fp2, struct thread *td)
+{
+
+	if (fp1->f_ops->fo_cmp == NULL)
+		return (ENODEV);
+	return ((*fp1->f_ops->fo_cmp)(fp1, fp2, td));
 }
 
 #endif /* _KERNEL */

@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1980, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -32,8 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)dumprestore.h	8.2 (Berkeley) 1/21/94
- *
- * $FreeBSD: releng/11.3/include/protocols/dumprestore.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _PROTOCOLS_DUMPRESTORE_H_
@@ -74,7 +74,7 @@
  */
 typedef uint32_t dump_ino_t;
 
-union u_spcl {
+extern union u_spcl {
 	char dummy[TP_BSIZE];
 	struct	s_spcl {
 		int32_t	c_type;		    /* record type (see below) */
@@ -116,9 +116,9 @@ union u_spcl {
 		char	c_addr[TP_NINDIR];  /* 1 => data; 0 => hole in inode */
 		char	c_label[LBLSIZE];   /* dump label */
 		int32_t	c_level;	    /* level of this dump */
-		char	c_filesys[NAMELEN]; /* name of dumpped file system */
-		char	c_dev[NAMELEN];	    /* name of dumpped device */
-		char	c_host[NAMELEN];    /* name of dumpped host */
+		char	c_filesys[NAMELEN]; /* name of dumped file system */
+		char	c_dev[NAMELEN];	    /* name of dumped device */
+		char	c_host[NAMELEN];    /* name of dumped host */
 		int32_t	c_flags;	    /* additional information */
 		int32_t	c_old_firstrec;	    /* first record on volume */
 		int64_t	c_date;		    /* date of this dump */

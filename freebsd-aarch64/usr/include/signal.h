@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)signal.h	8.3 (Berkeley) 3/30/94
- * $FreeBSD: releng/12.2/include/signal.h 355898 2019-12-19 02:09:16Z kevans $
  */
 
 #ifndef _SIGNAL_H_

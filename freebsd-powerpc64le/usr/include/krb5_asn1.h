@@ -455,7 +455,7 @@ ASN1EXP void   ASN1CALL free_ENCTYPE  (ENCTYPE *);
 
 
 /*
-krb5uint32 ::= INTEGER (0..-1)
+krb5uint32 ::= INTEGER (0..4294967295)
 */
 
 typedef unsigned int krb5uint32;

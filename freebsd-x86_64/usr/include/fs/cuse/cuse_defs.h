@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/11.3/sys/fs/cuse/cuse_defs.h 346666 2019-04-25 11:57:34Z hselasky $ */
 /*-
  * Copyright (c) 2010-2012 Hans Petter Selasky. All rights reserved.
  *
@@ -27,7 +26,7 @@
 #ifndef _CUSE_DEFS_H_
 #define	_CUSE_DEFS_H_
 
-#define	CUSE_VERSION		0x000124
+#define	CUSE_VERSION		0x000125
 
 #define	CUSE_ERR_NONE		0
 #define	CUSE_ERR_BUSY		-1

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2009 Rick Macklem, University of Guelph
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/nfs/nfsdport.h 283635 2015-05-27 22:00:05Z rmacklem $
  */
 
 /*
@@ -52,7 +52,7 @@
  * needs to be returned by nfsd_fhtovp().
  */
 struct nfsexstuff {
-	int	nes_exflag;			/* export flags */
+	uint64_t nes_exflag;			/* export flags */
 	int	nes_numsecflavor;		/* # of security flavors */
 	int	nes_secflavors[MAXSECFLAVORS];	/* and the flavors */
 };
@@ -79,18 +79,20 @@ struct nfsexstuff {
 #define	NFSVNO_EXPORTANON(e)		((e)->nes_exflag & MNT_EXPORTANON)
 #define	NFSVNO_EXSTRICTACCESS(e)	((e)->nes_exflag & MNT_EXSTRICTACCESS)
 #define	NFSVNO_EXV4ONLY(e)		((e)->nes_exflag & MNT_EXV4ONLY)
+#define	NFSVNO_EXTLS(e)			((e)->nes_exflag & MNT_EXTLS)
+#define	NFSVNO_EXTLSCERT(e)		((e)->nes_exflag & MNT_EXTLSCERT)
+#define	NFSVNO_EXTLSCERTUSER(e)		((e)->nes_exflag & MNT_EXTLSCERTUSER)
 
 #define	NFSVNO_SETEXRDONLY(e)	((e)->nes_exflag = (MNT_EXPORTED|MNT_EXRDONLY))
 
 #define	NFSVNO_CMPFH(f1, f2)						\
-    ((f1)->fh_fsid.val[0] == (f2)->fh_fsid.val[0] &&			\
-     (f1)->fh_fsid.val[1] == (f2)->fh_fsid.val[1] &&			\
+    (fsidcmp(&(f1)->fh_fsid, &(f2)->fh_fsid) == 0 &&			\
      bcmp(&(f1)->fh_fid, &(f2)->fh_fid, sizeof(struct fid)) == 0)
 
 #define	NFSLOCKHASH(f) 							\
-	(&nfslockhash[nfsrv_hashfh(f) % nfsrv_lockhashsize])
+	(&NFSD_VNET(nfslockhash)[nfsrv_hashfh(f) % nfsrv_lockhashsize])
 
-#define	NFSFPVNODE(f)	((struct vnode *)((f)->f_data))
+#define	NFSFPVNODE(f)	((f)->f_vnode)
 #define	NFSFPCRED(f)	((f)->f_cred)
 #define	NFSFPFLAG(f)	((f)->f_flag)
 
@@ -99,12 +101,6 @@ struct nfsexstuff {
 	(n)->cn_nameiop = (o);						\
 	(n)->cn_flags = (f);						\
     } while (0)
-
-/*
- * A little bit of Darwin vfs kpi.
- */
-#define	vnode_mount(v)	((v)->v_mount)
-#define	vfs_statfs(m)	(&((m)->mnt_stat))
 
 #define	NFSPATHLEN_T	size_t
 
@@ -120,4 +116,3 @@ struct nfsexstuff {
 		if (nfsd_debuglevel >= (level))				\
 			printf(__VA_ARGS__);				\
 	} while (0)
-

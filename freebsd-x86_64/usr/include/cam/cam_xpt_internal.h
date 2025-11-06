@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright 2009 Scott Long
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/cam_xpt_internal.h 328820 2018-02-02 23:22:58Z mav $
  */
 
 #ifndef _CAM_CAM_XPT_INTERNAL_H
@@ -47,6 +47,7 @@ typedef void (*xpt_dev_async_func)(u_int32_t async_code,
 				   struct cam_ed *device,
 				   void *async_arg);
 typedef void (*xpt_announce_periph_func)(struct cam_periph *periph);
+typedef void (*xpt_announce_periph_sbuf_func)(struct cam_periph *periph, struct sbuf *sbuf);
 
 struct xpt_xport_ops {
 	xpt_alloc_device_func	alloc_device;
@@ -54,6 +55,7 @@ struct xpt_xport_ops {
 	xpt_action_func		action;
 	xpt_dev_async_func	async;
 	xpt_announce_periph_func announce;
+	xpt_announce_periph_sbuf_func announce_sbuf;
 };
 
 struct xpt_xport {
@@ -67,11 +69,14 @@ SET_DECLARE(cam_xpt_xport_set, struct xpt_xport);
 	DATA_SET(cam_xpt_xport_set, data)
 
 typedef void (*xpt_proto_announce_func)(struct cam_ed *);
+typedef void (*xpt_proto_announce_sbuf_func)(struct cam_ed *, struct sbuf *);
 typedef void (*xpt_proto_debug_out_func)(union ccb *);
 
 struct xpt_proto_ops {
 	xpt_proto_announce_func	announce;
+	xpt_proto_announce_sbuf_func	announce_sbuf;
 	xpt_proto_announce_func	denounce;
+	xpt_proto_announce_sbuf_func	denounce_sbuf;
 	xpt_proto_debug_out_func debug_out;
 };
 
@@ -85,10 +90,9 @@ SET_DECLARE(cam_xpt_proto_set, struct xpt_proto);
 #define CAM_XPT_PROTO(data) 				\
 	DATA_SET(cam_xpt_proto_set, data)
 
-
 /*
  * The CAM EDT (Existing Device Table) contains the device information for
- * all devices for all busses in the system.  The table contains a
+ * all devices for all buses in the system.  The table contains a
  * cam_ed structure for each device on the bus.
  */
 struct cam_ed {
@@ -100,7 +104,7 @@ struct cam_ed {
 	struct	cam_ccbq ccbq;		/* Queue of pending ccbs */
 	struct	async_list asyncs;	/* Async callback info for this B/T/L */
 	struct	periph_list periphs;	/* All attached devices */
-	u_int	generation;		/* Generation number */
+	u_int		 generation;	/* Generation number */
 	void		 *quirk;	/* Oddities about this device */
 	u_int		 maxtags;
 	u_int		 mintags;
@@ -120,6 +124,7 @@ struct cam_ed {
 	uint32_t	 rcap_len;
 	uint8_t		 *rcap_buf;
 	struct		 ata_params ident_data;
+        struct		 mmc_params mmc_ident_data;
 	u_int8_t	 inq_flags;	/*
 					 * Current settings for inquiry flags.
 					 * This allows us to override settings
@@ -147,8 +152,8 @@ struct cam_ed {
 	STAILQ_ENTRY(cam_ed) highpowerq_entry;
 	struct mtx	 device_mtx;
 	struct task	 device_destroy_task;
-	const struct	 nvme_controller_data *nvme_cdata;
-	const struct	 nvme_namespace_data *nvme_data;
+	struct nvme_controller_data *nvme_cdata;
+	struct nvme_namespace_data *nvme_data;
 };
 
 /*

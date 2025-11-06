@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)param.h	8.3 (Berkeley) 4/4/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_PARAM_H_
@@ -52,7 +51,7 @@
  * there.
  * Currently this lives here in the doc/ repository:
  *
- *	documentation/content/en/books/porters-handbook/versions/chapter.adoc
+ *	documentation/content/en/books/porters-handbook/versions/_index.adoc
  *
  * scheme is:  <major><two digit minor>Rxx
  *		'R' is in the range 0 to 4 if this is a release branch or
@@ -60,7 +59,7 @@
  *		in the range 5 to 9.
  */
 #undef __FreeBSD_version
-#define __FreeBSD_version 1300139	/* Master, propagated to newvers */
+#define __FreeBSD_version 1304000	/* Master, propagated to newvers */
 
 /*
  * __FreeBSD_kernel__ indicates that this system uses the kernel of FreeBSD,
@@ -78,7 +77,7 @@
 #undef __FreeBSD_kernel__
 #define __FreeBSD_kernel__
 
-#if defined(_KERNEL) || defined(IN_RTLD)
+#if defined(_KERNEL) || defined(_WANT_P_OSREL)
 #define	P_OSREL_SIGWAIT			700000
 #define	P_OSREL_SIGSEGV			700004
 #define	P_OSREL_MAP_ANON		800104
@@ -91,6 +90,8 @@
 #define	P_OSREL_CK_SUPERBLOCK		1300000
 #define	P_OSREL_CK_INODE		1300005
 #define	P_OSREL_POWERPC_NEW_AUX_ARGS	1300070
+#define	P_OSREL_TIDPID			1400079
+#define	P_OSREL_TIDPID_13		1302501
 
 #define	P_OSREL_MAJOR(x)		((x) / 100000)
 #endif
@@ -305,9 +306,9 @@
 #endif
 #define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
 #define	rounddown(x, y)	(((x)/(y))*(y))
-#define	rounddown2(x, y) ((x)&(~((y)-1)))          /* if y is power of two */
+#define	rounddown2(x, y) __align_down(x, y) /* if y is power of two */
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))  /* to any y */
-#define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#define	roundup2(x, y)	__align_up(x, y) /* if y is powers of two */
 #define powerof2(x)	((((x)-1)&(x))==0)
 
 /* Macros for min/max. */
@@ -343,12 +344,12 @@ __END_DECLS
  * Scale factor for scaled integers used to count %cpu time and load avgs.
  *
  * The number of CPU `tick's that map to a unique `%age' can be expressed
- * by the formula (1 / (2 ^ (FSHIFT - 11))).  The maximum load average that
- * can be calculated (assuming 32 bits) can be closely approximated using
- * the formula (2 ^ (2 * (16 - FSHIFT))) for (FSHIFT < 15).
+ * by the formula (1 / (2 ^ (FSHIFT - 11))).  Since the intermediate
+ * calculation is done with 64-bit precision, the maximum load average that can
+ * be calculated is approximately 2^32 / FSCALE.
  *
  * For the scheduler to maintain a 1:1 mapping of CPU `tick' to `%age',
- * FSHIFT must be at least 11; this gives us a maximum load avg of ~1024.
+ * FSHIFT must be at least 11.  This gives a maximum load avg of 2 million.
  */
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)

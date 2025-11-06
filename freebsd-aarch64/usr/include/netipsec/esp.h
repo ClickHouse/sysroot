@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/esp.h 326023 2017-11-20 19:43:44Z pfg $	*/
 /*	$KAME: esp.h,v 1.16 2000/10/18 21:28:00 itojun Exp $	*/
 
 /*-
@@ -64,6 +63,6 @@ struct esptail {
 	u_int8_t	esp_nxt;	/* Next header */
 	/*variable size, 32bit bound*/	/* Authentication data (new IPsec)*/
 };
-	
+
 #define ESP_ALEN	12	/* 96-bit authenticator */
 #endif /*_NETIPSEC_ESP_H_*/

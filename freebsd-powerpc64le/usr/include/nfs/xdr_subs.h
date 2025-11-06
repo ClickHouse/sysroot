@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)xdr_subs.h	8.3 (Berkeley) 3/30/95
- * $FreeBSD$
  */
 
 #ifndef _NFS_XDR_SUBS_H_
@@ -83,10 +82,12 @@ do { \
 #define	fxdr_hyper(f) \
 	((((u_quad_t)ntohl(((u_int32_t *)(f))[0])) << 32) | \
 	 (u_quad_t)(ntohl(((u_int32_t *)(f))[1])))
-#define	txdr_hyper(f, t) \
-do { \
-	((u_int32_t *)(t))[0] = htonl((u_int32_t)((f) >> 32)); \
-	((u_int32_t *)(t))[1] = htonl((u_int32_t)((f) & 0xffffffff)); \
-} while (0)
+
+static inline void
+txdr_hyper(uint64_t f, uint32_t* t)
+{
+	t[0] = htonl((u_int32_t)(f >> 32));
+	t[1] = htonl((u_int32_t)(f & 0xffffffff));
+}
 
 #endif

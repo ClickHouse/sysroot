@@ -3,6 +3,8 @@
  */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001, FreeBSD Incorporated 
  * All rights reserved.
  *
@@ -29,8 +31,6 @@
  * SUCH DAMAGE.
  *
  * Author: Julian Elischer <julian@freebsd.org>
- *
- * $FreeBSD: releng/11.3/sys/netgraph/ng_etf.h 139823 2005-01-07 01:45:51Z imp $
  */
 
 #ifndef _NETGRAPH_NG_ETF_H_

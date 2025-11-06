@@ -1,7 +1,8 @@
 /*	$NetBSD: rpc_com.h,v 1.3 2000/12/10 04:10:08 christos Exp $	*/
-/*	$FreeBSD: releng/11.3/include/rpc/rpc_com.h 331722 2018-03-29 02:50:57Z eadler $ */
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2009, Sun Microsystems, Inc.
  * All rights reserved.
  *
@@ -57,7 +58,6 @@
 
 __BEGIN_DECLS
 extern u_int __rpc_get_a_size(int);
-extern int __rpc_dtbsize(void);
 extern int _rpc_dtablesize(void);
 extern struct netconfig * __rpcgettp(int);
 extern  int  __rpc_get_default_domain(char **);

@@ -29,7 +29,6 @@
  *
  *	From: @(#)ansi.h	8.2 (Berkeley) 1/4/94
  *	From: @(#)types.h	8.3 (Berkeley) 1/5/94
- * $FreeBSD: releng/12.2/sys/arm64/include/_types.h 329859 2018-02-23 04:04:25Z imp $
  */
 
 #ifndef _MACHINE__TYPES_H_

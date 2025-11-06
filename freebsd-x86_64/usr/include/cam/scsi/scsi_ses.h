@@ -1,5 +1,6 @@
-/* $FreeBSD: releng/11.3/sys/cam/scsi/scsi_ses.h 309041 2016-11-23 09:10:11Z mav $ */
 /*-
+ * SPDX-License-Identifier: (BSD-2-Clause OR GPL-2.0)
+ *
  * Copyright (c) 2000 by Matthew Jacob
  * All rights reserved.
  *
@@ -152,7 +153,6 @@ ses_cfg_page_get_num_subenc(struct ses_cfg_page *page)
 {
 	return (page->hdr.page_specific_flags + 1);
 }
-
 
 /*================ SCSI SES Control Diagnostic Page Structures ==============*/
 struct ses_ctrl_common {
@@ -2057,6 +2057,50 @@ union ses_status_element {
 	uint8_t				    bytes[4];
 };
 
+/*
+ * Convert element status into control as much as possible.
+ * Some bits have different meaning in status and control,
+ * while others have the same and should be preserved.
+ */
+static inline void
+ses_status_to_ctrl(uint8_t type, uint8_t *bytes)
+{
+	/* Updated to SES4r5. */
+	static const uint8_t mask[][4] = {
+	    { 0x60, 0x00, 0x00, 0x00 },	/* UNSPECIFIED */
+	    { 0x60, 0x00, 0x4e, 0x3c },	/* DEVICE */
+	    { 0x60, 0xc0, 0x00, 0x60 },	/* POWER */
+	    { 0x60, 0xc0, 0x00, 0x60 },	/* COOLING/FAN */
+	    { 0x60, 0xc0, 0x00, 0x80 },	/* THERM */
+	    { 0x60, 0xc0, 0x00, 0x01 },	/* DOORLOCK */
+	    { 0x60, 0xc0, 0x00, 0x5f },	/* ALARM */
+	    { 0x60, 0xf0, 0x01, 0x00 },	/* ESSC */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* SCC */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* NVRAM */
+	    { 0x60, 0x00, 0x00, 0x00 },	/* INV_OP_REASON */
+	    { 0x60, 0x00, 0x00, 0xe0 },	/* UPS */
+	    { 0x60, 0xc0, 0xff, 0xff },	/* DISPLAY */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* KEYPAD */
+	    { 0x60, 0x80, 0x00, 0xff },	/* ENCLOSURE */
+	    { 0x60, 0xc0, 0x00, 0x10 },	/* SCSIXVR */
+	    { 0x60, 0x80, 0xff, 0xff },	/* LANGUAGE */
+	    { 0x60, 0xc0, 0x00, 0x01 },	/* COMPORT */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* VOM */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* AMMETER */
+	    { 0x60, 0xc0, 0x00, 0x01 },	/* SCSI_TGT */
+	    { 0x60, 0xc0, 0x00, 0x01 },	/* SCSI_INI*/
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* SUBENC */
+	    { 0x60, 0xff, 0x4e, 0x3c },	/* ARRAY_DEV */
+	    { 0x60, 0xc0, 0x00, 0x00 },	/* SAS_EXP */
+	    { 0x60, 0x80, 0x00, 0x40 },	/* SAS_CONN */
+	};
+
+	if (type >= sizeof(mask) / sizeof(mask[0]))
+		type = 0;
+	for (int i = 0; i < 4; i++)
+		bytes[i] &= mask[type][i];
+}
+
 /*===================== SCSI SES Status Diagnostic Page =====================*/
 struct ses_status_page {
 	struct ses_page_hdr  hdr;
@@ -2153,8 +2197,6 @@ struct ses_status_page_hdr {
 /* Element Descriptor Diagnostic Page: unused */
 /* Additional Element Status Diagnostic Page: unused */
 
-
-
 /* Summary SES Status Defines, Common Status Codes */
 #define	SES_OBJSTAT_UNSUPPORTED		0
 #define	SES_OBJSTAT_OK			1
@@ -2179,15 +2221,27 @@ struct ses_status_page_hdr {
 #define	SESCTL_DISABLE		0x20
 #define	SESCTL_RSTSWAP		0x10
 
-
-/* Control bits, Device Elements, byte 2 */
-#define	SESCTL_DRVLCK	0x40	/* "DO NOT REMOVE" */
+/* Control bits, Array Device Slot Elements, byte 1 */
+#define	SESCTL_RQSOK	0x80	/* RQST OK */
+#define	SESCTL_RQSRSV	0x40	/* RQST RSVD DEVICE */
+#define	SESCTL_RQSSPR	0x20	/* RQST HOT SPARE */
+#define	SESCTL_RQSCCH	0x10	/* RQST CONS CHECK */
+#define	SESCTL_RQSCRA	0x08	/* RQST IN CRIT ARRAY */
+#define	SESCTL_RQSFAA	0x04	/* RQST IN FAILED ARRAY */
+#define	SESCTL_RQSRR	0x02	/* RQST REBUI/REMAP */
+#define	SESCTL_RQSRRA	0x01	/* RQST R/R ABORT */
+/* Control bits, [Array] Device Slot Elements, byte 2 */
+#define	SESCTL_RQSACT	0x80	/* RQST ACTIVE */
+#define	SESCTL_DRVLCK	0x40	/* DO NOT REMOVE */
+#define	SESCTL_RQSMSN	0x10	/* RQST MISSING */
 #define	SESCTL_RQSINS	0x08	/* RQST INSERT */
 #define	SESCTL_RQSRMV	0x04	/* RQST REMOVE */
 #define	SESCTL_RQSID	0x02	/* RQST IDENT */
-/* Control bits, Device Elements, byte 3 */
+/* Control bits, [Array] Device Slot Elements, byte 3 */
 #define	SESCTL_RQSFLT	0x20	/* RQST FAULT */
 #define	SESCTL_DEVOFF	0x10	/* DEVICE OFF */
+#define	SESCTL_ENBYPA	0x08	/* ENABLE BYP A */
+#define	SESCTL_ENBYPB	0x04	/* ENABLE BYP B */
 
 /* Control bits, Generic, byte 3 */
 #define	SESCTL_RQSTFAIL	0x40
@@ -2397,6 +2451,17 @@ union ses_elm_sas_hdr {
 int ses_elm_sas_type0_not_all_phys(union ses_elm_sas_hdr *);
 int ses_elm_sas_descr_type(union ses_elm_sas_hdr *);
 
+/*
+ * This structure for SPSP_PROTO_ATA is not defined by SES specs,
+ * but purely my own design to make AHCI EM interoperate with SES.
+ * Since no other software I know can talk to SEMB, and we do not
+ * expose this outside, it should be safe to do what we want.
+ */
+struct ses_elm_ata_hdr {
+	uint8_t bus[4];
+	uint8_t target[4];
+};
+
 struct ses_elm_addlstatus_base_hdr {
 	uint8_t byte0;
 	/*
@@ -2414,7 +2479,13 @@ int ses_elm_addlstatus_invalid(struct ses_elm_addlstatus_base_hdr *);
 struct ses_elm_addlstatus_eip_hdr {
 	struct ses_elm_addlstatus_base_hdr base;
 	uint8_t byte2;
-#define	SES_ADDL_EIP_EIIOE	1
+#define	SES_ADDL_EIP_EIIOE_MASK	3
+#define	SES_ADDL_EIP_EIIOE_SES2	0
+#define	SES_ADDL_EIP_EIIOE_GLOB	1
+#define	SES_ADDL_EIP_EIIOE_IND	2
+#define	SES_ADDL_EIP_EIIOE_MIX	3
+#define	SES_ADDL_EIP_EIIOE_EI_GLOB(x)				\
+    (((x) & SES_ADDL_EIP_EIIOE_MASK) == SES_ADDL_EIP_EIIOE_GLOB)
 	uint8_t element_index;
 	/* NB: This define (currently) applies to all eip=1 headers */
 #define	SES_EIP_HDR_EXTRA_LEN	2

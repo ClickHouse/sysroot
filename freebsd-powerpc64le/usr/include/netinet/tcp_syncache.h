@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tcp_var.h	8.4 (Berkeley) 5/24/95
- * $FreeBSD$
  */
 
 #ifndef _NETINET_TCP_SYNCACHE_H_
@@ -40,14 +39,15 @@ void	 syncache_init(void);
 #ifdef VIMAGE
 void	syncache_destroy(void);
 #endif
-void	 syncache_unreach(struct in_conninfo *, tcp_seq);
+void	 syncache_unreach(struct in_conninfo *, tcp_seq, uint16_t);
 int	 syncache_expand(struct in_conninfo *, struct tcpopt *,
-	     struct tcphdr *, struct socket **, struct mbuf *);
+	     struct tcphdr *, struct socket **, struct mbuf *, uint16_t);
 int	 syncache_add(struct in_conninfo *, struct tcpopt *,
 	     struct tcphdr *, struct inpcb *, struct socket **, struct mbuf *,
-	     void *, void *, uint8_t);
-void	 syncache_chkrst(struct in_conninfo *, struct tcphdr *, struct mbuf *);
-void	 syncache_badack(struct in_conninfo *);
+	     void *, void *, uint8_t, uint16_t);
+void	 syncache_chkrst(struct in_conninfo *, struct tcphdr *, struct mbuf *,
+	     uint16_t);
+void	 syncache_badack(struct in_conninfo *, uint16_t);
 int	 syncache_pcblist(struct sysctl_req *);
 
 struct syncache {
@@ -55,6 +55,7 @@ struct syncache {
 	struct		in_conninfo sc_inc;	/* addresses */
 	int		sc_rxttime;		/* retransmit time */
 	u_int16_t	sc_rxmits;		/* retransmit counter */
+	u_int16_t	sc_port;		/* remote UDP encaps port */
 	u_int32_t	sc_tsreflect;		/* timestamp to reflect */
 	u_int32_t	sc_tsoff;		/* ts offset w/ syncookies */
 	u_int32_t	sc_flowlabel;		/* IPv6 flowlabel */

@@ -14,8 +14,6 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NET_LAGG_H
@@ -223,7 +221,7 @@ struct lagg_lb {
 
 struct lagg_mc {
 	struct sockaddr_dl	mc_addr;
-	struct ifmultiaddr      *mc_ifma;
+	struct ifmultiaddr	*mc_ifma;
 	SLIST_ENTRY(lagg_mc)	mc_entries;
 };
 

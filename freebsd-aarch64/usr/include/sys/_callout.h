@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)callout.h	8.2 (Berkeley) 1/21/94
- * $FreeBSD: releng/12.2/sys/sys/_callout.h 360633 2020-05-04 16:30:36Z jhb $
  */
 
 #ifndef _SYS__CALLOUT_H

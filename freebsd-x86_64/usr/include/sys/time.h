@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)time.h	8.5 (Berkeley) 5/4/95
- * $FreeBSD: releng/11.3/sys/sys/time.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_TIME_H_
@@ -36,6 +37,7 @@
 #include <sys/_timeval.h>
 #include <sys/types.h>
 #include <sys/timespec.h>
+#include <sys/_clock_id.h>
 
 struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
@@ -156,51 +158,123 @@ sbttobt(sbintime_t _sbt)
 }
 
 /*
- * Decimal<->sbt conversions.  Multiplying or dividing by SBT_1NS results in
- * large roundoff errors which sbttons() and nstosbt() avoid.  Millisecond and
- * microsecond functions are also provided for completeness.
+ * Scaling functions for signed and unsigned 64-bit time using any
+ * 32-bit fraction:
  */
+
 static __inline int64_t
-sbttons(sbintime_t _sbt)
+__stime64_scale32_ceil(int64_t x, int32_t factor, int32_t divisor)
 {
+	const int64_t rem = x % divisor;
 
-	return ((1000000000 * _sbt) >> 32);
-}
-
-static __inline sbintime_t
-nstosbt(int64_t _ns)
-{
-
-	return ((_ns * (((uint64_t)1 << 63) / 500000000)) >> 32);
+	return (x / divisor * factor + (rem * factor + divisor - 1) / divisor);
 }
 
 static __inline int64_t
-sbttous(sbintime_t _sbt)
+__stime64_scale32_floor(int64_t x, int32_t factor, int32_t divisor)
 {
+	const int64_t rem = x % divisor;
 
-	return ((1000000 * _sbt) >> 32);
+	return (x / divisor * factor + (rem * factor) / divisor);
 }
 
-static __inline sbintime_t
-ustosbt(int64_t _us)
+static __inline uint64_t
+__utime64_scale32_ceil(uint64_t x, uint32_t factor, uint32_t divisor)
 {
+	const uint64_t rem = x % divisor;
 
-	return ((_us * (((uint64_t)1 << 63) / 500000)) >> 32);
+	return (x / divisor * factor + (rem * factor + divisor - 1) / divisor);
+}
+
+static __inline uint64_t
+__utime64_scale32_floor(uint64_t x, uint32_t factor, uint32_t divisor)
+{
+	const uint64_t rem = x % divisor;
+
+	return (x / divisor * factor + (rem * factor) / divisor);
+}
+
+/*
+ * This function finds the common divisor between the two arguments,
+ * in powers of two. Use a macro, so the compiler will output a
+ * warning if the value overflows!
+ *
+ * Detailed description:
+ *
+ * Create a variable with 1's at the positions of the leading 0's
+ * starting at the least significant bit, producing 0 if none (e.g.,
+ * 01011000 -> 0000 0111). Then these two variables are bitwise AND'ed
+ * together, to produce the greatest common power of two minus one. In
+ * the end add one to flip the value to the actual power of two (e.g.,
+ * 0000 0111 + 1 -> 0000 1000).
+ */
+#define	__common_powers_of_two(a, b) \
+	((~(a) & ((a) - 1) & ~(b) & ((b) - 1)) + 1)
+
+/*
+ * Scaling functions for signed and unsigned 64-bit time assuming
+ * reducable 64-bit fractions to 32-bit fractions:
+ */
+
+static __inline int64_t
+__stime64_scale64_ceil(int64_t x, int64_t factor, int64_t divisor)
+{
+	const int64_t gcd = __common_powers_of_two(factor, divisor);
+
+	return (__stime64_scale32_ceil(x, factor / gcd, divisor / gcd));
 }
 
 static __inline int64_t
-sbttoms(sbintime_t _sbt)
+__stime64_scale64_floor(int64_t x, int64_t factor, int64_t divisor)
 {
+	const int64_t gcd = __common_powers_of_two(factor, divisor);
 
-	return ((1000 * _sbt) >> 32);
+	return (__stime64_scale32_floor(x, factor / gcd, divisor / gcd));
 }
 
-static __inline sbintime_t
-mstosbt(int64_t _ms)
+static __inline uint64_t
+__utime64_scale64_ceil(uint64_t x, uint64_t factor, uint64_t divisor)
 {
+	const uint64_t gcd = __common_powers_of_two(factor, divisor);
 
-	return ((_ms * (((uint64_t)1 << 63) / 500)) >> 32);
+	return (__utime64_scale32_ceil(x, factor / gcd, divisor / gcd));
 }
+
+static __inline uint64_t
+__utime64_scale64_floor(uint64_t x, uint64_t factor, uint64_t divisor)
+{
+	const uint64_t gcd = __common_powers_of_two(factor, divisor);
+
+	return (__utime64_scale32_floor(x, factor / gcd, divisor / gcd));
+}
+
+/*
+ * Decimal<->sbt conversions. Multiplying or dividing by SBT_1NS
+ * results in large roundoff errors which sbttons() and nstosbt()
+ * avoid. Millisecond and microsecond functions are also provided for
+ * completeness.
+ *
+ * When converting from sbt to another unit, the result is always
+ * rounded down. When converting back to sbt the result is always
+ * rounded up. This gives the property that sbttoX(Xtosbt(y)) == y .
+ *
+ * The conversion functions can also handle negative values.
+ */
+#define	SBT_DECLARE_CONVERSION_PAIR(name, units_per_second)	\
+static __inline int64_t \
+sbtto##name(sbintime_t sbt) \
+{ \
+	return (__stime64_scale64_floor(sbt, units_per_second, SBT_1S)); \
+} \
+static __inline sbintime_t \
+name##tosbt(int64_t name) \
+{ \
+	return (__stime64_scale64_ceil(name, SBT_1S, units_per_second)); \
+}
+
+SBT_DECLARE_CONVERSION_PAIR(ns, 1000000000)
+SBT_DECLARE_CONVERSION_PAIR(us, 1000000)
+SBT_DECLARE_CONVERSION_PAIR(ms, 1000)
 
 /*-
  * Background information:
@@ -221,8 +295,19 @@ bintime2timespec(const struct bintime *_bt, struct timespec *_ts)
 {
 
 	_ts->tv_sec = _bt->sec;
-	_ts->tv_nsec = ((uint64_t)1000000000 *
-	    (uint32_t)(_bt->frac >> 32)) >> 32;
+	_ts->tv_nsec = __utime64_scale64_floor(
+	    _bt->frac, 1000000000, 1ULL << 32) >> 32;
+}
+
+static __inline uint64_t
+bintime2ns(const struct bintime *_bt)
+{
+	uint64_t ret;
+
+	ret = (uint64_t)(_bt->sec) * (uint64_t)1000000000;
+	ret += __utime64_scale64_floor(
+	    _bt->frac, 1000000000, 1ULL << 32) >> 32;
+	return (ret);
 }
 
 static __inline void
@@ -230,8 +315,8 @@ timespec2bintime(const struct timespec *_ts, struct bintime *_bt)
 {
 
 	_bt->sec = _ts->tv_sec;
-	/* 18446744073 = int(2^64 / 1000000000) */
-	_bt->frac = _ts->tv_nsec * (uint64_t)18446744073LL;
+	_bt->frac = __utime64_scale64_floor(
+	    (uint64_t)_ts->tv_nsec << 32, 1ULL << 32, 1000000000);
 }
 
 static __inline void
@@ -239,7 +324,8 @@ bintime2timeval(const struct bintime *_bt, struct timeval *_tv)
 {
 
 	_tv->tv_sec = _bt->sec;
-	_tv->tv_usec = ((uint64_t)1000000 * (uint32_t)(_bt->frac >> 32)) >> 32;
+	_tv->tv_usec = __utime64_scale64_floor(
+	    _bt->frac, 1000000, 1ULL << 32) >> 32;
 }
 
 static __inline void
@@ -247,8 +333,8 @@ timeval2bintime(const struct timeval *_tv, struct bintime *_bt)
 {
 
 	_bt->sec = _tv->tv_sec;
-	/* 18446744073709 = int(2^64 / 1000000) */
-	_bt->frac = _tv->tv_usec * (uint64_t)18446744073709LL;
+	_bt->frac = __utime64_scale64_floor(
+	    (uint64_t)_tv->tv_usec << 32, 1ULL << 32, 1000000);
 }
 
 static __inline struct timespec
@@ -287,7 +373,24 @@ tvtosbt(struct timeval _tv)
 #endif /* __BSD_VISIBLE */
 
 #ifdef _KERNEL
+/*
+ * Simple macros to convert ticks to milliseconds
+ * or microseconds and vice-versa. The answer
+ * will always be at least 1. Note the return
+ * value is a uint32_t however we step up the
+ * operations to 64 bit to avoid any overflow/underflow
+ * problems.
+ */
+#define TICKS_2_MSEC(t) max(1, (uint32_t)(hz == 1000) ? \
+	  (t) : (((uint64_t)(t) * (uint64_t)1000)/(uint64_t)hz))
+#define TICKS_2_USEC(t) max(1, (uint32_t)(hz == 1000) ? \
+	  ((t) * 1000) : (((uint64_t)(t) * (uint64_t)1000000)/(uint64_t)hz))
+#define MSEC_2_TICKS(m) max(1, (uint32_t)((hz == 1000) ? \
+	  (m) : ((uint64_t)(m) * (uint64_t)hz)/(uint64_t)1000))
+#define USEC_2_TICKS(u) max(1, (uint32_t)((hz == 1000) ? \
+	 ((u) / 1000) : ((uint64_t)(u) * (uint64_t)hz)/(uint64_t)1000000))
 
+#endif
 /* Operations on timespecs */
 #define	timespecclear(tvp)	((tvp)->tv_sec = (tvp)->tv_nsec = 0)
 #define	timespecisset(tvp)	((tvp)->tv_sec || (tvp)->tv_nsec)
@@ -295,24 +398,29 @@ tvtosbt(struct timeval _tv)
 	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
 	    ((tvp)->tv_nsec cmp (uvp)->tv_nsec) :			\
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
-#define	timespecadd(vvp, uvp)						\
+
+#define	timespecadd(tsp, usp, vsp)					\
 	do {								\
-		(vvp)->tv_sec += (uvp)->tv_sec;				\
-		(vvp)->tv_nsec += (uvp)->tv_nsec;			\
-		if ((vvp)->tv_nsec >= 1000000000) {			\
-			(vvp)->tv_sec++;				\
-			(vvp)->tv_nsec -= 1000000000;			\
+		(vsp)->tv_sec = (tsp)->tv_sec + (usp)->tv_sec;		\
+		(vsp)->tv_nsec = (tsp)->tv_nsec + (usp)->tv_nsec;	\
+		if ((vsp)->tv_nsec >= 1000000000L) {			\
+			(vsp)->tv_sec++;				\
+			(vsp)->tv_nsec -= 1000000000L;			\
 		}							\
 	} while (0)
-#define	timespecsub(vvp, uvp)						\
+#define	timespecsub(tsp, usp, vsp)					\
 	do {								\
-		(vvp)->tv_sec -= (uvp)->tv_sec;				\
-		(vvp)->tv_nsec -= (uvp)->tv_nsec;			\
-		if ((vvp)->tv_nsec < 0) {				\
-			(vvp)->tv_sec--;				\
-			(vvp)->tv_nsec += 1000000000;			\
+		(vsp)->tv_sec = (tsp)->tv_sec - (usp)->tv_sec;		\
+		(vsp)->tv_nsec = (tsp)->tv_nsec - (usp)->tv_nsec;	\
+		if ((vsp)->tv_nsec < 0) {				\
+			(vsp)->tv_sec--;				\
+			(vsp)->tv_nsec += 1000000000L;			\
 		}							\
 	} while (0)
+#define	timespecvalid_interval(tsp)	((tsp)->tv_sec >= 0 &&		\
+	    (tsp)->tv_nsec >= 0 && (tsp)->tv_nsec < 1000000000L)
+
+#ifdef _KERNEL
 
 /* Operations on timevals. */
 
@@ -379,35 +487,12 @@ struct clockinfo {
 	int	profhz;		/* profiling clock frequency */
 };
 
-/* These macros are also in time.h. */
-#ifndef CLOCK_REALTIME
-#define	CLOCK_REALTIME	0
-#define	CLOCK_VIRTUAL	1
-#define	CLOCK_PROF	2
-#define	CLOCK_MONOTONIC	4
-#define	CLOCK_UPTIME	5		/* FreeBSD-specific. */
-#define	CLOCK_UPTIME_PRECISE	7	/* FreeBSD-specific. */
-#define	CLOCK_UPTIME_FAST	8	/* FreeBSD-specific. */
-#define	CLOCK_REALTIME_PRECISE	9	/* FreeBSD-specific. */
-#define	CLOCK_REALTIME_FAST	10	/* FreeBSD-specific. */
-#define	CLOCK_MONOTONIC_PRECISE	11	/* FreeBSD-specific. */
-#define	CLOCK_MONOTONIC_FAST	12	/* FreeBSD-specific. */
-#define	CLOCK_SECOND	13		/* FreeBSD-specific. */
-#define	CLOCK_THREAD_CPUTIME_ID	14
-#define	CLOCK_PROCESS_CPUTIME_ID	15
-#endif
-
-#ifndef TIMER_ABSTIME
-#define	TIMER_RELTIME	0x0	/* relative timer */
-#define	TIMER_ABSTIME	0x1	/* absolute timer */
-#endif
-
 #if __BSD_VISIBLE
 #define	CPUCLOCK_WHICH_PID	0
 #define	CPUCLOCK_WHICH_TID	1
 #endif
 
-#ifdef _KERNEL
+#if defined(_KERNEL) || defined(_STANDALONE)
 
 /*
  * Kernel to clock driver interface.
@@ -419,6 +504,7 @@ extern volatile time_t	time_second;
 extern volatile time_t	time_uptime;
 extern struct bintime tc_tick_bt;
 extern sbintime_t tc_tick_sbt;
+extern time_t tick_seconds_max;
 extern struct bintime tick_bt;
 extern sbintime_t tick_sbt;
 extern int tc_precexp;
@@ -497,6 +583,13 @@ void	timevaladd(struct timeval *t1, const struct timeval *t2);
 void	timevalsub(struct timeval *t1, const struct timeval *t2);
 int	tvtohz(struct timeval *tv);
 
+/*
+ * The following HZ limits allow the tvtohz() function
+ * to only use integer computations.
+ */
+#define	HZ_MAXIMUM (INT_MAX / (1000000 >> 6)) /* 137kHz */
+#define	HZ_MINIMUM 8 /* hz */
+
 #define	TC_DEFAULTPERC		5
 
 #define	BT2FREQ(bt)                                                     \
@@ -515,7 +608,7 @@ int	tvtohz(struct timeval *tv);
 	(((sbt2) >= sbt_timethreshold) ?				\
 	    ((*(sbt) = getsbinuptime()), 1) : ((*(sbt) = sbinuptime()), 0))
 
-#else /* !_KERNEL */
+#else /* !_KERNEL && !_STANDALONE */
 #include <time.h>
 
 #include <sys/cdefs.h>

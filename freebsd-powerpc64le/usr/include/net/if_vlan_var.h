@@ -25,12 +25,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NET_IF_VLAN_VAR_H_
 #define	_NET_IF_VLAN_VAR_H_	1
+
+#include <sys/mbuf.h>
 
 /* Set the VLAN ID in an mbuf packet header non-destructively. */
 #define EVL_APPLY_VLID(m, vlid)						\
@@ -124,6 +124,8 @@ struct	vlanreq {
 #define	MTAG_8021Q_PCP_IN	0		/* Input priority. */
 #define	MTAG_8021Q_PCP_OUT	1		/* Output priority. */
 
+#define	VLAN_PCP_MAX		7
+
 /*
  * 802.1q full tag. Proto and vid are stored in host byte order.
  */
@@ -167,6 +169,28 @@ typedef void (*vlan_config_fn)(void *, struct ifnet *, uint16_t);
 typedef void (*vlan_unconfig_fn)(void *, struct ifnet *, uint16_t);
 EVENTHANDLER_DECLARE(vlan_config, vlan_config_fn);
 EVENTHANDLER_DECLARE(vlan_unconfig, vlan_unconfig_fn);
+
+static inline int
+vlan_set_pcp(struct mbuf *m, uint8_t prio)
+{
+	struct m_tag *mtag;
+
+	KASSERT(prio <= VLAN_PCP_MAX,
+	    ("%s with invalid pcp", __func__));
+
+	mtag = m_tag_locate(m, MTAG_8021Q, MTAG_8021Q_PCP_OUT, NULL);
+	if (mtag == NULL) {
+		mtag = m_tag_alloc(MTAG_8021Q, MTAG_8021Q_PCP_OUT,
+		    sizeof(uint8_t), M_NOWAIT);
+		if (mtag == NULL)
+			return (ENOMEM);
+		m_tag_prepend(m, mtag);
+	}
+
+	*(uint8_t *)(mtag + 1) = prio;
+
+	return (0);
+}
 
 #endif /* _KERNEL */
 
