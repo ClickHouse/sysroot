@@ -60,10 +60,7 @@ The ubuntu version 14.04 is selected for better compatibility.
 
 FreeBSD:
 
-```
-https://clickhouse-datasets.s3.yandex.net/toolchains/toolchains/freebsd-11.3-toolchain.tar.xz
-http://distcache.FreeBSD.org/local-distfiles/mikael/freebsd-12.2-aarch64-toolchain.tar.xz
-```
+- Run ./refresh-freebsd-sysroot.sh
 
 TODO:
 - build `compiler-rt` from sources and remove `libgcc.a` from here;
