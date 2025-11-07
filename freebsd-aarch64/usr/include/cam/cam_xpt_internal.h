@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright 2009 Scott Long
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/cam/cam_xpt_internal.h 334200 2018-05-25 03:34:33Z mav $
  */
 
 #ifndef _CAM_CAM_XPT_INTERNAL_H
@@ -92,7 +90,6 @@ SET_DECLARE(cam_xpt_proto_set, struct xpt_proto);
 #define CAM_XPT_PROTO(data) 				\
 	DATA_SET(cam_xpt_proto_set, data)
 
-
 /*
  * The CAM EDT (Existing Device Table) contains the device information for
  * all devices for all buses in the system.  The table contains a
@@ -107,7 +104,7 @@ struct cam_ed {
 	struct	cam_ccbq ccbq;		/* Queue of pending ccbs */
 	struct	async_list asyncs;	/* Async callback info for this B/T/L */
 	struct	periph_list periphs;	/* All attached devices */
-	u_int	generation;		/* Generation number */
+	u_int		 generation;	/* Generation number */
 	void		 *quirk;	/* Oddities about this device */
 	u_int		 maxtags;
 	u_int		 mintags;

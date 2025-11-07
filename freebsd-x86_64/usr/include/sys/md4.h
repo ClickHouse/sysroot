@@ -1,8 +1,9 @@
 /* MD4.H - header file for MD4C.C
- * $FreeBSD: releng/11.3/sys/sys/md4.h 309023 2016-11-22 20:28:17Z asomers $
  */
 
 /*-
+   SPDX-License-Identifier: RSA-MD
+
    Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
    rights reserved.
 

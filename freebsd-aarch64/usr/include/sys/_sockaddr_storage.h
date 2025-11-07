@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)socket.h	8.4 (Berkeley) 2/21/94
- * $FreeBSD: releng/12.2/sys/sys/_sockaddr_storage.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _SYS__SOCKADDR_STORAGE_H_

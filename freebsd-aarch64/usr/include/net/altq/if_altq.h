@@ -24,7 +24,6 @@
  * SUCH DAMAGE.
  *
  * $KAME: if_altq.h,v 1.12 2005/04/13 03:44:25 suz Exp $
- * $FreeBSD: releng/12.2/sys/net/altq/if_altq.h 336727 2018-07-25 22:46:36Z pkelsey $
  */
 #ifndef _ALTQ_IF_ALTQ_H_
 #define	_ALTQ_IF_ALTQ_H_
@@ -73,7 +72,6 @@ struct	ifaltq {
 	/* input traffic conditioner (doesn't belong to the output queue...) */
 	struct top_cdnr *altq_cdnr;
 };
-
 
 #ifdef _KERNEL
 

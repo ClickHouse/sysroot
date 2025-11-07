@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NFS_XDR_SUBS_H_
@@ -93,9 +91,11 @@
         ((((u_quad_t)ntohl(((u_int32_t *)(f))[0])) << 32) |		\
 	 (u_quad_t)(ntohl(((u_int32_t *)(f))[1])))
 
-#define	txdr_hyper(f, t) do {						\
-	((u_int32_t *)(t))[0] = htonl((u_int32_t)((f) >> 32));		\
-	((u_int32_t *)(t))[1] = htonl((u_int32_t)((f) & 0xffffffff));	\
-    } while (0)
+static inline void
+txdr_hyper(uint64_t f, uint32_t* t)
+{
+	t[0] = htonl((u_int32_t)(f >> 32));
+	t[1] = htonl((u_int32_t)(f & 0xffffffff));
+}
 
 #endif	/* _NFS_XDR_SUBS_H_ */

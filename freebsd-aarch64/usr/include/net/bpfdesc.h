@@ -34,8 +34,6 @@
  * SUCH DAMAGE.
  *
  *      @(#)bpfdesc.h	8.1 (Berkeley) 6/10/93
- *
- * $FreeBSD: releng/12.2/sys/net/bpfdesc.h 335362 2018-06-19 10:34:45Z ae $
  */
 
 #ifndef _NET_BPFDESC_H_
@@ -43,9 +41,10 @@
 
 #include <sys/callout.h>
 #include <sys/selinfo.h>
-#include <sys/queue.h>
+#include <sys/ck.h>
 #include <sys/conf.h>
 #include <sys/counter.h>
+#include <sys/epoch.h>
 #include <net/if.h>
 
 /*
@@ -53,7 +52,7 @@
  */
 struct zbuf;
 struct bpf_d {
-	LIST_ENTRY(bpf_d) bd_next;	/* Linked list of descriptors */
+	CK_LIST_ENTRY(bpf_d) bd_next;	/* Linked list of descriptors */
 	/*
 	 * Buffer slots: two memory buffers store the incoming packets.
 	 *   The model has three slots.  Sbuf is always occupied.
@@ -90,6 +89,7 @@ struct bpf_d {
 	int		bd_feedback;	/* true to feed back sent packets */
 	int		bd_async;	/* non-zero if packet reception should generate signal */
 	int		bd_sig;		/* signal to send upon packet reception */
+	int		bd_pcp;		/* VLAN pcp tag */
 	struct sigio *	bd_sigio;	/* information for async I/O */
 	struct selinfo	bd_sel;		/* bsd select info */
 	struct mtx	bd_lock;	/* per-descriptor lock */
@@ -104,6 +104,9 @@ struct bpf_d {
 	counter_u64_t	bd_wdcount;	/* number of packets dropped during a write */
 	counter_u64_t	bd_zcopy;	/* number of zero copy operations */
 	u_char		bd_compat32;	/* 32-bit stream on LP64 system */
+
+	volatile u_int	bd_refcnt;
+	struct epoch_context epoch_ctx;
 };
 
 /* Values for bd_state */

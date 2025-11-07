@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	From: @(#)if.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD: releng/12.2/sys/net/ifq.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef	_NET_IFQ_H_
@@ -336,7 +335,7 @@ drbr_enqueue(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m)
 }
 
 static __inline void
-drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *new)
+drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m_new)
 {
 	/*
 	 * The top of the list needs to be swapped 
@@ -348,11 +347,11 @@ drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *new)
 		 * Peek in altq case dequeued it
 		 * so put it back.
 		 */
-		IFQ_DRV_PREPEND(&ifp->if_snd, new);
+		IFQ_DRV_PREPEND(&ifp->if_snd, m_new);
 		return;
 	}
 #endif
-	buf_ring_putback_sc(br, new);
+	buf_ring_putback_sc(br, m_new);
 }
 
 static __inline struct mbuf *
@@ -371,7 +370,7 @@ drbr_peek(struct ifnet *ifp, struct buf_ring *br)
 		return (m);
 	}
 #endif
-	return(buf_ring_peek_clear_sc(br));
+	return ((struct mbuf *)buf_ring_peek_clear_sc(br));
 }
 
 static __inline void
@@ -383,7 +382,7 @@ drbr_flush(struct ifnet *ifp, struct buf_ring *br)
 	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd))
 		IFQ_PURGE(&ifp->if_snd);
 #endif	
-	while ((m = buf_ring_dequeue_sc(br)) != NULL)
+	while ((m = (struct mbuf *)buf_ring_dequeue_sc(br)) != NULL)
 		m_freem(m);
 }
 
@@ -406,7 +405,7 @@ drbr_dequeue(struct ifnet *ifp, struct buf_ring *br)
 		return (m);
 	}
 #endif
-	return (buf_ring_dequeue_sc(br));
+	return ((struct mbuf *)buf_ring_dequeue_sc(br));
 }
 
 static __inline void
@@ -419,7 +418,6 @@ drbr_advance(struct ifnet *ifp, struct buf_ring *br)
 #endif
 	return (buf_ring_advance_sc(br));
 }
-
 
 static __inline struct mbuf *
 drbr_dequeue_cond(struct ifnet *ifp, struct buf_ring *br,
@@ -439,11 +437,11 @@ drbr_dequeue_cond(struct ifnet *ifp, struct buf_ring *br,
 		return (m);
 	}
 #endif
-	m = buf_ring_peek(br);
+	m = (struct mbuf *)buf_ring_peek(br);
 	if (m == NULL || func(m, arg) == 0)
 		return (NULL);
 
-	return (buf_ring_dequeue_sc(br));
+	return ((struct mbuf *)buf_ring_dequeue_sc(br));
 }
 
 static __inline int

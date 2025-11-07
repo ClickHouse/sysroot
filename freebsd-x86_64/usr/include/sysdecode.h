@@ -1,6 +1,5 @@
 /*-
  * Copyright (c) 2015 John H. Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -22,12 +21,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/lib/libsysdecode/sysdecode.h 332248 2018-04-07 21:04:43Z tuexen $
  */
 
 #ifndef __SYSDECODE_H__
 #define	__SYSDECODE_H__
+
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 enum sysdecode_abi {
 	SYSDECODE_ABI_UNKNOWN = 0,
@@ -35,7 +36,8 @@ enum sysdecode_abi {
 	SYSDECODE_ABI_FREEBSD32,
 	SYSDECODE_ABI_LINUX,
 	SYSDECODE_ABI_LINUX32,
-	SYSDECODE_ABI_CLOUDABI64
+	SYSDECODE_ABI_CLOUDABI64,
+	SYSDECODE_ABI_CLOUDABI32
 };
 
 int	sysdecode_abi_to_freebsd_errno(enum sysdecode_abi _abi, int _error);
@@ -45,6 +47,7 @@ const char *sysdecode_atfd(int _fd);
 bool	sysdecode_atflags(FILE *_fp, int _flags, int *_rem);
 bool	sysdecode_cap_fcntlrights(FILE *_fp, uint32_t _rights, uint32_t *_rem);
 void	sysdecode_cap_rights(FILE *_fp, cap_rights_t *_rightsp);
+bool	sysdecode_close_range_flags(FILE *_fp, int _flags, int *_rem);
 const char *sysdecode_cmsg_type(int _cmsg_level, int _cmsg_type);
 const char *sysdecode_extattrnamespace(int _namespace);
 const char *sysdecode_fadvice(int _advice);
@@ -63,6 +66,7 @@ const char *sysdecode_ioctlname(unsigned long _val);
 const char *sysdecode_ipproto(int _protocol);
 void	sysdecode_kevent_fflags(FILE *_fp, short _filter, int _fflags,
 	    int _base);
+const char *sysdecode_itimer(int _which);
 const char *sysdecode_kevent_filter(int _filter);
 bool	sysdecode_kevent_flags(FILE *_fp, int _flags, int *_rem);
 const char *sysdecode_kldsym_cmd(int _cmd);
@@ -121,6 +125,7 @@ const char *sysdecode_sysarch_number(int _number);
 bool	sysdecode_thr_create_flags(FILE *_fp, int _flags, int *_rem);
 bool	sysdecode_umtx_cvwait_flags(FILE *_fp, u_long _flags, u_long *_rem);
 const char *sysdecode_umtx_op(int _op);
+bool	sysdecode_umtx_op_flags(FILE *_fp, int op, int *_rem);
 bool	sysdecode_umtx_rwlock_flags(FILE *_fp, u_long _flags, u_long *_rem);
 int	sysdecode_utrace(FILE *_fp, void *_buf, size_t _len);
 bool	sysdecode_vmprot(FILE *_fp, int _type, int *_rem);
@@ -128,5 +133,20 @@ const char *sysdecode_vmresult(int _result);
 bool	sysdecode_wait4_options(FILE *_fp, int _options, int *_rem);
 bool	sysdecode_wait6_options(FILE *_fp, int _options, int *_rem);
 const char *sysdecode_whence(int _whence);
+bool	sysdecode_shmflags(FILE *_fp, int _flags, int *_rem);
+
+#if defined(__i386__) || defined(__amd64__) || defined(__aarch64__)
+
+#define	SYSDECODE_HAVE_LINUX
+
+bool	sysdecode_linux_atflags(FILE *_fp, int _flag, int *_rem);
+void	sysdecode_linux_clockid(FILE *_fp, clockid_t _which);
+bool	sysdecode_linux_clock_flags(FILE *_fp, int _flags, int *_rem);
+bool	sysdecode_linux_clone_flags(FILE *_fp, int _flags, int *_rem);
+bool	sysdecode_linux_open_flags(FILE *_fp, int _flags, int *_rem);
+const char *sysdecode_linux_signal(int _sig);
+const char *sysdecode_linux_sigprocmask_how(int _how);
+
+#endif /* __i386__ || __amd64__ || __aarch64__ */
 
 #endif /* !__SYSDECODE_H__ */

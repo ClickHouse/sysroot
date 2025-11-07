@@ -1,7 +1,8 @@
-/* $FreeBSD: releng/11.3/sys/sys/shm.h 347995 2019-05-20 16:31:45Z kib $ */
 /*	$NetBSD: shm.h,v 1.15 1994/06/29 06:45:17 cgd Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 1994 Adam Glass
  * All rights reserved.
  *
@@ -96,12 +97,14 @@ struct shmid_ds_old {
 };
 #endif
 
+typedef unsigned int shmatt_t;
+
 struct shmid_ds {
 	struct ipc_perm shm_perm;	/* operation permission structure */
 	size_t          shm_segsz;	/* size of segment in bytes */
 	pid_t           shm_lpid;   /* process ID of last shared memory op */
 	pid_t           shm_cpid;	/* process ID of creator */
-	int		shm_nattch;	/* number of current attaches */
+	shmatt_t        shm_nattch;	/* number of current attaches */
 	time_t          shm_atime;	/* time of last shmat() */
 	time_t          shm_dtime;	/* time of last shmdt() */
 	time_t          shm_ctime;	/* time of last change by shmctl() */
@@ -149,8 +152,14 @@ struct vmspace;
 
 extern struct shminfo	shminfo;
 
+#define	SHMSEG_FREE     	0x0200
+#define	SHMSEG_REMOVED  	0x0400
+#define	SHMSEG_ALLOCATED	0x0800
+
 void	shmexit(struct vmspace *);
 void	shmfork(struct proc *, struct proc *);
+int	kern_get_shmsegs(struct thread *td, struct shmid_kernel **res,
+	    size_t *sz);
 
 #else /* !_KERNEL */
 

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-1-Clause
+ *
  * Copyright (c) 1992, 1993 Erik Forsberg.
  * Copyright (c) 1996, 1997 Kazutaka YOKOTA
  * All rights reserved.
@@ -19,8 +21,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/mouse.h 344165 2019-02-15 20:46:03Z wulf $
  */
 
 #ifndef _SYS_MOUSE_H_
@@ -36,8 +36,6 @@
 #define MOUSE_SETMODE		_IOW('M', 3, mousemode_t)
 #define MOUSE_GETLEVEL		_IOR('M', 4, int)
 #define MOUSE_SETLEVEL		_IOW('M', 5, int)
-#define MOUSE_GETVARS		_IOR('M', 6, mousevar_t)
-#define MOUSE_SETVARS		_IOW('M', 7, mousevar_t)
 #define MOUSE_READSTATE		_IOWR('M', 8, mousedata_t)
 #define MOUSE_READDATA		_IOWR('M', 9, mousedata_t)
 
@@ -142,8 +140,8 @@ typedef struct synapticshw {
 /* iftype */
 #define MOUSE_IF_UNKNOWN	(-1)
 #define MOUSE_IF_SERIAL		0
-#define MOUSE_IF_BUS		1
-#define MOUSE_IF_INPORT		2
+/* 1 was bus */
+/* 2 was inport */
 #define MOUSE_IF_PS2		3
 #define MOUSE_IF_SYSMOUSE	4
 #define MOUSE_IF_USB		5
@@ -191,7 +189,7 @@ typedef struct mousemode {
  *   GlidePoint, IntelliMouse, Thinking Mouse, MouseRemote, Kidspad,
  *   VersaPad
  * Bus mouse protocols:
- *   bus, InPort
+ *   bus, InPort -- both of these are now obsolete and will be remvoed soon.
  * PS/2 mouse protocol:
  *   PS/2
  */
@@ -201,8 +199,8 @@ typedef struct mousemode {
 #define MOUSE_PROTO_LOGI	2	/* Logitech, 3 bytes */
 #define MOUSE_PROTO_MM		3	/* MM series, 3 bytes */
 #define MOUSE_PROTO_LOGIMOUSEMAN 4	/* Logitech MouseMan 3/4 bytes */
-#define MOUSE_PROTO_BUS		5	/* MS/Logitech bus mouse */
-#define MOUSE_PROTO_INPORT	6	/* MS/ATI InPort mouse */
+#define	MOUSE_PROTO_BUS		5	/* bus mouse -- obsolete */
+#define	MOUSE_PROTO_INPORT	6	/* inport mosue -- obsolete */
 #define MOUSE_PROTO_PS2		7	/* PS/2 mouse, 3 bytes */
 #define MOUSE_PROTO_HITTAB	8	/* Hitachi Tablet 3 bytes */
 #define MOUSE_PROTO_GLIDEPOINT	9	/* ALPS GlidePoint, 3/4 bytes */
@@ -226,19 +224,6 @@ typedef struct mousedata {
 	int len;		/* # of data in the buffer */
 	int buf[16];		/* data buffer */
 } mousedata_t;
-
-#if (defined(MOUSE_GETVARS))
-
-typedef struct mousevar {
-	int var[16];
-} mousevar_t;
-
-/* magic numbers in var[0] */
-#define MOUSE_VARS_PS2_SIG	0x00325350	/* 'PS2' */
-#define MOUSE_VARS_BUS_SIG	0x00535542	/* 'BUS' */
-#define MOUSE_VARS_INPORT_SIG	0x00504e49	/* 'INP' */
-
-#endif /* MOUSE_GETVARS */
 
 /* Synaptics Touchpad */
 #define MOUSE_SYNAPTICS_PACKETSIZE	6	/* '3' works better */

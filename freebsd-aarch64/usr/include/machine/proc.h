@@ -28,7 +28,6 @@
  *
  *      from: @(#)proc.h        7.1 (Berkeley) 5/15/91
  *	from: FreeBSD: src/sys/i386/include/proc.h,v 1.11 2001/06/29
- * $FreeBSD: releng/12.2/sys/arm64/include/proc.h 334101 2018-05-23 15:43:35Z markj $
  */
 
 #ifndef	_MACHINE_PROC_H_
@@ -37,10 +36,11 @@
 struct mdthread {
 	int	md_spinlock_count;	/* (k) */
 	register_t md_saved_daif;	/* (k) */
+	uintptr_t md_canary;
 };
 
 struct mdproc {
-	vm_offset_t	md_l0addr;
+	long	md_dummy;
 };
 
 #define	KINFO_PROC_SIZE	1088
@@ -51,7 +51,6 @@ struct syscall_args {
 	u_int code;
 	struct sysent *callp;
 	register_t args[MAXARGS];
-	int narg;
 };
 
 #ifdef _KERNEL
@@ -61,9 +60,7 @@ struct syscall_args {
 #define	GET_STACK_USAGE(total, used) do {				\
 	struct thread *td = curthread;					\
 	(total) = td->td_kstack_pages * PAGE_SIZE - sizeof(struct pcb);	\
-	(used) = (char *)td->td_kstack +				\
-	    td->td_kstack_pages * PAGE_SIZE -				\
-	    (char *)&td;						\
+	(used) = td->td_kstack + (total) - (vm_offset_t)&td;		\
 } while (0)
 
 #endif

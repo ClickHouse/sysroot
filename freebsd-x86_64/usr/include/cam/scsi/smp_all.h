@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2010 Spectra Logic Corporation
  * All rights reserved.
  *
@@ -28,7 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGES.
  *
  * $Id: //depot/users/kenm/FreeBSD-test/sys/cam/scsi/smp_all.h#4 $
- * $FreeBSD: releng/11.3/sys/cam/scsi/smp_all.h 216088 2010-11-30 22:39:46Z ken $
  */
 
 /*

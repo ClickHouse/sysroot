@@ -22,18 +22,19 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/arm64/include/vm.h 318252 2017-05-13 13:01:15Z andrew $
  */
 
 #ifndef _MACHINE_VM_H_
 #define	_MACHINE_VM_H_
 
 /* Memory attribute configuration. */
-#define	VM_MEMATTR_DEVICE		0
+#define	VM_MEMATTR_DEVICE_nGnRnE	0
 #define	VM_MEMATTR_UNCACHEABLE		1
 #define	VM_MEMATTR_WRITE_BACK		2
 #define	VM_MEMATTR_WRITE_THROUGH	3
+#define	VM_MEMATTR_DEVICE_nGnRE		4
+
+#define	VM_MEMATTR_DEVICE		VM_MEMATTR_DEVICE_nGnRnE
 
 #ifdef _KERNEL
 /* If defined vmstat will try to use both of these in a switch statement */

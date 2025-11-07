@@ -22,14 +22,23 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netinet/udplite.h 264212 2014-04-07 01:53:03Z kevlo $
  */
 
 #ifndef _NETINET_UDPLITE_H_
 #define	_NETINET_UDPLITE_H_
 
-/* 
+/*
+ * UDP-Lite protocol header.
+ * Per RFC 3828, July, 2004.
+ */
+struct udplitehdr {
+	u_short	udplite_sport;		/* UDO-Lite source port */
+	u_short	udplite_dport;		/* UDP-Lite destination port */
+	u_short	udplite_coverage;	/* UDP-Lite checksum coverage */
+	u_short	udplite_checksum;	/* UDP-Lite checksum */
+};
+
+/*
  * User-settable options (used with setsockopt).
  */
 #define	UDPLITE_SEND_CSCOV	2	/* Sender checksum coverage. */

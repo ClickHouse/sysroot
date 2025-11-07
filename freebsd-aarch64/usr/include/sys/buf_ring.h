@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007-2009 Kip Macy <kmacy@freebsd.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/buf_ring.h 365326 2020-09-04 11:22:18Z mw $
  *
  */
 
@@ -197,12 +195,12 @@ buf_ring_dequeue_sc(struct buf_ring *br)
 	cons_head = br->br_cons_head;
 #endif
 	prod_tail = atomic_load_acq_32(&br->br_prod_tail);
-	
+
 	cons_next = (cons_head + 1) & br->br_cons_mask;
 #ifdef PREFETCH_DEFINED
 	cons_next_next = (cons_head + 2) & br->br_cons_mask;
 #endif
-	
+
 	if (cons_head == prod_tail) 
 		return (NULL);
 
@@ -238,10 +236,10 @@ buf_ring_advance_sc(struct buf_ring *br)
 {
 	uint32_t cons_head, cons_next;
 	uint32_t prod_tail;
-	
+
 	cons_head = br->br_cons_head;
 	prod_tail = br->br_prod_tail;
-	
+
 	cons_next = (cons_head + 1) & br->br_cons_mask;
 	if (cons_head == prod_tail) 
 		return;
@@ -297,7 +295,7 @@ buf_ring_peek(struct buf_ring *br)
 	 */
 	if (br->br_cons_head == br->br_prod_tail)
 		return (NULL);
-	
+
 	return (br->br_ring[br->br_cons_head]);
 }
 
@@ -366,7 +364,5 @@ buf_ring_count(struct buf_ring *br)
 struct buf_ring *buf_ring_alloc(int count, struct malloc_type *type, int flags,
     struct mtx *);
 void buf_ring_free(struct buf_ring *br, struct malloc_type *type);
-
-
 
 #endif

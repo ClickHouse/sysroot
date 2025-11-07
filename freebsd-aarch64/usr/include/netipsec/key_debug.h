@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/key_debug.h 326023 2017-11-20 19:43:44Z pfg $	*/
 /*	$KAME: key_debug.h,v 1.10 2001/08/05 08:37:52 itojun Exp $	*/
 
 /*-

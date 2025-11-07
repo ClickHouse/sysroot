@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/sys/arm64/include/bus_dma.h 360525 2020-05-01 09:46:27Z hselasky $ */
 
 #ifndef _MACHINE_BUS_DMA_H_
 #define	_MACHINE_BUS_DMA_H_

@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfs.h	8.4 (Berkeley) 5/1/95
- * $FreeBSD: releng/12.2/sys/nfsclient/nfsstats.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NFSCLIENT_NFSSTATS_H_

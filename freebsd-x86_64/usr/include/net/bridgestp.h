@@ -1,6 +1,8 @@
 /*	$NetBSD: if_bridgevar.h,v 1.4 2003/07/08 07:13:50 itojun Exp $	*/
 
-/*
+/*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright 2001 Wasabi Systems, Inc.
  * All rights reserved.
  *
@@ -35,7 +37,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
+/*-
  * Copyright (c) 1999, 2000 Jason L. Wright (jason@thought.net)
  * All rights reserved.
  *
@@ -66,8 +68,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * OpenBSD: if_bridge.h,v 1.14 2001/03/22 03:48:29 jason Exp
- *
- * $FreeBSD: releng/11.3/sys/net/bridgestp.h 234488 2012-04-20 10:06:28Z thompsa $
  */
 
 /*
@@ -175,7 +175,6 @@
 #define	BSTP_INFO_MINE		2
 #define	BSTP_INFO_AGED		3
 #define	BSTP_INFO_DISABLED	4
-
 
 #define	BSTP_MESSAGE_AGE_INCR	(1 * 256)	/* in 256ths of a second */
 #define	BSTP_TICK_VAL		(1 * 256)	/* in 256ths of a second */

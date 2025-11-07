@@ -1,4 +1,3 @@
-/* $FreeBSD$ */
 /*	$NetBSD: sem.h,v 1.5 1994/06/29 06:45:15 cgd Exp $	*/
 
 /*
@@ -142,6 +141,9 @@ extern struct seminfo	seminfo;
  * Process sem_undo vectors at proc exit.
  */
 void	semexit(struct proc *p);
+
+int	kern_get_sema(struct thread *td, struct semid_kernel **res,
+	    size_t *sz);
 
 #else /* !_KERNEL */
 

@@ -29,7 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  *	$OpenBSD: pfvar.h,v 1.282 2009/01/29 15:12:28 pyr Exp $
- *	$FreeBSD$
  */
 
 #ifndef	_NET_PF_H_
@@ -49,7 +48,8 @@
 
 enum	{ PF_INOUT, PF_IN, PF_OUT };
 enum	{ PF_PASS, PF_DROP, PF_SCRUB, PF_NOSCRUB, PF_NAT, PF_NONAT,
-	  PF_BINAT, PF_NOBINAT, PF_RDR, PF_NORDR, PF_SYNPROXY_DROP, PF_DEFER };
+	  PF_BINAT, PF_NOBINAT, PF_RDR, PF_NORDR, PF_SYNPROXY_DROP, PF_DEFER,
+	  PF_MATCH };
 enum	{ PF_RULESET_SCRUB, PF_RULESET_FILTER, PF_RULESET_NAT,
 	  PF_RULESET_BINAT, PF_RULESET_RDR, PF_RULESET_MAX };
 enum	{ PF_OP_NONE, PF_OP_IRG, PF_OP_EQ, PF_OP_NE, PF_OP_LT,
@@ -60,19 +60,43 @@ enum	{ PF_CHANGE_NONE, PF_CHANGE_ADD_HEAD, PF_CHANGE_ADD_TAIL,
 	  PF_CHANGE_REMOVE, PF_CHANGE_GET_TICKET };
 enum	{ PF_GET_NONE, PF_GET_CLR_CNTR };
 enum	{ PF_SK_WIRE, PF_SK_STACK, PF_SK_BOTH };
+enum	{ PF_PEER_SRC, PF_PEER_DST, PF_PEER_BOTH };
 
 /*
  * Note about PFTM_*: real indices into pf_rule.timeout[] come before
  * PFTM_MAX, special cases afterwards. See pf_state_expires().
  */
-enum	{ PFTM_TCP_FIRST_PACKET, PFTM_TCP_OPENING, PFTM_TCP_ESTABLISHED,
-	  PFTM_TCP_CLOSING, PFTM_TCP_FIN_WAIT, PFTM_TCP_CLOSED,
-	  PFTM_UDP_FIRST_PACKET, PFTM_UDP_SINGLE, PFTM_UDP_MULTIPLE,
-	  PFTM_ICMP_FIRST_PACKET, PFTM_ICMP_ERROR_REPLY,
-	  PFTM_OTHER_FIRST_PACKET, PFTM_OTHER_SINGLE,
-	  PFTM_OTHER_MULTIPLE, PFTM_FRAG, PFTM_INTERVAL,
-	  PFTM_ADAPTIVE_START, PFTM_ADAPTIVE_END, PFTM_SRC_NODE,
-	  PFTM_TS_DIFF, PFTM_MAX, PFTM_PURGE, PFTM_UNLINKED };
+enum	{
+	PFTM_TCP_FIRST_PACKET	= 0,
+	PFTM_TCP_OPENING	= 1,
+	PFTM_TCP_ESTABLISHED	= 2,
+	PFTM_TCP_CLOSING	= 3,
+	PFTM_TCP_FIN_WAIT	= 4,
+	PFTM_TCP_CLOSED		= 5,
+	PFTM_UDP_FIRST_PACKET	= 6,
+	PFTM_UDP_SINGLE		= 7,
+	PFTM_UDP_MULTIPLE	= 8,
+	PFTM_ICMP_FIRST_PACKET	= 9,
+	PFTM_ICMP_ERROR_REPLY	= 10,
+	PFTM_OTHER_FIRST_PACKET	= 11,
+	PFTM_OTHER_SINGLE	= 12,
+	PFTM_OTHER_MULTIPLE	= 13,
+	PFTM_FRAG		= 14,
+	PFTM_INTERVAL		= 15,
+	PFTM_ADAPTIVE_START	= 16,
+	PFTM_ADAPTIVE_END	= 17,
+	PFTM_SRC_NODE		= 18,
+	PFTM_TS_DIFF		= 19,
+	PFTM_OLD_MAX		= 20, /* Legacy limit, for binary compatibility with old kernels. */
+	PFTM_SCTP_FIRST_PACKET	= 20,
+	PFTM_SCTP_OPENING	= 21,
+	PFTM_SCTP_ESTABLISHED	= 22,
+	PFTM_SCTP_CLOSING	= 23,
+	PFTM_SCTP_CLOSED	= 24,
+	PFTM_MAX		= 25,
+	PFTM_PURGE		= 26,
+	PFTM_UNLINKED		= 27,
+};
 
 /* PFTM default values */
 #define PFTM_TCP_FIRST_PACKET_VAL	120	/* First TCP packet */
@@ -160,6 +184,11 @@ enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
 #define LCNT_OVERLOAD_TABLE	5	/* entry added to overload table */
 #define LCNT_OVERLOAD_FLUSH	6	/* state entries flushed */
 #define LCNT_MAX		7	/* total+1 */
+/* Only available via the nvlist-based API */
+#define KLCNT_SYNFLOODS		7	/* synfloods detected */
+#define KLCNT_SYNCOOKIES_SENT	8	/* syncookies sent */
+#define KLCNT_SYNCOOKIES_VALID	9	/* syncookies validated */
+#define KLCNT_MAX		10	/* total+1 */
 
 #define LCNT_NAMES { \
 	"max states per rule", \
@@ -171,12 +200,34 @@ enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
 	"overload flush states", \
 	NULL \
 }
+#define KLCNT_NAMES { \
+	"max states per rule", \
+	"max-src-states", \
+	"max-src-nodes", \
+	"max-src-conn", \
+	"max-src-conn-rate", \
+	"overload table insertion", \
+	"overload flush states", \
+	"synfloods detected", \
+	"syncookies sent", \
+	"syncookies validated", \
+	NULL \
+}
 
 /* state operation counters */
 #define FCNT_STATE_SEARCH	0
 #define FCNT_STATE_INSERT	1
 #define FCNT_STATE_REMOVALS	2
 #define FCNT_MAX		3
+
+#ifdef _KERNEL
+#define FCNT_NAMES { \
+	"searches", \
+	"inserts", \
+	"removals", \
+	NULL \
+}
+#endif
 
 /* src_node operation counters */
 #define SCNT_SRC_NODE_SEARCH	0
@@ -186,6 +237,12 @@ enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
 
 #define	PF_TABLE_NAME_SIZE	32
 #define	PF_QNAME_SIZE		64
+
+struct pfioc_nv {
+	void            *data;
+	size_t           len;   /* The length of the nvlist data. */
+	size_t           size;  /* The total size of the data buffer. */
+};
 
 struct pf_rule;
 
@@ -309,6 +366,12 @@ struct pf_poolhashkey {
 #define key8	pfk.key8
 #define key16	pfk.key16
 #define key32	pfk.key32
+};
+
+struct pf_mape_portset {
+	u_int8_t		offset;
+	u_int8_t		psidlen;
+	u_int16_t		psid;
 };
 
 struct pf_pool {
@@ -438,6 +501,7 @@ struct pf_rule {
 #define PF_SKIP_COUNT		8
 	union pf_rule_ptr	 skip[PF_SKIP_COUNT];
 #define PF_RULE_LABEL_SIZE	 64
+#define PF_RULE_MAX_LABEL_COUNT	 5
 	char			 label[PF_RULE_LABEL_SIZE];
 	char			 ifname[IFNAMSIZ];
 	char			 qname[PF_QNAME_SIZE];
@@ -462,7 +526,7 @@ struct pf_rule {
 	pf_osfp_t		 os_fingerprint;
 
 	int			 rtableid;
-	u_int32_t		 timeout[PFTM_MAX];
+	u_int32_t		 timeout[PFTM_OLD_MAX];
 	u_int32_t		 max_states;
 	u_int32_t		 max_src_nodes;
 	u_int32_t		 max_src_states;
@@ -631,13 +695,6 @@ struct pf_anchor {
 RB_PROTOTYPE(pf_anchor_global, pf_anchor, entry_global, pf_anchor_compare);
 RB_PROTOTYPE(pf_anchor_node, pf_anchor, entry_node, pf_anchor_compare);
 
-/* these ruleset functions can be linked into userland programs (pfctl) */
-int			 pf_get_ruleset_number(u_int8_t);
-void			 pf_init_ruleset(struct pf_ruleset *);
-int			 pf_anchor_setup(struct pf_rule *,
-			    const struct pf_ruleset *, const char *);
-void			 pf_remove_if_empty_ruleset(struct pf_ruleset *);
-struct pf_ruleset	*pf_find_ruleset(const char *);
-struct pf_ruleset	*pf_find_or_create_ruleset(const char *);
+int	 pf_get_ruleset_number(u_int8_t);
 
 #endif	/* _NET_PF_H_ */

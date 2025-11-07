@@ -34,9 +34,10 @@
  * SUCH DAMAGE.
  *
  *	@(#)iso_rrip.h	8.2 (Berkeley) 1/23/94
- * $FreeBSD: releng/12.2/sys/fs/cd9660/iso_rrip.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
+#ifndef _ISOFS_CD9660_ISO_RRIP_H_
+#define _ISOFS_CD9660_ISO_RRIP_H_
 
 /*
  *	Analyze function flag (similar to RR field bits)
@@ -84,3 +85,5 @@ int cd9660_rrip_getsymname(struct iso_directory_record *isodir,
 int cd9660_rrip_offset(struct iso_directory_record *isodir,
 			   struct iso_mnt *imp);
 #endif /* _KERNEL */
+
+#endif /* _ISOFS_CD9660_ISO_RRIP_H_ */

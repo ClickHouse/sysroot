@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/netinet/udplite.h 337018 2018-07-31 22:56:03Z tuexen $
  */
 
 #ifndef _NETINET_UDPLITE_H_
@@ -40,7 +38,7 @@ struct udplitehdr {
 	u_short	udplite_checksum;	/* UDP-Lite checksum */
 };
 
-/* 
+/*
  * User-settable options (used with setsockopt).
  */
 #define	UDPLITE_SEND_CSCOV	2	/* Sender checksum coverage. */

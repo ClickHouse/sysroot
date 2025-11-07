@@ -1,7 +1,8 @@
 /*	$NetBSD: nsswitch.h,v 1.6 1999/01/26 01:04:07 lukem Exp $	*/
-/*	$FreeBSD: releng/11.3/include/nsswitch.h 331722 2018-03-29 02:50:57Z eadler $ */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1997, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
@@ -51,6 +52,7 @@
 #define	NS_NOTFOUND	(1<<2)		/* source responded 'no such entry' */
 #define	NS_TRYAGAIN	(1<<3)		/* source busy, may respond to retry */
 #define NS_RETURN	(1<<4)		/* stop search, e.g. for ERANGE */
+#define NS_ADDRFAMILY	(1<<5)		/* no addr for fam, getaddrinfo only */
 #define NS_TERMINATE	(NS_SUCCESS|NS_RETURN) /* flags that end search */
 #define	NS_STATUSMASK	0x000000ff	/* bitmask to get the status flags */
 

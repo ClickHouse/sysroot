@@ -1,5 +1,5 @@
 /*	$NetBSD: vis.h,v 1.25 2017/04/23 01:57:36 christos Exp $	*/
-/*	$FreeBSD: releng/12.2/contrib/libc-vis/vis.h 326307 2017-11-28 01:35:28Z brooks $	*/
+/*	$FreeBSD$	*/
 
 /*-
  * Copyright (c) 1990, 1993

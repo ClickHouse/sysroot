@@ -37,10 +37,9 @@
 
 #ifndef RPC_HDR
 %#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD: releng/11.3/include/rpcsvc/yp.x 259117 2013-12-09 04:26:50Z hrs $");
 #endif
 
-const YPMAXRECORD = 1024;
+const YPMAXRECORD = 16777216;
 const YPMAXDOMAIN = 64;
 const YPMAXMAP = 64;
 const YPMAXPEER = 64;

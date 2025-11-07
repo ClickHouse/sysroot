@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/11.3/sys/netipsec/xform.h 331693 2018-03-28 17:49:31Z jhb $	*/
 /*	$OpenBSD: ip_ipsp.h,v 1.119 2002/03/14 01:27:11 millert Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -71,7 +70,7 @@ struct xform_history {
 struct xform_data {
 	struct secpolicy	*sp;		/* security policy */
 	struct secasvar		*sav;		/* related SA */
-	uint64_t		cryptoid;	/* used crypto session id */
+	crypto_session_t	cryptoid;	/* used crypto session */
 	u_int			idx;		/* IPsec request index */
 	int			protoff;	/* current protocol offset */
 	int			skip;		/* data offset */
@@ -86,14 +85,16 @@ struct xform_data {
 #define	XF_IPCOMP	6	/* IPCOMP */
 
 struct xformsw {
-	u_short	xf_type;		/* xform ID */
-	char	*xf_name;		/* human-readable name */
+	u_short			xf_type;	/* xform ID */
+	const char		*xf_name;	/* human-readable name */
 	int	(*xf_init)(struct secasvar*, struct xformsw*);	/* setup */
-	int	(*xf_zeroize)(struct secasvar*);		/* cleanup */
+	void	(*xf_cleanup)(struct secasvar*);		/* cleanup */
 	int	(*xf_input)(struct mbuf*, struct secasvar*,	/* input */
 			int, int);
 	int	(*xf_output)(struct mbuf*,			/* output */
 	    struct secpolicy *, struct secasvar *, u_int, int, int);
+
+	volatile u_int		xf_cntr;
 	LIST_ENTRY(xformsw)	chain;
 };
 
@@ -103,12 +104,13 @@ const struct comp_algo * comp_algorithm_lookup(int);
 
 void xform_attach(void *);
 void xform_detach(void *);
+int xform_init(struct secasvar *, u_short);
 
-struct cryptoini;
+struct crypto_session_params;
 /* XF_AH */
 int xform_ah_authsize(const struct auth_hash *);
-extern int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);
-extern int ah_zeroize(struct secasvar *sav);
+int ah_init0(struct secasvar *, struct xformsw *,
+    struct crypto_session_params *);
 extern size_t ah_hdrsiz(struct secasvar *);
 
 /* XF_ESP */

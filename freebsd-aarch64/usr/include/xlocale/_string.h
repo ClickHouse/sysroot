@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2011, 2012 The FreeBSD Foundation
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/include/xlocale/_string.h 326192 2017-11-25 17:09:43Z pfg $
  */
 
 #ifndef _LOCALE_T_DEFINED
@@ -46,6 +43,7 @@ typedef struct	_xlocale *locale_t;
  * POSIX2008 functions
  */
 int	 strcoll_l(const char *, const char *, locale_t);
+char	*strerror_l(int num, locale_t);
 size_t	 strxfrm_l(char *, const char *, size_t, locale_t);
 #endif /* _XLOCALE_STRING1_H */
 

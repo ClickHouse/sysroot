@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 Poul-Henning Kamp
  * Copyright (c) 2013 iXsystems.com,
@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/watchdog.h 327505 2018-01-03 00:56:30Z karels $
  */
 #ifndef _SYS_WATCHDOG_H
 #define	_SYS_WATCHDOG_H
@@ -104,7 +102,7 @@
 
 #ifdef _KERNEL
 
-#include <sys/eventhandler.h>
+#include <sys/_eventhandler.h>
 
 typedef void (*watchdog_fn)(void *, u_int, int *);
 

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2002 Mitsuru IWASAKI
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/x86/include/acpica_machdep.h 298094 2016-04-16 03:44:50Z gjb $
  */
 
 /******************************************************************************
@@ -68,7 +68,7 @@ int	acpi_release_global_lock(volatile uint32_t *);
 #define	ACPI_RELEASE_GLOBAL_LOCK(GLptr, Acq)	do {			\
 	(Acq) = acpi_release_global_lock(&((GLptr)->GlobalLock));	\
 } while (0)
- 
+
 enum intr_trigger;
 enum intr_polarity;
 
@@ -82,6 +82,7 @@ void	madt_parse_interrupt_values(void *entry,
 	    enum intr_trigger *trig, enum intr_polarity *pol);
 
 extern int madt_found_sci_override;
+extern int (*apei_nmi)(void);
 
 #endif /* _KERNEL */
 

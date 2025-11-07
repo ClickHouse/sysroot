@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -30,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_asconf.h 347154 2019-05-05 12:28:39Z tuexen $");
-
 #ifndef _NETINET_SCTP_ASCONF_H_
 #define _NETINET_SCTP_ASCONF_H_
 
@@ -41,7 +40,7 @@ __FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_asconf.h 347154 2019-05-05 12:2
 /*
  * function prototypes
  */
-extern void sctp_asconf_cleanup(struct sctp_tcb *, struct sctp_nets *);
+extern void sctp_asconf_cleanup(struct sctp_tcb *);
 
 extern struct mbuf *sctp_compose_asconf(struct sctp_tcb *, int *, int);
 
@@ -54,9 +53,8 @@ sctp_handle_asconf_ack(struct mbuf *, int, struct sctp_asconf_ack_chunk *,
     struct sctp_tcb *, struct sctp_nets *, int *);
 
 extern uint32_t
-sctp_addr_mgmt_ep_sa(struct sctp_inpcb *, struct sockaddr *,
-    uint32_t, uint32_t, struct sctp_ifa *);
-
+sctp_addr_mgmt_ep_sa(struct sctp_inpcb *, struct sockaddr *, uint32_t,
+    uint32_t);
 
 extern int
 sctp_asconf_iterator_ep(struct sctp_inpcb *inp, void *ptr,
@@ -66,7 +64,6 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     void *ptr, uint32_t type);
 extern void sctp_asconf_iterator_end(void *ptr, uint32_t val);
-
 
 extern int32_t
 sctp_set_primary_ip_address_sa(struct sctp_tcb *,

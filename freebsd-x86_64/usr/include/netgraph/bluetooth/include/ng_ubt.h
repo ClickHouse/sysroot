@@ -3,6 +3,8 @@
  */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001-2002 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
  *
@@ -28,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_ubt.h,v 1.6 2003/04/13 21:34:42 max Exp $
- * $FreeBSD: releng/11.3/sys/netgraph/bluetooth/include/ng_ubt.h 139823 2005-01-07 01:45:51Z imp $
  */
 
 #ifndef _NG_UBT_H_
@@ -88,4 +89,3 @@ typedef struct {
 typedef u_int16_t	ng_ubt_node_dev_nodes_ep;
 
 #endif /* ndef _NG_UBT_H_ */
-

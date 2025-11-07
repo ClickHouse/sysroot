@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000 Matthew Jacob
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/cam/scsi/scsi_enc_internal.h 355337 2019-12-03 16:48:21Z mav $
  */
 
 /*
@@ -39,16 +37,16 @@
 #include <sys/sysctl.h>
 
 typedef struct enc_element {
-	uint8_t	 elm_idx;		/* index of element */
+	u_int	 elm_idx;		/* index of element */
 	uint8_t	 elm_type;		/* element type */
 	uint8_t	 subenclosure;		/* subenclosure id */
 	uint8_t	 type_elm_idx;		/* index of element within type */
 	uint8_t	 svalid;		/* enclosure information valid */
-	uint16_t priv;			/* private data, per object */
 	uint8_t	 encstat[4];		/* state && stats */
+	u_int	 physical_path_len;	/* Length of device path data. */
 	uint8_t *physical_path;		/* Device physical path data. */
-	u_int    physical_path_len;	/* Length of device path data. */
 	void    *elm_private;		/* per-type object data */
+	uint16_t priv;
 } enc_element_t;
 
 typedef enum {
@@ -88,13 +86,13 @@ typedef int (enc_softc_init_t)(enc_softc_t *);
 typedef void (enc_softc_invalidate_t)(enc_softc_t *);
 typedef void (enc_softc_cleanup_t)(enc_softc_t *);
 typedef int (enc_init_enc_t)(enc_softc_t *); 
-typedef int (enc_get_enc_status_t)(enc_softc_t *, int);
 typedef int (enc_set_enc_status_t)(enc_softc_t *, encioc_enc_status_t, int);
 typedef int (enc_get_elm_status_t)(enc_softc_t *, encioc_elm_status_t *, int);
 typedef int (enc_set_elm_status_t)(enc_softc_t *, encioc_elm_status_t *, int);
 typedef int (enc_get_elm_desc_t)(enc_softc_t *, encioc_elm_desc_t *); 
 typedef int (enc_get_elm_devnames_t)(enc_softc_t *, encioc_elm_devnames_t *); 
-typedef int (enc_handle_string_t)(enc_softc_t *, encioc_string_t *, int);
+typedef int (enc_handle_string_t)(enc_softc_t *, encioc_string_t *,
+				  unsigned long);
 typedef void (enc_device_found_t)(enc_softc_t *);
 typedef void (enc_poll_status_t)(enc_softc_t *);
 
@@ -102,7 +100,6 @@ struct enc_vec {
 	enc_softc_invalidate_t	*softc_invalidate;
 	enc_softc_cleanup_t	*softc_cleanup;
 	enc_init_enc_t		*init_enc;
-	enc_get_enc_status_t	*get_enc_status;
 	enc_set_enc_status_t	*set_enc_status;
 	enc_get_elm_status_t	*get_elm_status;
 	enc_set_elm_status_t	*set_elm_status;
@@ -162,8 +159,6 @@ struct enc_softc {
 	struct proc		*enc_daemon;
 
 	struct enc_fsm_state 	*enc_fsm_states;
-
-	struct root_hold_token	 enc_rootmount;
 
 #define 	ENC_ANNOUNCE_SZ		400
 	char			announce_buf[ENC_ANNOUNCE_SZ];

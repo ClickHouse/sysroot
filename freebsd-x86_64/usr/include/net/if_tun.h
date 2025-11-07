@@ -12,8 +12,6 @@
  * roots in a similar driver written by Phil Cockcroft (formerly) at
  * UCL. This driver is based much more on read/write/select mode of
  * operation though.
- *
- * $FreeBSD: releng/11.3/sys/net/if_tun.h 300603 2016-05-24 11:47:14Z tuexen $
  */
 
 #ifndef _NET_IF_TUN_H_
@@ -40,6 +38,7 @@ struct tuninfo {
 #define	TUNSIFINFO	_IOW('t', 91, struct tuninfo)
 #define	TUNGIFINFO	_IOR('t', 92, struct tuninfo)
 #define	TUNSLMODE	_IOW('t', 93, int)
+#define	TUNGIFNAME	_IOR('t', 93, struct ifreq)
 #define	TUNSIFMODE	_IOW('t', 94, int)
 #define	TUNSIFPID	_IO('t', 95)
 #define	TUNSIFHEAD	_IOW('t', 96, int)

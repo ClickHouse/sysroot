@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2011-2014 Matteo Landi, Luigi Rizzo. All rights reserved.
  *
@@ -27,7 +27,6 @@
  */
 
 /*
- * $FreeBSD$
  *
  * Definitions of constants and the structures used by the netmap
  * framework, for the part visible to both kernel and userspace.
@@ -147,7 +146,7 @@
  *   netmap:foo*, or another registration should be done to open at least a
  *   NIC TX queue in netmap mode.
  *
- * + Netmap is not currently able to deal with intercepted trasmit mbufs which
+ * + Netmap is not currently able to deal with intercepted transmit mbufs which
  *   require offloadings like TSO, UFO, checksumming offloadings, etc. It is
  *   responsibility of the user to disable those offloadings (e.g. using
  *   ifconfig on FreeBSD or ethtool -K on Linux) for an interface that is being
@@ -217,6 +216,11 @@ struct netmap_slot {
          * ixgbe and i40e on Linux)
 	 * Set on all but the last slot of a multi-segment packet.
 	 * The 'len' field refers to the individual fragment.
+	 */
+
+#define NS_TXMON	0x0040
+	/* (monitor ports only) the packet comes from the TX
+	 * ring of the monitored port
 	 */
 
 #define	NS_PORT_SHIFT	8
@@ -474,7 +478,7 @@ struct netmap_if {
 
 /* Header common to all request options. */
 struct nmreq_option {
-	/* Pointer ot the next option. */
+	/* Pointer to the next option. */
 	uint64_t		nro_next;
 	/* Option type. */
 	uint32_t		nro_reqtype;
@@ -757,7 +761,7 @@ struct nmreq_pools_info {
  */
 struct nmreq_sync_kloop_start {
 	/* Sleeping is the default synchronization method for the kloop.
-	 * The 'sleep_us' field specifies how many microsconds to sleep for
+	 * The 'sleep_us' field specifies how many microseconds to sleep for
 	 * when there is no work to do, before doing another kloop iteration.
 	 */
 	uint32_t	sleep_us;

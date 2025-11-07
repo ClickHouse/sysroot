@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_types.h	8.3 (Berkeley) 4/28/95
- * $FreeBSD: releng/12.2/sys/net/if_types.h 326023 2017-11-20 19:43:44Z pfg $
  * $NetBSD: if_types.h,v 1.16 2000/04/19 06:30:53 itojun Exp $
  */
 
@@ -207,7 +206,7 @@ typedef enum {
 	IFT_USB		= 0xa0,		/* USB Interface */
 	IFT_IEEE8023ADLAG = 0xa1,	/* IEEE 802.3ad Link Aggregate*/
 	IFT_BGPPOLICYACCOUNTING = 0xa2,	/* BGP Policy Accounting */
-	IFT_FRF16MFRBUNDLE = 0xa3,	/* FRF.16 Multilik Frame Relay*/
+	IFT_FRF16MFRBUNDLE = 0xa3,	/* FRF.16 Multilink Frame Relay*/
 	IFT_H323GATEKEEPER = 0xa4,	/* H323 Gatekeeper */
 	IFT_H323PROXY	= 0xa5,		/* H323 Voice and Video Proxy */
 	IFT_MPLS	= 0xa6,		/* MPLS */
@@ -242,6 +241,7 @@ typedef enum {
 	IFT_OPTICALCHANNEL = 0xc3,	/* Optical Channel */
 	IFT_OPTICALTRANSPORT = 0xc4,	/* Optical Transport */
 	IFT_INFINIBAND	= 0xc7,		/* Infiniband */
+	IFT_INFINIBANDLAG = 0xc8,	/* Infiniband Link Aggregate */
 	IFT_BRIDGE	= 0xd1,		/* Transparent bridge interface */
 	IFT_STF		= 0xd7,		/* 6to4 interface */
 
@@ -255,6 +255,7 @@ typedef enum {
 	IFT_ENC		= 0xf4,		/* Encapsulating interface */
 	IFT_PFLOG	= 0xf6,		/* PF packet filter logging */
 	IFT_PFSYNC	= 0xf7,		/* PF packet filter synchronization */
+	IFT_WIREGUARD	= 0xf8,		/* WireGuard tunnel */
 } ifType;
 
 /*

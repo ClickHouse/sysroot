@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: (BSD-2-Clause AND BSD-4-Clause)
+ *
  * Copyright (c) 1999, 2000 Kenneth D. Merry.
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	$FreeBSD: releng/11.3/sys/sys/tiio.h 331722 2018-03-29 02:50:57Z eadler $
  */
 /*
  * The ti_stats structure below is from code with the following copyright, 
@@ -265,7 +265,6 @@ struct tg_mem {
 	caddr_t		userAddr;
 	int		len;
 }; 
-
 
 typedef enum {
 	TI_PARAM_NONE		= 0x00,

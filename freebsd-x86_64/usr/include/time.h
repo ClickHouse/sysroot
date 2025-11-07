@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -35,7 +37,6 @@
  */
 
 /*
- * $FreeBSD: releng/11.3/include/time.h 332135 2018-04-06 19:17:59Z kevans $
  */
 
 #ifndef _TIME_H_
@@ -44,6 +45,7 @@
 #include <sys/cdefs.h>
 #include <sys/_null.h>
 #include <sys/_types.h>
+#include <sys/_clock_id.h>
 
 #if __POSIX_VISIBLE > 0 && __POSIX_VISIBLE < 200112 || __BSD_VISIBLE
 /*
@@ -94,33 +96,6 @@ typedef	__pid_t		pid_t;
 #define	_PID_T_DECLARED
 #endif
 #endif
-
-/* These macros are also in sys/time.h. */
-#if !defined(CLOCK_REALTIME) && __POSIX_VISIBLE >= 200112
-#define CLOCK_REALTIME	0
-#ifdef __BSD_VISIBLE
-#define CLOCK_VIRTUAL	1
-#define CLOCK_PROF	2
-#endif
-#define CLOCK_MONOTONIC	4
-#define CLOCK_UPTIME	5		/* FreeBSD-specific. */
-#define CLOCK_UPTIME_PRECISE	7	/* FreeBSD-specific. */
-#define CLOCK_UPTIME_FAST	8	/* FreeBSD-specific. */
-#define CLOCK_REALTIME_PRECISE	9	/* FreeBSD-specific. */
-#define CLOCK_REALTIME_FAST	10	/* FreeBSD-specific. */
-#define CLOCK_MONOTONIC_PRECISE	11	/* FreeBSD-specific. */
-#define CLOCK_MONOTONIC_FAST	12	/* FreeBSD-specific. */
-#define CLOCK_SECOND	13		/* FreeBSD-specific. */
-#define CLOCK_THREAD_CPUTIME_ID	14
-#define	CLOCK_PROCESS_CPUTIME_ID	15
-#endif /* !defined(CLOCK_REALTIME) && __POSIX_VISIBLE >= 200112 */
-
-#if !defined(TIMER_ABSTIME) && __POSIX_VISIBLE >= 200112
-#if __BSD_VISIBLE
-#define TIMER_RELTIME	0x0	/* relative timer */
-#endif
-#define TIMER_ABSTIME	0x1	/* absolute timer */
-#endif /* !defined(TIMER_ABSTIME) && __POSIX_VISIBLE >= 200112 */
 
 struct tm {
 	int	tm_sec;		/* seconds after the minute [0-60] */
@@ -197,11 +172,22 @@ void tzsetwall(void);
 time_t timelocal(struct tm * const);
 time_t timegm(struct tm * const);
 int timer_oshandle_np(timer_t timerid);
+time_t time2posix(time_t t);
+time_t posix2time(time_t t);
 #endif /* __BSD_VISIBLE */
 
 #if __POSIX_VISIBLE >= 200809 || defined(_XLOCALE_H_)
 #include <xlocale/_time.h>
 #endif
+
+#if __BSD_VISIBLE || __ISO_C_VISIBLE >= 2011 || \
+    (defined(__cplusplus) && __cplusplus >= 201703)
+#include <sys/_timespec.h>
+/* ISO/IEC 9899:201x 7.27.2.5 The timespec_get function */
+#define TIME_UTC	1	/* time elapsed since epoch */
+int timespec_get(struct timespec *ts, int base);
+#endif
+
 __END_DECLS
 
 #endif /* !_TIME_H_ */

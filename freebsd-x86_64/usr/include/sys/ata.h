@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2000 - 2008 Søren Schmidt <sos@FreeBSD.org>
  * All rights reserved.
  *
@@ -22,13 +24,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/ata.h 346125 2019-04-11 13:12:43Z mav $
  */
 
 #ifndef _SYS_ATA_H_
 #define _SYS_ATA_H_
 
+#include <sys/types.h>
 #include <sys/ioccom.h>
 
 /* ATA/ATAPI device parameters */
@@ -44,6 +45,7 @@ struct ata_params {
 #define ATA_ATAPI_TYPE_TAPE             0x0100  /* streaming tape */
 #define ATA_ATAPI_TYPE_CDROM            0x0500  /* CD-ROM device */
 #define ATA_ATAPI_TYPE_OPTICAL          0x0700  /* optical disk */
+#define ATA_ATAPI_REMOVABLE             0x0080
 #define ATA_DRQ_MASK                    0x0060
 #define ATA_DRQ_SLOW                    0x0000  /* cpu 3 ms delay */
 #define ATA_DRQ_INTR                    0x0020  /* interrupt 10 ms delay */
@@ -64,7 +66,8 @@ struct ata_params {
 /*023*/ u_int8_t        revision[8];            /* firmware revision */
 /*027*/ u_int8_t        model[40];              /* model name */
 /*047*/ u_int16_t       sectors_intr;           /* sectors per interrupt */
-/*048*/ u_int16_t       usedmovsd;              /* double word read/write? */
+/*048*/ u_int16_t       tcg;                    /* Trusted Computing Group */
+#define ATA_SUPPORT_TCG                 0x0001
 /*049*/ u_int16_t       capabilities1;
 #define ATA_SUPPORT_DMA                 0x0100
 #define ATA_SUPPORT_LBA                 0x0200
@@ -90,6 +93,12 @@ struct ata_params {
 /*057*/ u_int16_t       current_size_1;
 /*058*/ u_int16_t       current_size_2;
 /*059*/ u_int16_t       multi;
+#define ATA_SUPPORT_BLOCK_ERASE_EXT     0x8000
+#define ATA_SUPPORT_OVERWRITE_EXT       0x4000
+#define ATA_SUPPORT_CRYPTO_SCRAMBLE_EXT 0x2000
+#define ATA_SUPPORT_SANITIZE            0x1000
+#define	ATA_SUPPORT_SANITIZE_ALLOWED	0x0800
+#define	ATA_SUPPORT_ANTIFREEZE_LOCK_EXT	0x0400
 #define ATA_MULTI_VALID                 0x0100
 
 /*060*/ u_int16_t       lba_size_1;
@@ -105,6 +114,7 @@ struct ata_params {
 /*069*/ u_int16_t       support3;
 #define ATA_SUPPORT_RZAT                0x0020
 #define ATA_SUPPORT_DRAT                0x4000
+#define ATA_ENCRYPTS_ALL_USER_DATA      0x0010  /* Self-encrypting drive */
 #define	ATA_SUPPORT_ZONE_MASK		0x0003
 #define	ATA_SUPPORT_ZONE_NR		0x0000
 #define	ATA_SUPPORT_ZONE_HOST_AWARE	0x0001
@@ -133,7 +143,8 @@ struct ata_params {
 /*77*/  u_int16_t       satacapabilities2;
 #define ATA_SATA_CURR_GEN_MASK          0x0006
 #define ATA_SUPPORT_NCQ_STREAM          0x0010
-#define ATA_SUPPORT_NCQ_QMANAGEMENT     0x0020
+#define ATA_SUPPORT_NCQ_NON_DATA        0x0020
+#define ATA_SUPPORT_NCQ_QMANAGEMENT     ATA_SUPPORT_NCQ_NON_DATA
 #define ATA_SUPPORT_RCVSND_FPDMA_QUEUED 0x0040
 /*78*/  u_int16_t       satasupport;
 #define ATA_SUPPORT_NONZERO             0x0002
@@ -142,6 +153,7 @@ struct ata_params {
 #define ATA_SUPPORT_INORDERDATA         0x0010
 #define ATA_SUPPORT_ASYNCNOTIF          0x0020
 #define ATA_SUPPORT_SOFTSETPRESERVE     0x0040
+#define ATA_SUPPORT_NCQ_AUTOSENSE       0x0080
 /*79*/  u_int16_t       sataenabled;
 #define ATA_ENABLED_DAPST               0x0080
 
@@ -234,12 +246,15 @@ struct ata_params {
 #define ATA_SUPPORT_FREEFALL		0x0020
 #define ATA_SUPPORT_SENSE_REPORT	0x0040
 #define ATA_SUPPORT_EPC			0x0080
+#define ATA_SUPPORT_AMAX_ADDR		0x0100
+#define ATA_SUPPORT_DSN			0x0200
 /*120*/ u_int16_t       enabled2;
 #define ATA_ENABLED_WRITEREADVERIFY	0x0002
 #define ATA_ENABLED_WRITEUNCORREXT	0x0004
 #define ATA_ENABLED_FREEFALL		0x0020
 #define ATA_ENABLED_SENSE_REPORT	0x0040
 #define ATA_ENABLED_EPC			0x0080
+#define ATA_ENABLED_DSN			0x0200
 	u_int16_t       reserved121[6];
 /*127*/ u_int16_t       removable_status;
 /*128*/ u_int16_t       security_status;
@@ -257,10 +272,23 @@ struct ata_params {
 /*162*/ u_int16_t       cfa_kms_support;
 /*163*/ u_int16_t       cfa_trueide_modes;
 /*164*/ u_int16_t       cfa_memory_modes;
-	u_int16_t       reserved165[4];
+	u_int16_t       reserved165[3];
+/*168*/ u_int16_t       form_factor;
+#define ATA_FORM_FACTOR_MASK		0x000f
+#define ATA_FORM_FACTOR_NOT_REPORTED	0x0000
+#define ATA_FORM_FACTOR_5_25		0x0001
+#define ATA_FORM_FACTOR_3_5		0x0002
+#define ATA_FORM_FACTOR_2_5		0x0003
+#define ATA_FORM_FACTOR_1_8		0x0004
+#define ATA_FORM_FACTOR_SUB_1_8		0x0005
+#define ATA_FORM_FACTOR_MSATA		0x0006
+#define ATA_FORM_FACTOR_M_2		0x0007
+#define ATA_FORM_FACTOR_MICRO_SSD	0x0008
+#define ATA_FORM_FACTOR_C_FAST		0x0009
 /*169*/	u_int16_t       support_dsm;
 #define ATA_SUPPORT_DSM_TRIM		0x0001
-	u_int16_t       reserved170[6];
+/*170*/ u_int8_t        product_id[8];	/* Additional Product Identifier */
+	u_int16_t       reserved174[2];
 /*176*/ u_int8_t        media_serial[60];
 /*206*/ u_int16_t       sct;
 	u_int16_t       reserved207[2];
@@ -283,7 +311,7 @@ struct ata_params {
 /*223*/ u_int16_t       transport_minor;
 	u_int16_t       reserved224[31];
 /*255*/ u_int16_t       integrity;
-} __packed;
+} __packed __aligned(2);
 
 /* ATA Dataset Management */
 #define ATA_DSM_BLK_SIZE	512
@@ -355,7 +383,6 @@ struct ata_params {
 #define ATA_SA600               0x49
 #define ATA_DMA_MAX             0x4f
 
-
 /* ATA commands */
 #define ATA_NOP                         0x00    /* NOP */
 #define         ATA_NF_FLUSHQUEUE       0x00    /* flush queued cmd's */
@@ -416,6 +443,10 @@ struct ata_params {
 #define		ATA_RFPDMA_ZAC_MGMT_IN	0x02	/* NCQ ZAC mgmt in w/data */
 #define ATA_SEP_ATTN                    0x67    /* SEP request */
 #define ATA_SEEK                        0x70    /* seek */
+#define	ATA_AMAX_ADDR			0x78	/* Accessible Max Address */
+#define		ATA_AMAX_ADDR_GET	0x00	/* GET NATIVE MAX ADDRESS EXT */
+#define		ATA_AMAX_ADDR_SET	0x01	/* SET ACCESSIBLE MAX ADDRESS EXT */
+#define		ATA_AMAX_ADDR_FREEZE	0x02	/* FREEZE ACCESSIBLE MAX ADDRESS EXT */
 #define	ATA_ZAC_MANAGEMENT_OUT		0x9f	/* ZAC management out */
 #define		ATA_ZM_CLOSE_ZONE	0x01	/* close zone */
 #define		ATA_ZM_FINISH_ZONE	0x02	/* finish zone */
@@ -427,6 +458,7 @@ struct ata_params {
 #define ATA_ATAPI_IDENTIFY              0xa1    /* get ATAPI params*/
 #define ATA_SERVICE                     0xa2    /* service command */
 #define ATA_SMART_CMD                   0xb0    /* SMART command */
+#define	ATA_SANITIZE			0xb4	/* sanitize device */
 #define ATA_CFA_ERASE                   0xc0    /* CFA erase */
 #define ATA_READ_MUL                    0xc4    /* read multi */
 #define ATA_WRITE_MUL                   0xc5    /* write multi */
@@ -443,6 +475,13 @@ struct ata_params {
 #define ATA_READ_BUFFER                 0xe4    /* read buffer */
 #define ATA_READ_PM                     0xe4    /* read portmultiplier */
 #define ATA_CHECK_POWER_MODE            0xe5    /* device power mode */
+#define		ATA_PM_STANDBY		0x00	/* standby, also ATA_EPC_STANDBY_Z */
+#define		ATA_PM_STANDBY_Y	0x01	/* standby, also ATA_EPC_STANDBY_Y */
+#define		ATA_PM_IDLE		0x80	/* idle */
+#define		ATA_PM_IDLE_A		0x81	/* idle, also ATA_EPC_IDLE_A */
+#define		ATA_PM_IDLE_B		0x82	/* idle, also ATA_EPC_IDLE_B */
+#define		ATA_PM_IDLE_C		0x83	/* idle, also ATA_EPC_IDLE_C */
+#define		ATA_PM_ACTIVE_IDLE	0xff	/* active or idle */
 #define ATA_SLEEP                       0xe6    /* sleep */
 #define ATA_FLUSHCACHE                  0xe7    /* flush cache to disk */
 #define	ATA_WRITE_BUFFER		0xe8    /* write buffer */
@@ -474,7 +513,6 @@ struct ata_params {
 #define         ATA_SF_DIS_SRVIRQ       0xde    /* disable service interrupt */
 #define 	ATA_SF_LPSAERC		0x62	/* Long Phys Sect Align ErrRep*/
 #define 	ATA_SF_DSN		0x63	/* Device Stats Notification */
-#define ATA_CHECK_POWER_MODE		0xe5	/* Check Power Mode */
 #define ATA_SECURITY_SET_PASSWORD       0xf1    /* set drive password */
 #define ATA_SECURITY_UNLOCK             0xf2    /* unlock drive using passwd */
 #define ATA_SECURITY_ERASE_PREPARE      0xf3    /* prepare to erase drive */
@@ -483,7 +521,6 @@ struct ata_params {
 #define ATA_SECURITY_DISABLE_PASSWORD   0xf6    /* disable drive password */
 #define ATA_READ_NATIVE_MAX_ADDRESS     0xf8    /* read native max address */
 #define ATA_SET_MAX_ADDRESS             0xf9    /* set max address */
-
 
 /* ATAPI commands */
 #define ATAPI_TEST_UNIT_READY           0x00    /* check if device is ready */
@@ -545,7 +582,6 @@ struct ata_params {
 #define ATAPI_READ_CD                   0xbe    /* read data */
 #define ATAPI_POLL_DSC                  0xff    /* poll DSC status bit */
 
-
 struct ata_ioc_devices {
     int                 channel;
     char                name[2][32];
@@ -596,7 +632,7 @@ struct atapi_sense {
     u_int8_t	specific;		/* sense key specific */
 #define	ATA_SENSE_SPEC_VALID	0x80
 #define	ATA_SENSE_SPEC_MASK	0x7f
-	
+
     u_int8_t	specific1;		/* sense key specific */
     u_int8_t	specific2;		/* sense key specific */
 } __packed;
@@ -693,7 +729,7 @@ struct atapi_sense {
 #define	ATA_IDL_ATA_STRINGS	0x05	/* ATA Strings */
 #define	ATA_IDL_SECURITY	0x06	/* Security */
 #define	ATA_IDL_PARALLEL_ATA	0x07	/* Parallel ATA */
-#define	ATA_IDL_SERIAL_ATA	0x08	/* Seiral ATA */
+#define	ATA_IDL_SERIAL_ATA	0x08	/* Serial ATA */
 #define	ATA_IDL_ZDI		0x09	/* Zoned Device Information */
 
 struct ata_gp_log_dir {
@@ -975,7 +1011,6 @@ struct ata_security_password {
 
 #define IOCATAGSPINDOWN		_IOR('a', 104, int)
 #define IOCATASSPINDOWN		_IOW('a', 105, int)
-
 
 struct ata_ioc_raid_config {
 	    int                 lun;

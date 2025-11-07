@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001 Ian Dowse.  All rights reserved.
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/ufs/ufs/dirhash.h 326272 2017-11-27 15:23:17Z pfg $
  */
 
 #ifndef _UFS_UFS_DIRHASH_H_
@@ -66,7 +64,7 @@
  * placed at the most-recently-used end of the list. This helps a lot
  * in the worst-case case scenario where every directory access is
  * to a directory that is not hashed (i.e. the working set of hash
- * candidates is much larger than the configured memry limit). In this
+ * candidates is much larger than the configured memory limit). In this
  * case it limits the number of hash builds to 1/DH_SCOREINIT of the
  * number of accesses.
  */ 
@@ -95,7 +93,7 @@ struct dirhash {
 	int	dh_memreq;	/* Memory used. */
 
 	/* Free space statistics. XXX assumes DIRBLKSIZ is 512. */
-	u_int8_t *dh_blkfree;	/* free DIRALIGN words in each dir block */
+	uint8_t *dh_blkfree;	/* free DIRALIGN words in each dir block */
 	int	dh_nblk;	/* size of dh_blkfree array */
 	int	dh_dirblks;	/* number of DIRBLKSIZ blocks in dir */
 	int	dh_firstfree[DH_NFSTATS + 1]; /* first blk with N words free */
@@ -111,7 +109,6 @@ struct dirhash {
 	/* Protected by ufsdirhash_mtx. */
 	TAILQ_ENTRY(dirhash) dh_list;	/* chain of all dirhashes */
 };
-
 
 /*
  * Dirhash functions.

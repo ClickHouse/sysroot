@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -28,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/nfs/nfsport.h 336421 2018-07-17 19:10:15Z rmacklem $
  */
 
 #ifndef _NFS_NFSPORT_H_
@@ -96,16 +96,10 @@
 #include <netinet/tcp_timer.h>
 #include <netinet/tcp_var.h>
 #include <machine/in_cksum.h>
-#include <crypto/des/des.h>
 #include <sys/md5.h>
 #include <rpc/rpc.h>
 #include <rpc/rpcsec_gss.h>
 
-/*
- * For Darwin, these functions should be "static" when built in a kext.
- * (This is always defined as nil otherwise.)
- */
-#define	APPLESTATIC
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -113,8 +107,12 @@
 #include <ufs/ufs/ufsmount.h>
 #include <vm/uma.h>
 #include <vm/vm.h>
-#include <vm/vm_object.h>
+#include <vm/pmap.h>
 #include <vm/vm_extern.h>
+#include <vm/vm_object.h>
+#include <vm/vm_page.h>
+#include <vm/vm_pageout.h>
+#include <vm/vm_param.h>
 #include <nfs/nfssvc.h>
 #include "opt_nfs.h"
 #include "opt_ufs.h"
@@ -170,7 +168,6 @@
 			MGETHDR((m), M_WAITOK, MT_DATA); 	\
 		} 						\
 	} while (0)
-#define	NFSMTOD	mtod
 
 /*
  * Client side constant for size of a lockowner name.
@@ -181,6 +178,20 @@
  * Type for a mutex lock.
  */
 #define	NFSMUTEX_T		struct mtx
+
+/* Just define the NFSD_VNETxxx() macros as VNETxxx() macros. */
+#define	NFSD_VNET_NAME(n)		VNET_NAME(n)
+#define	NFSD_VNET_DECLARE(t, n)		VNET_DECLARE(t, n)
+#define	NFSD_VNET_DEFINE(t, n)		VNET_DEFINE(t, n)
+#define	NFSD_VNET_DEFINE_STATIC(t, n)	VNET_DEFINE_STATIC(t, n)
+#define	NFSD_VNET(n)			VNET(n)
+
+#define	CTLFLAG_NFSD_VNET		CTLFLAG_VNET
+
+#define	NFSD_CURVNET_SET(n)		CURVNET_SET(n)
+#define	NFSD_CURVNET_SET_QUIET(n)	CURVNET_SET_QUIET(n)
+#define	NFSD_CURVNET_RESTORE()		CURVNET_RESTORE()
+#define	NFSD_TD_TO_VNET(n)		TD_TO_VNET(n)
 
 #endif	/* _KERNEL */
 
@@ -255,10 +266,39 @@
 
 /*
  * Must be one more than last op#.
- * NFSv4.2 isn't implemented yet, but define the op# limit for it.
  */
 #define	NFSV41_NOPS		59
-#define	NFSV42_NOPS		72
+
+/*
+ * Additional operations for NFSv4.2.
+ */
+#define	NFSV4OP_ALLOCATE	59
+#define	NFSV4OP_COPY		60
+#define	NFSV4OP_COPYNOTIFY	61
+#define	NFSV4OP_DEALLOCATE	62
+#define	NFSV4OP_IOADVISE	63
+#define	NFSV4OP_LAYOUTERROR	64
+#define	NFSV4OP_LAYOUTSTATS	65
+#define	NFSV4OP_OFFLOADCANCEL	66
+#define	NFSV4OP_OFFLOADSTATUS	67
+#define	NFSV4OP_READPLUS	68
+#define	NFSV4OP_SEEK		69
+#define	NFSV4OP_WRITESAME	70
+#define	NFSV4OP_CLONE		71
+
+/* One greater than the last Operation # defined in RFC-7862. */
+#define	NFSV42_PURENOPS		72
+
+/* and the optional Extended attribute operations (RFC-8276). */
+#define	NFSV4OP_GETXATTR	72
+#define	NFSV4OP_SETXATTR	73
+#define	NFSV4OP_LISTXATTRS	74
+#define	NFSV4OP_REMOVEXATTR	75
+
+/*
+ * Must be one more than the last NFSv4.2 op#.
+ */
+#define	NFSV42_NOPS		76
 
 /* Quirky case if the illegal op code */
 #define	NFSV4OP_OPILLEGAL	10044
@@ -307,6 +347,12 @@
 #define	NFSV4OP_CBNOTIFYDEVID	14
 
 #define	NFSV41_CBNOPS		15
+
+/*
+ * Additional callback operations for NFSv4.2.
+ */
+#define	NFSV4OP_CBOFFLOAD	15
+
 #define	NFSV42_CBNOPS		16
 
 /*
@@ -365,13 +411,49 @@
  */
 #define	NFSV41_NPROCS		56
 
+/* Additional procedures for NFSv4.2. */
+#define	NFSPROC_IOADVISE	56
+#define	NFSPROC_ALLOCATE	57
+#define	NFSPROC_COPY		58
+#define	NFSPROC_SEEK		59
+#define	NFSPROC_SEEKDS		60
+
+/* and the ones for the optional Extended attribute support (RFC-8276). */
+#define	NFSPROC_GETEXTATTR	61
+#define	NFSPROC_SETEXTATTR	62
+#define	NFSPROC_RMEXTATTR	63
+#define	NFSPROC_LISTEXTATTR	64
+
+/* BindConnectionToSession, done by the krpc for a new connection. */
+#define	NFSPROC_BINDCONNTOSESS	65
+
+/* Do a Lookup+Open for "oneopenown". */
+#define	NFSPROC_LOOKUPOPEN	66
+
+/* Do an NFSv4.2 Deallocate. */
+#define	NFSPROC_DEALLOCATE	67
+
+/* Do an NFSv4.2 LayoutError. */
+#define	NFSPROC_LAYOUTERROR	68
+
+/* Do an NFSv4 Verify+Write. */
+#define	NFSPROC_APPENDWRITE	69
+
+/*
+ * Must be defined as one higher than the last NFSv4.2 Proc# above.
+ */
+#define	NFSV42_NPROCS		70
+
+/* Value of NFSV42_NPROCS for old nfsstats structure. (Always 69) */
+#define	NFSV42_OLDNPROCS	69
+
 #endif	/* NFS_V3NPROCS */
 
 /*
- * New stats structure.
+ * Newest stats structure.
  * The vers field will be set to NFSSTATS_V1 by the caller.
  */
-#define	NFSSTATS_V1	1
+#define	NFSSTATS_V1	2
 struct nfsstatsv1 {
 	int		vers;	/* Set to version requested by caller. */
 	uint64_t	attrcache_hits;
@@ -392,17 +474,82 @@ struct nfsstatsv1 {
 	uint64_t	readlink_bios;
 	uint64_t	biocache_readdirs;
 	uint64_t	readdir_bios;
-	uint64_t	rpccnt[NFSV41_NPROCS + 13];
+	uint64_t	rpccnt[NFSV42_NPROCS + 10];
 	uint64_t	rpcretries;
-	uint64_t	srvrpccnt[NFSV42_NOPS + NFSV4OP_FAKENOPS];
-	uint64_t	srvrpc_errs;
-	uint64_t	srv_errs;
+	uint64_t	srvrpccnt[NFSV42_NOPS + NFSV4OP_FAKENOPS + 15];
+	uint64_t	srvlayouts;
+	uint64_t	cllayouts;
 	uint64_t	rpcrequests;
 	uint64_t	rpctimeouts;
 	uint64_t	rpcunexpected;
 	uint64_t	rpcinvalid;
 	uint64_t	srvcache_inproghits;
-	uint64_t	srvcache_idemdonehits;
+	uint64_t	reserved_2;
+	uint64_t	srvcache_nonidemdonehits;
+	uint64_t	srvcache_misses;
+	uint64_t	srvcache_tcppeak;
+	int		srvcache_size;	/* Updated by atomic_xx_int(). */
+	uint64_t	srvclients;
+	uint64_t	srvopenowners;
+	uint64_t	srvopens;
+	uint64_t	srvlockowners;
+	uint64_t	srvlocks;
+	uint64_t	srvdelegates;
+	uint64_t	cbrpccnt[NFSV42_CBNOPS + 10];
+	uint64_t	clopenowners;
+	uint64_t	clopens;
+	uint64_t	cllockowners;
+	uint64_t	cllocks;
+	uint64_t	cldelegates;
+	uint64_t	cllocalopenowners;
+	uint64_t	cllocalopens;
+	uint64_t	cllocallockowners;
+	uint64_t	cllocallocks;
+	uint64_t	srvstartcnt;
+	uint64_t	srvdonecnt;
+	uint64_t	srvbytes[NFSV42_NOPS + NFSV4OP_FAKENOPS + 15];
+	uint64_t	srvops[NFSV42_NOPS + NFSV4OP_FAKENOPS + 15];
+	struct bintime	srvduration[NFSV42_NOPS + NFSV4OP_FAKENOPS + 15];
+	struct bintime	busyfrom;
+	struct bintime	busytime;
+};
+
+/*
+ * Newer stats structure.
+ * The vers field will be set to NFSSTATS_OV1 by the caller.
+ */
+#define	NFSSTATS_OV1	1
+struct nfsstatsov1 {
+	int		vers;	/* Set to version requested by caller. */
+	uint64_t	attrcache_hits;
+	uint64_t	attrcache_misses;
+	uint64_t	lookupcache_hits;
+	uint64_t	lookupcache_misses;
+	uint64_t	direofcache_hits;
+	uint64_t	direofcache_misses;
+	uint64_t	accesscache_hits;
+	uint64_t	accesscache_misses;
+	uint64_t	biocache_reads;
+	uint64_t	read_bios;
+	uint64_t	read_physios;
+	uint64_t	biocache_writes;
+	uint64_t	write_bios;
+	uint64_t	write_physios;
+	uint64_t	biocache_readlinks;
+	uint64_t	readlink_bios;
+	uint64_t	biocache_readdirs;
+	uint64_t	readdir_bios;
+	uint64_t	rpccnt[NFSV42_OLDNPROCS];
+	uint64_t	rpcretries;
+	uint64_t	srvrpccnt[NFSV42_PURENOPS + NFSV4OP_FAKENOPS];
+	uint64_t	reserved_0;
+	uint64_t	reserved_1;
+	uint64_t	rpcrequests;
+	uint64_t	rpctimeouts;
+	uint64_t	rpcunexpected;
+	uint64_t	rpcinvalid;
+	uint64_t	srvcache_inproghits;
+	uint64_t	reserved_2;
 	uint64_t	srvcache_nonidemdonehits;
 	uint64_t	srvcache_misses;
 	uint64_t	srvcache_tcppeak;
@@ -425,9 +572,9 @@ struct nfsstatsv1 {
 	uint64_t	cllocallocks;
 	uint64_t	srvstartcnt;
 	uint64_t	srvdonecnt;
-	uint64_t	srvbytes[NFSV42_NOPS + NFSV4OP_FAKENOPS];
-	uint64_t	srvops[NFSV42_NOPS + NFSV4OP_FAKENOPS];
-	struct bintime	srvduration[NFSV42_NOPS + NFSV4OP_FAKENOPS];
+	uint64_t	srvbytes[NFSV42_PURENOPS + NFSV4OP_FAKENOPS];
+	uint64_t	srvops[NFSV42_PURENOPS + NFSV4OP_FAKENOPS];
+	struct bintime	srvduration[NFSV42_PURENOPS + NFSV4OP_FAKENOPS];
 	struct bintime	busyfrom;
 	struct bintime	busytime;
 };
@@ -457,14 +604,14 @@ struct ext_nfsstats {
 	int	rpccnt[NFSV4_NPROCS];
 	int	rpcretries;
 	int	srvrpccnt[NFSV4OP_NOPS + NFSV4OP_FAKENOPS];
-	int	srvrpc_errs;
-	int	srv_errs;
+	int	reserved_0;
+	int	reserved_1;
 	int	rpcrequests;
 	int	rpctimeouts;
 	int	rpcunexpected;
 	int	rpcinvalid;
 	int	srvcache_inproghits;
-	int	srvcache_idemdonehits;
+	int	reserved_2;
 	int	srvcache_nonidemdonehits;
 	int	srvcache_misses;
 	int	srvcache_tcppeak;
@@ -520,7 +667,7 @@ struct nfs_vattr {
 struct nfsvattr {
 	struct vattr	na_vattr;
 	nfsattrbit_t	na_suppattr;
-	u_int32_t	na_mntonfileno;
+	u_int64_t	na_mntonfileno;
 	u_int64_t	na_filesid[2];
 };
 
@@ -536,6 +683,7 @@ struct nfsvattr {
 #define	na_atime	na_vattr.va_atime
 #define	na_mtime	na_vattr.va_mtime
 #define	na_ctime	na_vattr.va_ctime
+#define	na_btime	na_vattr.va_birthtime
 #define	na_gen		na_vattr.va_gen
 #define	na_flags	na_vattr.va_flags
 #define	na_rdev		na_vattr.va_rdev
@@ -627,18 +775,7 @@ void nfsrvd_rcv(struct socket *, void *, int);
  * mbufs any more.)
  */
 #define	NFSSOCKADDR(a, t)	((t)(a))
-#define	NFSSOCKADDRALLOC(a) 					\
-    do {							\
-	MALLOC((a), struct sockaddr *, sizeof (struct sockaddr), \
-	    M_SONAME, M_WAITOK); 				\
-	NFSBZERO((a), sizeof (struct sockaddr)); 		\
-    } while (0)
 #define	NFSSOCKADDRSIZE(a, s)		((a)->sa_len = (s))
-#define	NFSSOCKADDRFREE(a) 					\
-	do { 							\
-		if (a) 						\
-			FREE((caddr_t)(a), M_SONAME); 		\
-	} while (0)
 
 /*
  * These should be defined as a process or thread structure, as required
@@ -658,12 +795,6 @@ void nfsrvd_rcv(struct socket *, void *, int);
 #define	NCHNAMLEN	9999999
 
 /*
- * These macros are defined to initialize and set the timer routine.
- */
-#define	NFS_TIMERINIT \
-	newnfs_timer(NULL)
-
-/*
  * Handle SMP stuff:
  */
 #define	NFSSTATESPINLOCK	extern struct mtx nfs_state_mutex
@@ -678,6 +809,7 @@ void nfsrvd_rcv(struct socket *, void *, int);
 #define	NFSLOCKSOCK()		mtx_lock(&nfs_slock_mutex)
 #define	NFSUNLOCKSOCK()		mtx_unlock(&nfs_slock_mutex)
 #define	NFSNAMEIDMUTEX		extern struct mtx nfs_nameid_mutex
+#define	NFSNAMEIDMUTEXPTR	(&nfs_nameid_mutex)
 #define	NFSLOCKNAMEID()		mtx_lock(&nfs_nameid_mutex)
 #define	NFSUNLOCKNAMEID()	mtx_unlock(&nfs_nameid_mutex)
 #define	NFSNAMEIDREQUIRED()	mtx_assert(&nfs_nameid_mutex, MA_OWNED)
@@ -697,12 +829,14 @@ void nfsrvd_rcv(struct socket *, void *, int);
 #define	NFSUNLOCKV4ROOTMUTEX()	mtx_unlock(&nfs_v4root_mutex)
 #define	NFSLOCKNODE(n)		mtx_lock(&((n)->n_mtx))
 #define	NFSUNLOCKNODE(n)	mtx_unlock(&((n)->n_mtx))
+#define	NFSASSERTNODE(n)	mtx_assert(&((n)->n_mtx), MA_OWNED)
 #define	NFSLOCKMNT(m)		mtx_lock(&((m)->nm_mtx))
 #define	NFSUNLOCKMNT(m)		mtx_unlock(&((m)->nm_mtx))
+#define	NFSLOCKIOD()		mtx_lock(&ncl_iod_mutex)
+#define	NFSUNLOCKIOD()		mtx_unlock(&ncl_iod_mutex)
+#define	NFSASSERTIOD()		mtx_assert(&ncl_iod_mutex, MA_OWNED)
 #define	NFSLOCKREQUEST(r)	mtx_lock(&((r)->r_mtx))
 #define	NFSUNLOCKREQUEST(r)	mtx_unlock(&((r)->r_mtx))
-#define	NFSPROCLISTLOCK()	sx_slock(&allproc_lock)
-#define	NFSPROCLISTUNLOCK()	sx_sunlock(&allproc_lock)
 #define	NFSLOCKSOCKREQ(r)	mtx_lock(&((r)->nr_mtx))
 #define	NFSUNLOCKSOCKREQ(r)	mtx_unlock(&((r)->nr_mtx))
 #define	NFSLOCKDS(d)		mtx_lock(&((d)->nfsclds_mtx))
@@ -710,6 +844,18 @@ void nfsrvd_rcv(struct socket *, void *, int);
 #define	NFSSESSIONMUTEXPTR(s)	(&((s)->mtx))
 #define	NFSLOCKSESSION(s)	mtx_lock(&((s)->mtx))
 #define	NFSUNLOCKSESSION(s)	mtx_unlock(&((s)->mtx))
+#define	NFSLAYOUTMUTEXPTR(l)	(&((l)->mtx))
+#define	NFSLOCKLAYOUT(l)	mtx_lock(&((l)->mtx))
+#define	NFSUNLOCKLAYOUT(l)	mtx_unlock(&((l)->mtx))
+#define	NFSDDSMUTEXPTR		(&nfsrv_dslock_mtx)
+#define	NFSDDSLOCK()		mtx_lock(&nfsrv_dslock_mtx)
+#define	NFSDDSUNLOCK()		mtx_unlock(&nfsrv_dslock_mtx)
+#define	NFSDDONTLISTMUTEXPTR	(&nfsrv_dontlistlock_mtx)
+#define	NFSDDONTLISTLOCK()	mtx_lock(&nfsrv_dontlistlock_mtx)
+#define	NFSDDONTLISTUNLOCK()	mtx_unlock(&nfsrv_dontlistlock_mtx)
+#define	NFSDRECALLMUTEXPTR	(&nfsrv_recalllock_mtx)
+#define	NFSDRECALLLOCK()	mtx_lock(&nfsrv_recalllock_mtx)
+#define	NFSDRECALLUNLOCK()	mtx_unlock(&nfsrv_recalllock_mtx)
 
 /*
  * Use these macros to initialize/free a mutex.
@@ -731,12 +877,6 @@ int nfsmsleep(void *, void *, int, const char *, struct timespec *);
 #define	NFSMAKEDEV(m, n)	makedev((m), (n))
 #define	NFSMAJOR(d)		major(d)
 #define	NFSMINOR(d)		minor(d)
-
-/*
- * Define this to be the macro that returns the minimum size required
- * for a directory entry.
- */
-#define	DIRENT_SIZE(dp)		GENERIC_DIRSIZ(dp)
 
 /*
  * The vnode tag for nfsv4root.
@@ -764,9 +904,11 @@ int nfsmsleep(void *, void *, int, const char *, struct timespec *);
 /*
  * Some queue.h files don't have these dfined in them.
  */
+#ifndef LIST_END
 #define	LIST_END(head)		NULL
 #define	SLIST_END(head)		NULL
 #define	TAILQ_END(head)		NULL
+#endif
 
 /*
  * This must be defined to be a global variable that increments once
@@ -796,7 +938,6 @@ MALLOC_DECLARE(M_NEWNFSCLLOCKOWNER);
 MALLOC_DECLARE(M_NEWNFSCLLOCK);
 MALLOC_DECLARE(M_NEWNFSDIROFF);
 MALLOC_DECLARE(M_NEWNFSV4NODE);
-MALLOC_DECLARE(M_NEWNFSDIRECTIO);
 MALLOC_DECLARE(M_NEWNFSMNT);
 MALLOC_DECLARE(M_NEWNFSDROLLBACK);
 MALLOC_DECLARE(M_NEWNFSLAYOUT);
@@ -823,7 +964,6 @@ MALLOC_DECLARE(M_NEWNFSDSESSION);
 #define	M_NFSCLLOCK	M_NEWNFSCLLOCK
 #define	M_NFSDIROFF	M_NEWNFSDIROFF
 #define	M_NFSV4NODE	M_NEWNFSV4NODE
-#define	M_NFSDIRECTIO	M_NEWNFSDIRECTIO
 #define	M_NFSDROLLBACK	M_NEWNFSDROLLBACK
 #define	M_NFSLAYOUT	M_NEWNFSLAYOUT
 #define	M_NFSFLAYOUT	M_NEWNFSFLAYOUT
@@ -860,11 +1000,11 @@ MALLOC_DECLARE(M_NEWNFSDSESSION);
 #define	NFSWRITERPC_SETTIME(w, n, a, v4)				\
 	do {								\
 		if (w) {						\
-			mtx_lock(&((n)->n_mtx));			\
+			NFSLOCKNODE(n);					\
 			(n)->n_mtime = (a)->na_mtime;			\
 			if (v4)						\
 				(n)->n_change = (a)->na_filerev;	\
-			mtx_unlock(&((n)->n_mtx));			\
+			NFSUNLOCKNODE(n);				\
 		}							\
 	} while (0)
 
@@ -879,6 +1019,8 @@ MALLOC_DECLARE(M_NEWNFSDSESSION);
 int nfscl_loadattrcache(struct vnode **, struct nfsvattr *, void *, void *,
     int, int);
 int newnfs_realign(struct mbuf **, int);
+bool ncl_pager_setsize(struct vnode *vp, u_quad_t *nsizep);
+void ncl_copy_vattr(struct vattr *dst, struct vattr *src);
 
 /*
  * If the port runs on an SMP box that can enforce Atomic ops with low
@@ -887,6 +1029,7 @@ int newnfs_realign(struct mbuf **, int);
  * "out by one" without disastrous consequences.
  */
 #define	NFSINCRGLOBAL(a)	((a)++)
+#define	NFSDECRGLOBAL(a)	((a)--)
 
 /*
  * Assorted funky stuff to make things work under Darwin8.
@@ -903,6 +1046,7 @@ int newnfs_realign(struct mbuf **, int);
 #define	NFSSTA_HASWRITEVERF	0x00040000  /* Has write verifier */
 #define	NFSSTA_GOTFSINFO	0x00100000  /* Got the fsinfo */
 #define	NFSSTA_OPENMODE		0x00200000  /* Must use correct open mode */
+#define	NFSSTA_FLEXFILE		0x00800000  /* Use Flex File Layout */
 #define	NFSSTA_NOLAYOUTCOMMIT	0x04000000  /* Don't do LayoutCommit */
 #define	NFSSTA_SESSPERSIST	0x08000000  /* Has a persistent session */
 #define	NFSSTA_TIMEO		0x10000000  /* Experiencing a timeout */
@@ -933,14 +1077,12 @@ int newnfs_realign(struct mbuf **, int);
 #define	NFSHASNOLAYOUTCOMMIT(n)	((n)->nm_state & NFSSTA_NOLAYOUTCOMMIT)
 #define	NFSHASSESSPERSIST(n)	((n)->nm_state & NFSSTA_SESSPERSIST)
 #define	NFSHASPNFS(n)		((n)->nm_state & NFSSTA_PNFS)
+#define	NFSHASFLEXFILE(n)	((n)->nm_state & NFSSTA_FLEXFILE)
 #define	NFSHASOPENMODE(n)	((n)->nm_state & NFSSTA_OPENMODE)
 #define	NFSHASONEOPENOWN(n)	(((n)->nm_flag & NFSMNT_ONEOPENOWN) != 0 &&	\
 				    (n)->nm_minorvers > 0)
-
-/*
- * Gets the stats field out of the mount structure.
- */
-#define	vfs_statfs(m)	(&((m)->mnt_stat))
+#define	NFSHASTLS(n)		(((n)->nm_newflag & NFSMNT_TLS) != 0)
+#define	NFSHASSYSKRB5(n)	(((n)->nm_newflag & NFSMNT_SYSKRB5) != 0)
 
 /*
  * Set boottime.
@@ -965,6 +1107,11 @@ int newnfs_realign(struct mbuf **, int);
 struct nfsex_args {
 	char	*fspec;
 	struct export_args	export;
+};
+
+struct nfsex_oldargs {
+	char	*fspec;
+	struct o2export_args	export;
 };
 
 /*
@@ -995,7 +1142,7 @@ void nfsd_mntinit(void);
  * later, for debugging or stats, etc.
  */
 #define	NFSVOPLOCK(v, f)	vn_lock((v), (f))
-#define	NFSVOPUNLOCK(v, f)	VOP_UNLOCK((v), (f))
+#define	NFSVOPUNLOCK(v)		VOP_UNLOCK((v))
 #define	NFSVOPISLOCKED(v)	VOP_ISLOCKED((v))
 
 /*
@@ -1045,6 +1192,36 @@ struct nfsreq {
  * used in both places that call getnewvnode().
  */
 extern const char nfs_vnode_tag[];
+
+/*
+ * Check for the errors that indicate a DS should be disabled.
+ * ENXIO indicates that the krpc cannot do an RPC on the DS.
+ * EIO is returned by the RPC as an indication of I/O problems on the
+ * server.
+ * Are there other fatal errors?
+ */
+#define	nfsds_failerr(e)	((e) == ENXIO || (e) == EIO)
+
+/*
+ * Get a pointer to the MDS session, which is always the first element
+ * in the list.
+ * This macro can only be safely used when the NFSLOCKMNT() lock is held.
+ * The inline function can be used when the lock isn't held.
+ */
+#define	NFSMNT_MDSSESSION(m)	(&(TAILQ_FIRST(&((m)->nm_sess))->nfsclds_sess))
+
+static __inline struct nfsclsession *
+nfsmnt_mdssession(struct nfsmount *nmp)
+{
+	struct nfsclsession *tsep;
+
+	tsep = NULL;
+	mtx_lock(&nmp->nm_mtx);
+	if (TAILQ_FIRST(&nmp->nm_sess) != NULL)
+		tsep = NFSMNT_MDSSESSION(nmp);
+	mtx_unlock(&nmp->nm_mtx);
+	return (tsep);
+}
 
 #endif	/* _KERNEL */
 

@@ -1,4 +1,4 @@
-/*	$NetBSD: histedit.h,v 1.55 2016/02/17 19:47:49 christos Exp $	*/
+/*	$NetBSD: histedit.h,v 1.61 2022/02/08 21:13:22 rillig Exp $	*/
 
 /*-
  * Copyright (c) 1992, 1993
@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)histedit.h	8.2 (Berkeley) 1/3/94
- * $FreeBSD: releng/11.3/lib/libedit/histedit.h 313981 2017-02-20 03:33:59Z pfg $
  */
 
 /*
@@ -159,6 +158,7 @@ unsigned char	_el_fn_sh_complete(EditLine *, int);
 #define	EL_RPROMPT_ESC	22	/* , prompt_func, Char);	      set/get */
 #define	EL_RESIZE	23	/* , el_zfunc_t, void *);	      set     */
 #define	EL_ALIAS_TEXT	24	/* , el_afunc_t, void *);	      set     */
+#define	EL_SAFEREAD	25	/* , int);			      set/get */
 
 #define	EL_BUILTIN_GETCFN	(NULL)
 
@@ -180,7 +180,8 @@ void		 el_resize(EditLine *);
 const LineInfo	*el_line(EditLine *);
 int		 el_insertstr(EditLine *, const char *);
 void		 el_deletestr(EditLine *, int);
-
+int		 el_replacestr(EditLine *, const char *);
+int		 el_deletestr1(EditLine *, int, int);
 
 /*
  * ==== History ====
@@ -228,6 +229,7 @@ int		history(History *, HistEvent *, int, ...);
 #define	H_DELDATA	24	/* , int, histdata_t *);*/
 #define	H_REPLACE	25	/* , const char *, histdata_t);	*/
 #define	H_SAVE_FP	26	/* , FILE *);		*/
+#define	H_NSAVE_FP	27	/* , size_t, FILE *);	*/
 
 
 
@@ -263,6 +265,8 @@ typedef struct lineinfow {
 	const wchar_t	*lastchar;
 } LineInfoW;
 
+typedef int	(*el_rfunc_t)(EditLine *, wchar_t *);
+
 const wchar_t	*el_wgets(EditLine *, int *);
 int		 el_wgetc(EditLine *, wchar_t *);
 void		 el_wpush(EditLine *, const wchar_t *);
@@ -276,6 +280,7 @@ int		 el_cursor(EditLine *, int);
 const LineInfoW	*el_wline(EditLine *);
 int		 el_winsertstr(EditLine *, const wchar_t *);
 #define          el_wdeletestr  el_deletestr
+int		 el_wreplacestr(EditLine *, const wchar_t *);
 
 /*
  * ==== History ====

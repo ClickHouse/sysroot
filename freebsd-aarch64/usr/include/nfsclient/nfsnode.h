@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsnode.h	8.9 (Berkeley) 5/14/95
- * $FreeBSD: releng/12.2/sys/nfsclient/nfsnode.h 328417 2018-01-25 22:25:13Z cem $
  */
 
 #ifndef _NFSCLIENT_NFSNODE_H_
@@ -83,7 +82,7 @@ struct nfs_accesscache {
 	uid_t			uid;		/* credentials having mode */
 	time_t			stamp;		/* mode cache timestamp */
 };
-	
+
 /*
  * The nfsnode is the nfs equivalent to ufs's inode. Any similarity
  * is purely coincidental.

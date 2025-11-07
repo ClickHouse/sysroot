@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)types.h	8.6 (Berkeley) 2/19/95
- * $FreeBSD: releng/12.2/sys/sys/types.h 360400 2020-04-27 22:27:46Z kevans $
  */
 
 #ifndef _SYS_TYPES_H_
@@ -252,13 +251,15 @@ typedef	struct cap_rights	cap_rights_t;
 #endif
 
 /*
- * Types suitable for exporting size and pointers (as virtual addresses)
- * from the kernel independent of native word size.  These should be
- * used in place of size_t and (u)intptr_t in structs which contain such
- * types that are shared with userspace.
+ * Types suitable for exporting physical addresses, virtual addresses
+ * (pointers), and memory object sizes from the kernel independent of native
+ * word size.  These should be used in place of vm_paddr_t, (u)intptr_t, and
+ * size_t in structs which contain such types that are shared with userspace.
  */
+typedef	__uint64_t	kpaddr_t;
 typedef	__uint64_t	kvaddr_t;
 typedef	__uint64_t	ksize_t;
+typedef	__int64_t	kssize_t;
 
 typedef	__vm_offset_t	vm_offset_t;
 typedef	__uint64_t	vm_ooffset_t;
@@ -269,8 +270,8 @@ typedef	__vm_size_t	vm_size_t;
 typedef __rman_res_t    rman_res_t;
 
 #ifdef _KERNEL
-typedef	int		boolean_t;
-typedef	struct device	*device_t;
+typedef	unsigned int	boolean_t;
+typedef	struct _device	*device_t;
 typedef	__intfptr_t	intfptr_t;
 
 /*
@@ -290,19 +291,17 @@ typedef	__uint64_t	uoff_t;
 typedef	char		vm_memattr_t;	/* memory attribute codes */
 typedef	struct vm_page	*vm_page_t;
 
+#define offsetof(type, field) __offsetof(type, field)
+#endif /* _KERNEL */
+
+#if	defined(_KERNEL) || defined(_STANDALONE)
 #if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
 #define	__bool_true_false_are_defined	1
 #define	false	0
 #define	true	1
-#if __STDC_VERSION__ < 199901L && __GNUC__ < 3 && !defined(__INTEL_COMPILER)
-typedef	int	_Bool;
-#endif
 typedef	_Bool	bool;
 #endif /* !__bool_true_false_are_defined && !__cplusplus */
-
-#define offsetof(type, field) __offsetof(type, field)
-
-#endif /* _KERNEL */
+#endif /* KERNEL || _STANDALONE */
 
 /*
  * The following are all things that really shouldn't exist in this header,
@@ -379,7 +378,7 @@ __bitcount64(__uint64_t _x)
  * The major and minor numbers are encoded in dev_t as MMMmmmMm (where
  * letters correspond to bytes).  The encoding of the lower 4 bytes is
  * constrained by compatibility with 16-bit and 32-bit dev_t's.  The
- * encoding of of the upper 4 bytes is the least unnatural one consistent
+ * encoding of the upper 4 bytes is the least unnatural one consistent
  * with this and other constraints.  Also, the decoding of the m bytes by
  * minor() is unnatural to maximize compatibility subject to not discarding
  * bits.  The upper m byte is shifted into the position of the lower M byte
@@ -400,10 +399,10 @@ __minor(dev_t _d)
 }
 #define	makedev(M, m)	__makedev((M), (m))
 static __inline dev_t
-__makedev(int _M, int _m)
+__makedev(int _Major, int _Minor)
 {
-	return (((dev_t)(_M & 0xffffff00) << 32) | ((_M & 0xff) << 8) |
-	    ((dev_t)(_m & 0xff00) << 24) | (_m & 0xffff00ff));
+	return (((dev_t)(_Major & 0xffffff00) << 32) | ((_Major & 0xff) << 8) |
+	    ((dev_t)(_Minor & 0xff00) << 24) | (_Minor & 0xffff00ff));
 }
 
 /*

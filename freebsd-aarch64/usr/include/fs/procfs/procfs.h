@@ -35,7 +35,6 @@
  *	@(#)procfs.h	8.9 (Berkeley) 5/14/95
  *
  * From:
- * $FreeBSD: releng/12.2/sys/fs/procfs/procfs.h 332936 2018-04-24 14:49:09Z eadler $
  */
 
 #ifdef _KERNEL
@@ -53,8 +52,6 @@ int	 procfs_doprocregs(PFS_FILL_ARGS);
 int	 procfs_doprocrlimit(PFS_FILL_ARGS);
 int	 procfs_doprocstatus(PFS_FILL_ARGS);
 int	 procfs_doproctype(PFS_FILL_ARGS);
-int	 procfs_ioctl(PFS_IOCTL_ARGS);
-int	 procfs_close(PFS_CLOSE_ARGS);
 
 /* Attributes */
 int	 procfs_attr_w(PFS_ATTR_ARGS);

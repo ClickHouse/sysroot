@@ -41,7 +41,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)kernel.h	8.3 (Berkeley) 1/21/94
- * $FreeBSD$
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -105,6 +104,7 @@ enum sysinit_sub_id {
 	SI_SUB_EVENTHANDLER	= 0x1C00000,	/* eventhandler init */
 	SI_SUB_VNET_PRELINK	= 0x1E00000,	/* vnet init before modules */
 	SI_SUB_KLD		= 0x2000000,	/* KLD and module setup */
+	SI_SUB_KHELP		= 0x2080000,	/* khelp modules */
 	SI_SUB_CPU		= 0x2100000,	/* CPU resource(s)*/
 	SI_SUB_RACCT		= 0x2110000,	/* resource accounting */
 	SI_SUB_KDTRACE		= 0x2140000,	/* Kernel dtrace hooks */
@@ -467,12 +467,17 @@ typedef void (*ich_func_t)(void *_arg);
 
 struct intr_config_hook {
 	TAILQ_ENTRY(intr_config_hook) ich_links;
+	uintptr_t	ich_state;
+#define ICHS_QUEUED	0x1
+#define ICHS_RUNNING	0x2
+#define	ICHS_DONE	0x3
 	ich_func_t	ich_func;
 	void		*ich_arg;
 };
 
 int	config_intrhook_establish(struct intr_config_hook *hook);
 void	config_intrhook_disestablish(struct intr_config_hook *hook);
+int	config_intrhook_drain(struct intr_config_hook *hook);
 void	config_intrhook_oneshot(ich_func_t _func, void *_arg);
 
 #endif /* !_SYS_KERNEL_H_*/

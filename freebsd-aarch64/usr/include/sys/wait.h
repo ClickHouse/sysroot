@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)wait.h	8.2 (Berkeley) 7/10/94
- * $FreeBSD: releng/12.2/sys/sys/wait.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _SYS_WAIT_H_

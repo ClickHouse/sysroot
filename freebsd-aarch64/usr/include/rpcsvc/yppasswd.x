@@ -40,7 +40,6 @@
 %/*static char sccsid[] = "from: @(#)yppasswd.x	2.1 88/08/01 4.0 RPCSRC";*/
 %#endif /* not lint */
 %#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD: releng/12.2/include/rpcsvc/yppasswd.x 259117 2013-12-09 04:26:50Z hrs $");
 #endif
 
 program YPPASSWDPROG {

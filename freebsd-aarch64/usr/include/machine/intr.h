@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/arm64/include/intr.h 330582 2018-03-07 13:16:03Z andrew $
  */
 
 #ifndef _MACHINE_INTR_H_
@@ -36,7 +34,7 @@
 #include <sys/intr.h>
 
 #ifndef NIRQ
-#define	NIRQ		2048	/* XXX - It should be an option. */
+#define	NIRQ		16384	/* XXX - It should be an option. */
 #endif
 
 static inline void
@@ -51,6 +49,7 @@ void intr_ipi_dispatch(u_int, struct trapframe *);
 #ifdef DEV_ACPI
 #define	ACPI_INTR_XREF	1
 #define	ACPI_MSI_XREF	2
+#define	ACPI_GPIO_XREF	3
 #endif
 
 #endif	/* _MACHINE_INTR_H */

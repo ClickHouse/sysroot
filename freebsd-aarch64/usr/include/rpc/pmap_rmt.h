@@ -31,7 +31,6 @@
  *
  *	from: @(#)pmap_rmt.h 1.2 88/02/08 SMI
  *	from: @(#)pmap_rmt.h	2.1 88/07/29 4.0 RPCSRC
- * $FreeBSD: releng/12.2/include/rpc/pmap_rmt.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 /*

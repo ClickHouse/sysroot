@@ -1,7 +1,8 @@
-/*	$FreeBSD: releng/11.3/sys/netipsec/keydb.h 331722 2018-03-29 02:50:57Z eadler $	*/
 /*	$KAME: keydb.h,v 1.14 2000/08/02 17:58:26 sakane Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
@@ -37,8 +38,10 @@
 #include <sys/counter.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
+#include <sys/rmlock.h>
 
 #include <netipsec/key_var.h>
+#include <opencrypto/_cryptodev.h>
 
 #ifndef _SOCKADDR_UNION_DEFINED
 #define	_SOCKADDR_UNION_DEFINED
@@ -52,7 +55,7 @@ union sockaddr_union {
 };
 #endif /* _SOCKADDR_UNION_DEFINED */
 
-/* Security Assocciation Index */
+/* Security Association Index */
 /* NOTE: Ensure to be same address family */
 struct secasindex {
 	union sockaddr_union src;	/* source address for SA */
@@ -154,13 +157,13 @@ struct secasvar {
 	struct seckey *key_enc;	        /* Key for Encryption */
 	struct secreplay *replay;	/* replay prevention */
 	struct secnatt *natt;		/* NAT-T config */
-	struct mtx *lock;		/* update/access lock */
+	struct rmlock *lock;		/* update/access lock */
 
 	const struct xformsw *tdb_xform;	/* transform */
 	const struct enc_xform *tdb_encalgxform;/* encoding algorithm */
 	const struct auth_hash *tdb_authalgxform;/* authentication algorithm */
 	const struct comp_algo *tdb_compalgxform;/* compression algorithm */
-	uint64_t tdb_cryptoid;		/* crypto session id */
+	crypto_session_t tdb_cryptoid;		/* crypto session */
 
 	uint8_t alg_auth;		/* Authentication Algorithm Identifier*/
 	uint8_t alg_enc;		/* Cipher Algorithm Identifier */
@@ -184,9 +187,13 @@ struct secasvar {
 	volatile u_int refcnt;		/* reference count */
 };
 
-#define	SECASVAR_LOCK(_sav)		mtx_lock((_sav)->lock)
-#define	SECASVAR_UNLOCK(_sav)		mtx_unlock((_sav)->lock)
-#define	SECASVAR_LOCK_ASSERT(_sav)	mtx_assert((_sav)->lock, MA_OWNED)
+#define	SECASVAR_RLOCK_TRACKER		struct rm_priotracker _secas_tracker
+#define	SECASVAR_RLOCK(_sav)		rm_rlock((_sav)->lock, &_secas_tracker)
+#define	SECASVAR_RUNLOCK(_sav)		rm_runlock((_sav)->lock, &_secas_tracker)
+#define	SECASVAR_WLOCK(_sav)		rm_wlock((_sav)->lock)
+#define	SECASVAR_WUNLOCK(_sav)		rm_wunlock((_sav)->lock)
+#define	SECASVAR_LOCK_ASSERT(_sav)	rm_assert((_sav)->lock, RA_LOCKED)
+#define	SECASVAR_LOCK_WASSERT(_sav)	rm_assert((_sav)->lock, RA_WLOCKED)
 #define	SAV_ISGCM(_sav)							\
 			((_sav)->alg_enc == SADB_X_EALG_AESGCM8 ||	\
 			(_sav)->alg_enc == SADB_X_EALG_AESGCM12 ||	\
@@ -194,19 +201,25 @@ struct secasvar {
 #define	SAV_ISCTR(_sav) ((_sav)->alg_enc == SADB_X_EALG_AESCTR)
 #define SAV_ISCTRORGCM(_sav)	(SAV_ISCTR((_sav)) || SAV_ISGCM((_sav)))
 
+#define	IPSEC_SEQH_SHIFT	32
+
 /* Replay prevention, protected by SECASVAR_LOCK:
  *  (m) locked by mtx
  *  (c) read only except during creation / free
  */
 struct secreplay {
-	u_int32_t count;	/* (m) */
+	struct mtx lock;
+	u_int64_t count;	/* (m) */
 	u_int wsize;		/* (c) window size, i.g. 4 bytes */
-	u_int32_t seq;		/* (m) used by sender */
-	u_int32_t lastseq;	/* (m) used by receiver */
+	u_int64_t last;		/* (m) used by receiver */
 	u_int32_t *bitmap;	/* (m) used by receiver */
 	u_int bitmap_size;	/* (c) size of the bitmap array */
 	int overflow;		/* (m) overflow flag */
 };
+
+#define SECREPLAY_LOCK(_r)	mtx_lock(&(_r)->lock)
+#define SECREPLAY_UNLOCK(_r)	mtx_unlock(&(_r)->lock)
+#define SECREPLAY_ASSERT(_r)	mtx_assert(&(_r)->lock, MA_OWNED)
 
 /* socket table due to send PF_KEY messages. */
 struct secreg {
@@ -226,28 +239,6 @@ struct secacq {
 	time_t created;		/* for lifetime */
 	int count;		/* for lifetime */
 };
-
-/* Sensitivity Level Specification */
-/* nothing */
-
-#define SADB_KILL_INTERVAL	600	/* six seconds */
-
-/* secpolicy */
-extern struct secpolicy *keydb_newsecpolicy(void);
-extern void keydb_delsecpolicy(struct secpolicy *);
-/* secashead */
-extern struct secashead *keydb_newsecashead(void);
-extern void keydb_delsecashead(struct secashead *);
-/* secasvar */
-extern struct secasvar *keydb_newsecasvar(void);
-extern void keydb_refsecasvar(struct secasvar *);
-extern void keydb_freesecasvar(struct secasvar *);
-/* secreplay */
-extern struct secreplay *keydb_newsecreplay(size_t);
-extern void keydb_delsecreplay(struct secreplay *);
-/* secreg */
-extern struct secreg *keydb_newsecreg(void);
-extern void keydb_delsecreg(struct secreg *);
 
 #endif /* _KERNEL */
 

@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)kvm.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/12.2/lib/libkvm/kvm.h 335979 2018-07-05 13:13:48Z brooks $
  */
 
 #ifndef _KVM_H_
@@ -82,18 +81,18 @@ struct kvm_swap {
 };
 
 struct kvm_page {
-	unsigned int version;
-	u_long paddr;
-	u_long kmap_vaddr;
-	u_long dmap_vaddr;
-	vm_prot_t prot;
-	u_long offset;
-	size_t len;
-	/* end of version 1 */
+	u_int		kp_version;
+	kpaddr_t	kp_paddr;
+	kvaddr_t	kp_kmap_vaddr;
+	kvaddr_t	kp_dmap_vaddr;
+	vm_prot_t	kp_prot;
+	off_t		kp_offset;
+	size_t		kp_len;
+	/* end of version 2 */
 };
 
 #define SWIF_DEV_PREFIX	0x0002
-#define	LIBKVM_WALK_PAGES_VERSION	1
+#define	LIBKVM_WALK_PAGES_VERSION	2
 
 __BEGIN_DECLS
 int	  kvm_close(kvm_t *);
@@ -124,6 +123,7 @@ ssize_t	  kvm_read(kvm_t *, unsigned long, void *, size_t);
 ssize_t	  kvm_read_zpcpu(kvm_t *, unsigned long, void *, size_t, int);
 ssize_t	  kvm_read2(kvm_t *, kvaddr_t, void *, size_t);
 ssize_t	  kvm_write(kvm_t *, unsigned long, const void *, size_t);
+kssize_t  kvm_kerndisp(kvm_t *);
 
 typedef int kvm_walk_pages_cb_t(struct kvm_page *, void *);
 int kvm_walk_pages(kvm_t *, kvm_walk_pages_cb_t *, void *);

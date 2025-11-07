@@ -23,8 +23,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 #ifndef __IFLIB_H_
 #define __IFLIB_H_
@@ -49,7 +47,7 @@ typedef uint16_t qidx_t;
 struct iflib_ctx;
 typedef struct iflib_ctx *if_ctx_t;
 struct if_shared_ctx;
-typedef struct if_shared_ctx *if_shared_ctx_t;
+typedef const struct if_shared_ctx *if_shared_ctx_t;
 struct if_int_delay_info;
 typedef struct if_int_delay_info  *if_int_delay_info_t;
 struct if_pseudo;
@@ -131,7 +129,9 @@ typedef struct if_pkt_info {
 	uint8_t			ipi_mflags;	/* packet mbuf flags */
 
 	uint32_t		ipi_tcp_seq;	/* tcp seqno */
-	uint32_t		__spare0__;
+	uint8_t			ipi_ip_tos;	/* IP ToS field data */
+	uint8_t			__spare0__;
+	uint16_t		__spare1__;
 } *if_pkt_info_t;
 
 typedef struct if_irq {
@@ -187,6 +187,8 @@ typedef struct if_txrx {
 	void (*ift_rxd_refill) (void * , if_rxd_update_t iru);
 	void (*ift_rxd_flush) (void *, uint16_t qsidx, uint8_t flidx, qidx_t pidx);
 	int (*ift_legacy_intr) (void *);
+	qidx_t (*ift_txq_select) (void *, struct mbuf *);
+	qidx_t (*ift_txq_select_v2) (void *, struct mbuf *, if_pkt_info_t);
 } *if_txrx_t;
 
 typedef struct if_softc_ctx {
@@ -348,22 +350,10 @@ typedef enum {
  * Driver needs frames padded to some minimum length
  */
 #define IFLIB_NEED_ETHER_PAD	0x100
-/*
- * Packets can be freed immediately after encap
- */
-#define IFLIB_TXD_ENCAP_PIO	0x00200
-/*
- * Use RX completion handler
- */
-#define IFLIB_RX_COMPLETION	0x00400
-/*
- * Skip refilling cluster free lists
- */
-#define IFLIB_SKIP_CLREFILL	0x00800
-/*
- * Don't reset on hang
- */
-#define IFLIB_NO_HANG_RESET	0x01000
+#define	IFLIB_SPARE7		0x200
+#define	IFLIB_SPARE6		0x400
+#define	IFLIB_SPARE5		0x800
+#define	IFLIB_SPARE4		0x1000
 /*
  * Don't need/want most of the niceties of
  * queue management
@@ -395,6 +385,28 @@ typedef enum {
  * emulating ethernet
  */
 #define IFLIB_PSEUDO_ETHER	0x80000
+
+/* The following IFLIB_FEATURE_* defines are for driver modules to determine
+ * what features this version of iflib supports. They shall be defined to the
+ * first __FreeBSD_version that introduced the feature.
+ */
+/*
+ * Driver can set its own TX queue selection function
+ * as ift_txq_select in struct if_txrx
+ */
+#define IFLIB_FEATURE_QUEUE_SELECT	1300527
+/*
+ * Driver can set its own TX queue selection function
+ * as ift_txq_select_v2 in struct if_txrx. This includes
+ * having iflib send L3+ extra header information to the
+ * function.
+ */
+#define IFLIB_FEATURE_QUEUE_SELECT_V2	1301509
+/*
+ * Driver can create subinterfaces with their own Tx/Rx queues
+ * that all share a single device (or commonly, port)
+ */
+#define IFLIB_FEATURE_SUB_INTERFACES	1303503
 
 /*
  * These enum values are used in iflib_needs_restart to indicate to iflib
@@ -453,11 +465,14 @@ int iflib_device_iov_add_vf(device_t, uint16_t, const nvlist_t *);
 int iflib_device_register(device_t dev, void *softc, if_shared_ctx_t sctx, if_ctx_t *ctxp);
 int iflib_device_deregister(if_ctx_t);
 
-int iflib_irq_alloc(if_ctx_t, if_irq_t, int, driver_filter_t, void *filter_arg, driver_intr_t, void *arg, const char *name);
+int iflib_irq_alloc(if_ctx_t, if_irq_t, int, driver_filter_t, void *filter_arg,
+		    driver_intr_t, void *arg, const char *name);
 int iflib_irq_alloc_generic(if_ctx_t ctx, if_irq_t irq, int rid,
 			    iflib_intr_type_t type, driver_filter_t *filter,
 			    void *filter_arg, int qid, const char *name);
-void iflib_softirq_alloc_generic(if_ctx_t ctx, if_irq_t irq, iflib_intr_type_t type,  void *arg, int qid, const char *name);
+void iflib_softirq_alloc_generic(if_ctx_t ctx, if_irq_t irq,
+				 iflib_intr_type_t type,  void *arg, int qid,
+				 const char *name);
 
 void iflib_irq_free(if_ctx_t ctx, if_irq_t irq);
 
@@ -488,6 +503,7 @@ void iflib_led_create(if_ctx_t ctx);
 
 void iflib_add_int_delay_sysctl(if_ctx_t, const char *, const char *,
 								if_int_delay_info_t, int, int);
+uint16_t iflib_get_extra_msix_vectors_sysctl(if_ctx_t ctx);
 
 /*
  * Pseudo device support
@@ -495,4 +511,11 @@ void iflib_add_int_delay_sysctl(if_ctx_t, const char *, const char *,
 if_pseudo_t iflib_clone_register(if_shared_ctx_t);
 void iflib_clone_deregister(if_pseudo_t);
 
+/*
+ * Sub-interface support
+ */
+int iflib_irq_alloc_generic_subctx(if_ctx_t ctx, if_ctx_t subctx, if_irq_t irq,
+				   int rid, iflib_intr_type_t type,
+				   driver_filter_t *filter, void *filter_arg,
+				   int qid, const char *name);
 #endif /*  __IFLIB_H_ */

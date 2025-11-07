@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tcpip.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD: releng/12.2/sys/netinet/tcpip.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NETINET_TCPIP_H_

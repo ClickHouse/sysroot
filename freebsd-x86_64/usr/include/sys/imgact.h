@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1993, David Greenman
  * All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -25,14 +27,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/imgact.h 337046 2018-08-01 17:40:17Z jhb $
  */
 
 #ifndef _SYS_IMGACT_H_
 #define	_SYS_IMGACT_H_
 
-#include <sys/uio.h>
+#include <sys/_uio.h>
 
 #include <vm/vm.h>
 
@@ -44,7 +44,8 @@ struct image_args {
 	char *buf;		/* pointer to string buffer */
 	void *bufkva;		/* cookie for string buffer KVA */
 	char *begin_argv;	/* beginning of argv in buf */
-	char *begin_envv;	/* beginning of envv in buf */
+	char *begin_envv;	/* (interal use only) beginning of envv in buf,
+				 * access with exec_args_get_begin_envv(). */
 	char *endp;		/* current `end' pointer of arg & env strings */
 	char *fname;            /* pointer to filename of executable (system space) */
 	char *fname_buf;	/* pointer to optional malloc(M_TEMP) buffer */
@@ -56,36 +57,41 @@ struct image_args {
 };
 
 struct image_params {
-	struct proc *proc;	/* our process struct */
+	struct proc *proc;		/* our process */
 	struct label *execlabel;	/* optional exec label */
-	struct vnode *vp;	/* pointer to vnode of file to exec */
+	struct vnode *vp;		/* pointer to vnode of file to exec */
 	struct vm_object *object;	/* The vm object for this vp */
-	struct vattr *attr;	/* attributes of file */
-	const char *image_header; /* head of file to exec */
-	unsigned long entry_addr; /* entry address of target executable */
-	unsigned long reloc_base; /* load address of image */
-	char vmspace_destroyed;	/* flag - we've blown away original vm space */
-#define IMGACT_SHELL	0x1
-#define IMGACT_BINMISC	0x2
-	unsigned char interpreted;	/* mask of interpreters that have run */
-	char opened;		/* flag - we have opened executable vnode */
-	char *interpreter_name;	/* name of the interpreter */
-	void *auxargs;		/* ELF Auxinfo structure pointer */
+	struct vattr *attr;		/* attributes of file */
+	const char *image_header;	/* header of file to exec */
+	unsigned long entry_addr;	/* entry address of target executable */
+	unsigned long reloc_base;	/* load address of image */
+	char *interpreter_name;		/* name of the interpreter */
+	void *auxargs;			/* ELF Auxinfo structure pointer */
 	struct sf_buf *firstpage;	/* first page that we mapped */
-	unsigned long ps_strings; /* PS_STRINGS for BSD/OS binaries */
+	void *ps_strings;		/* pointer to ps_string (user space) */
 	struct image_args *args;	/* system call arguments */
 	struct sysentvec *sysent;	/* system entry vector */
+	void *argv;			/* pointer to argv (user space) */
+	void *envv;			/* pointer to envv (user space) */
 	char *execpath;
-	unsigned long execpathp;
+	void *execpathp;
 	char *freepath;
-	unsigned long canary;
+	void *canary;
 	int canarylen;
-	unsigned long pagesizes;
+	void *pagesizes;
 	int pagesizeslen;
 	vm_prot_t stack_prot;
 	u_long stack_sz;
 	struct ucred *newcred;		/* new credentials if changing */
+#define IMGACT_SHELL	0x1
+#define IMGACT_BINMISC	0x2
+	unsigned char interpreted;	/* mask of interpreters that have run */
 	bool credential_setid;		/* true if becoming setid */
+	bool vmspace_destroyed;		/* we've blown away original vm space */
+	bool opened;			/* we have opened executable vnode */
+	bool textset;
+	u_int map_flags;
+	struct vnode *interpreter_vp;	/* vnode of the interpreter */
 };
 
 #ifdef _KERNEL
@@ -93,16 +99,25 @@ struct sysentvec;
 struct thread;
 struct vmspace;
 
-#define IMGACT_CORE_COMPRESS	0x01
-
 int	exec_alloc_args(struct image_args *);
+int	exec_args_add_arg(struct image_args *args, const char *argp,
+	    enum uio_seg segflg);
+int	exec_args_add_env(struct image_args *args, const char *envp,
+	    enum uio_seg segflg);
+int	exec_args_add_fname(struct image_args *args, const char *fname,
+	    enum uio_seg segflg);
+int	exec_args_adjust_args(struct image_args *args, size_t consume,
+	    ssize_t extend);
+char	*exec_args_get_begin_envv(struct image_args *args);
 int	exec_check_permissions(struct image_params *);
-register_t *exec_copyout_strings(struct image_params *);
+void	exec_cleanup(struct thread *td, struct vmspace *);
+int	exec_copyout_strings(struct image_params *, uintptr_t *);
 void	exec_free_args(struct image_args *);
+int	exec_map_stack(struct image_params *);
 int	exec_new_vmspace(struct image_params *, struct sysentvec *);
-void	exec_setregs(struct thread *, struct image_params *, u_long);
+void	exec_setregs(struct thread *, struct image_params *, uintptr_t);
 int	exec_shell_imgact(struct image_params *);
-int	exec_copyin_args(struct image_args *, char *, enum uio_seg,
+int	exec_copyin_args(struct image_args *, const char *, enum uio_seg,
 	char **, char **);
 int	exec_copyin_data_fds(struct thread *, struct image_args *, const void *,
 	size_t, const int *, size_t);

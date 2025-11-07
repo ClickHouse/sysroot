@@ -24,14 +24,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * From i386: FreeBSD:  157909 2006-04-21 04:28:43Z peter
- * $FreeBSD: releng/12.2/sys/arm64/include/minidump.h 286954 2015-08-20 11:26:26Z andrew $
  */
 
 #ifndef	_MACHINE_MINIDUMP_H_
 #define	_MACHINE_MINIDUMP_H_ 1
 
 #define	MINIDUMP_MAGIC		"minidump FreeBSD/arm64"
-#define	MINIDUMP_VERSION	1
+#define	MINIDUMP_VERSION	2
 
 struct minidumphdr {
 	char magic[24];
@@ -43,6 +42,7 @@ struct minidumphdr {
 	uint64_t dmapphys;
 	uint64_t dmapbase;
 	uint64_t dmapend;
+	uint32_t dumpavailsize;
 };
 
 #endif /* _MACHINE_MINIDUMP_H_ */

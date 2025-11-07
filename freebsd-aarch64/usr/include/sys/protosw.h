@@ -29,11 +29,12 @@
  * SUCH DAMAGE.
  *
  *	@(#)protosw.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/12.2/sys/sys/protosw.h 365059 2020-09-01 19:54:43Z bz $
  */
 
 #ifndef _SYS_PROTOSW_H_
 #define _SYS_PROTOSW_H_
+
+#include <sys/queue.h>
 
 /* Forward declare these structures referenced from prototypes below. */
 struct kaiocb;
@@ -93,6 +94,8 @@ struct protosw {
 	pr_drain_t *pr_drain;		/* flush any excess space possible */
 
 	struct	pr_usrreqs *pr_usrreqs;	/* user-protocol hook */
+	LIST_ENTRY(protosw)  pr_fasttimos;
+	LIST_ENTRY(protosw)  pr_slowtimos;
 };
 /*#endif*/
 
@@ -343,7 +346,6 @@ char	*prcorequests[] = {
 
 #ifdef _KERNEL
 void	pfctlinput(int, struct sockaddr *);
-void	pfctlinput2(int, struct sockaddr *, void *);
 struct domain *pffinddomain(int family);
 struct protosw *pffindproto(int family, int protocol, int type);
 struct protosw *pffindtype(int family, int type);

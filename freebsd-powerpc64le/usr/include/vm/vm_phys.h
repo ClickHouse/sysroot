@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2002-2006 Rice University
  * Copyright (c) 2007 Alan L. Cox <alc@cs.rice.edu>
@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -79,14 +77,14 @@ void vm_phys_register_domains(int ndomains, struct mem_affinity *affinity,
     int *locality);
 vm_page_t vm_phys_scan_contig(int domain, u_long npages, vm_paddr_t low,
     vm_paddr_t high, u_long alignment, vm_paddr_t boundary, int options);
-void vm_phys_set_pool(int pool, vm_page_t m, int order);
-boolean_t vm_phys_unfree_page(vm_page_t m);
+bool vm_phys_unfree_page(vm_page_t m);
 int vm_phys_mem_affinity(int f, int t);
 void vm_phys_early_add_seg(vm_paddr_t start, vm_paddr_t end);
 vm_paddr_t vm_phys_early_alloc(int domain, size_t alloc_size);
 void vm_phys_early_startup(void);
 int vm_phys_avail_largest(void);
 vm_paddr_t vm_phys_avail_size(int i);
+bool vm_phys_is_dumpable(vm_paddr_t pa);
 
 static inline int
 vm_phys_domain(vm_paddr_t pa)

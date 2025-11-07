@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)callout.h	8.2 (Berkeley) 1/21/94
- * $FreeBSD$
  */
 
 #ifndef _SYS_CALLOUT_H_
@@ -64,8 +63,6 @@
 
 /* Flags for callout_stop_safe() */
 #define	CS_DRAIN		0x0001 /* callout_drain(), wait allowed */
-#define	CS_EXECUTING		0x0002 /* Positive return value indicates that
-					  the callout was executing */
 
 #ifdef _KERNEL
 /* 

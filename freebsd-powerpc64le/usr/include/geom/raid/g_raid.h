@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2010 Alexander Motin <mav@FreeBSD.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	_G_RAID_H_
@@ -406,8 +404,8 @@ int g_raid_destroy_disk(struct g_raid_disk *disk);
 
 void g_raid_iodone(struct bio *bp, int error);
 void g_raid_subdisk_iostart(struct g_raid_subdisk *sd, struct bio *bp);
-int g_raid_subdisk_kerneldump(struct g_raid_subdisk *sd,
-    void *virtual, vm_offset_t physical, off_t offset, size_t length);
+int g_raid_subdisk_kerneldump(struct g_raid_subdisk *sd, void *virtual,
+    off_t offset, size_t length);
 
 struct g_consumer *g_raid_open_consumer(struct g_raid_softc *sc,
     const char *name);

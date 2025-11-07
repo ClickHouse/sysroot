@@ -1,6 +1,7 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2011, 2012 The FreeBSD Foundation
- * All rights reserved.
  *
  * This software was developed by David Chisnall under sponsorship from
  * the FreeBSD Foundation.
@@ -25,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/include/xlocale/_locale.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _XLOCALE_LOCALE_H
@@ -41,6 +40,7 @@
 #define LC_MESSAGES_MASK (1<<5)
 #define LC_ALL_MASK      (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MESSAGES_MASK | \
 			  LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK)
+#define LC_VERSION_MASK  (1<<6)
 #define LC_GLOBAL_LOCALE ((locale_t)-1)
 
 #ifndef _LOCALE_T_DEFINED
@@ -49,7 +49,7 @@ typedef struct	_xlocale *locale_t;
 #endif
 
 locale_t	 duplocale(locale_t base);
-int		 freelocale(locale_t loc);
+void		 freelocale(locale_t loc);
 locale_t	 newlocale(int mask, const char *locale, locale_t base);
 const char	*querylocale(int mask, locale_t loc);
 locale_t	 uselocale(locale_t loc);

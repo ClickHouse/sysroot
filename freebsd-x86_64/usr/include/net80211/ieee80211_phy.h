@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
  * All rights reserved.
  *
@@ -21,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/net80211/ieee80211_phy.h 297595 2016-04-05 22:01:56Z adrian $
  */
 
 #ifndef _NET80211_IEEE80211_PHY_H_
@@ -53,8 +53,23 @@
 #define IEEE80211_DUR_SHSLOT	9	/* ERP short slottime */
 #define IEEE80211_DUR_OFDM_SLOT	9	/* OFDM slottime */
 
+/*
+ * For drivers that don't implement per-VAP slot time
+ * (ie, they rely on net80211 figuring out the union
+ * between VAPs to program a single radio) - return
+ * the current radio configured slot time.
+ */
 #define IEEE80211_GET_SLOTTIME(ic) \
 	((ic->ic_flags & IEEE80211_F_SHSLOT) ? \
+	    IEEE80211_DUR_SHSLOT : IEEE80211_DUR_SLOT)
+
+/*
+ * For drivers that implement per-VAP slot time; look
+ * at the per-VAP flags to determine whether this VAP
+ * is in short or long slot time.
+ */
+#define IEEE80211_VAP_GET_SLOTTIME(vap) \
+	((vap->iv_flags & IEEE80211_F_SHSLOT) ? \
 	    IEEE80211_DUR_SHSLOT : IEEE80211_DUR_SLOT)
 
 /*

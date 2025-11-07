@@ -31,7 +31,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)malloc.h	8.5 (Berkeley) 5/3/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_MALLOC_H_
@@ -54,6 +53,7 @@
  */
 #define	M_NOWAIT	0x0001		/* do not block */
 #define	M_WAITOK	0x0002		/* ok to block */
+#define	M_NORECLAIM	0x0080		/* do not reclaim after failure */
 #define	M_ZERO		0x0100		/* bzero the allocation */
 #define	M_NOVM		0x0200		/* don't ask VM for pages */
 #define	M_USE_RESERVE	0x0400		/* can alloc out of reserve memory */
@@ -245,6 +245,9 @@ void	*malloc_domainset(size_t size, struct malloc_type *type,
 void	*mallocarray(size_t nmemb, size_t size, struct malloc_type *type,
 	    int flags) __malloc_like __result_use_check
 	    __alloc_size2(1, 2);
+void	*mallocarray_domainset(size_t nmemb, size_t size, struct malloc_type *type,
+	    struct domainset *ds, int flags) __malloc_like __result_use_check
+	    __alloc_size2(1, 2);
 void	*malloc_exec(size_t size, struct malloc_type *type, int flags) __malloc_like
 	    __result_use_check __alloc_size(1);
 void	*malloc_domainset_exec(size_t size, struct malloc_type *type,
@@ -261,6 +264,8 @@ void	*realloc(void *addr, size_t size, struct malloc_type *type, int flags)
 	    __result_use_check __alloc_size(2);
 void	*reallocf(void *addr, size_t size, struct malloc_type *type, int flags)
 	    __result_use_check __alloc_size(2);
+void	*malloc_aligned(size_t size, size_t align, struct malloc_type *type,
+	    int flags) __malloc_like __result_use_check __alloc_size(1);
 void	*malloc_domainset_aligned(size_t size, size_t align,
 	    struct malloc_type *mtp, struct domainset *ds, int flags)
 	    __malloc_like __result_use_check __alloc_size(1);
@@ -294,16 +299,20 @@ extern void *Malloc(size_t bytes, const char *file, int line);
  * flags mean anything and there's no need declare malloc types.
  * Define the simple alloc / free routines in terms of Malloc and
  * Free. None of the kernel features that this stuff disables are needed.
- *
- * XXX we are setting ourselves up for a potential crash if we can't allocate
- * memory for a M_WAITOK call.
  */
-#define M_WAITOK 0
+#define M_WAITOK 1
 #define M_ZERO 0
-#define M_NOWAIT 0
+#define M_NOWAIT 2
 #define MALLOC_DECLARE(x)
 
-#define kmem_zalloc(size, flags) Malloc((size), __FILE__, __LINE__)
+#define kmem_zalloc(size, flags) ({					\
+	void *p = Malloc((size), __FILE__, __LINE__);			\
+	if (p == NULL && (flags &  M_WAITOK) != 0)			\
+		panic("Could not malloc %zd bytes with M_WAITOK from %s line %d", \
+		    (size_t)size, __FILE__, __LINE__);			\
+	p;								\
+})
+
 #define kmem_free(p, size) Free(p, __FILE__, __LINE__)
 
 /*
@@ -311,5 +320,6 @@ extern void *Malloc(size_t bytes, const char *file, int line);
  * M_WAITOK. Given the above, it will also be a nop.
  */
 #define KM_SLEEP M_WAITOK
+#define KM_NOSLEEP M_NOWAIT
 #endif /* _STANDALONE */
 #endif /* !_SYS_MALLOC_H_ */

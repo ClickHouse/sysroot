@@ -36,8 +36,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/11.3/sys/netgraph/ng_hole.h 139823 2005-01-07 01:45:51Z imp $
  * $Whistle: ng_hole.h,v 1.3 1999/01/20 00:22:13 archie Exp $
  */
 

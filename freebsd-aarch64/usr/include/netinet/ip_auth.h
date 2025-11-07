@@ -1,11 +1,8 @@
-/*	$FreeBSD: releng/12.2/sys/contrib/ipfilter/netinet/ip_auth.h 264235 2014-04-07 19:32:56Z cy $	*/
 
 /*
  * Copyright (C) 2012 by Darren Reed.
  *
  * See the IPFILTER.LICENCE file for details on licencing.
- *
- * $FreeBSD: releng/12.2/sys/contrib/ipfilter/netinet/ip_auth.h 264235 2014-04-07 19:32:56Z cy $
  * Id: ip_auth.h,v 2.16.2.2 2006/03/16 06:45:49 darrenr Exp $
  *
  */
@@ -22,7 +19,7 @@ typedef struct  frauth {
 	fr_info_t	fra_info;
 	char	*fra_buf;
 	u_32_t	fra_flx;
-#ifdef	MENTAT
+#if SOLARIS
 	queue_t	*fra_q;
 	mb_t	*fra_m;
 #endif
@@ -68,25 +65,25 @@ typedef	struct ipf_auth_softc_s {
 	frentry_t	*ipf_auth_rules;
 } ipf_auth_softc_t;
 
-extern	frentry_t *ipf_auth_check __P((fr_info_t *, u_32_t *));
-extern	void	ipf_auth_expire __P((ipf_main_softc_t *));
-extern	int	ipf_auth_ioctl __P((ipf_main_softc_t *, caddr_t, ioctlcmd_t,
-				    int, int, void *));
-extern	int	ipf_auth_init __P((void));
-extern	int	ipf_auth_main_load __P((void));
-extern	int	ipf_auth_main_unload __P((void));
-extern	void	ipf_auth_soft_destroy __P((ipf_main_softc_t *, void *));
-extern	void	*ipf_auth_soft_create __P((ipf_main_softc_t *));
-extern	int	ipf_auth_new __P((mb_t *, fr_info_t *));
-extern	int	ipf_auth_precmd __P((ipf_main_softc_t *, ioctlcmd_t,
-				     frentry_t *, frentry_t **));
-extern	void	ipf_auth_unload __P((ipf_main_softc_t *));
-extern	int	ipf_auth_waiting __P((ipf_main_softc_t *));
-extern	void	ipf_auth_setlock __P((void *, int));
-extern	int	ipf_auth_soft_init __P((ipf_main_softc_t *, void *));
-extern	int	ipf_auth_soft_fini __P((ipf_main_softc_t *, void *));
-extern	u_32_t	ipf_auth_pre_scanlist __P((ipf_main_softc_t *, fr_info_t *,
-					   u_32_t));
-extern	frentry_t **ipf_auth_rulehead __P((ipf_main_softc_t *));
+extern	frentry_t *ipf_auth_check(fr_info_t *, u_32_t *);
+extern	void	ipf_auth_expire(ipf_main_softc_t *);
+extern	int	ipf_auth_ioctl(ipf_main_softc_t *, caddr_t, ioctlcmd_t,
+				    int, int, void *);
+extern	int	ipf_auth_init(void);
+extern	int	ipf_auth_main_load(void);
+extern	int	ipf_auth_main_unload(void);
+extern	void	ipf_auth_soft_destroy(ipf_main_softc_t *, void *);
+extern	void	*ipf_auth_soft_create(ipf_main_softc_t *);
+extern	int	ipf_auth_new(mb_t *, fr_info_t *);
+extern	int	ipf_auth_precmd(ipf_main_softc_t *, ioctlcmd_t,
+				     frentry_t *, frentry_t **);
+extern	void	ipf_auth_unload(ipf_main_softc_t *);
+extern	int	ipf_auth_waiting(ipf_main_softc_t *);
+extern	void	ipf_auth_setlock(void *, int);
+extern	int	ipf_auth_soft_init(ipf_main_softc_t *, void *);
+extern	int	ipf_auth_soft_fini(ipf_main_softc_t *, void *);
+extern	u_32_t	ipf_auth_pre_scanlist(ipf_main_softc_t *, fr_info_t *,
+					   u_32_t);
+extern	frentry_t **ipf_auth_rulehead(ipf_main_softc_t *);
 
 #endif	/* __IP_AUTH_H__ */

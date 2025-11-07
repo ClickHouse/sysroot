@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c)2006 YAMAMOTO Takashi,
  * All rights reserved.
  *
@@ -25,7 +27,6 @@
  */
 /* From	$NetBSD: vmem.h,v 1.20 2013/01/29 21:26:24 para Exp $	*/
 
-/* $FreeBSD: releng/11.3/sys/sys/vmem.h 331722 2018-03-29 02:50:57Z eadler $ */
 
 #ifndef _SYS_VMEM_H_
 #define	_SYS_VMEM_H_
@@ -39,8 +40,9 @@ typedef struct vmem vmem_t;
 typedef uintptr_t	vmem_addr_t;
 typedef size_t		vmem_size_t;
 
-#define	VMEM_ADDR_MIN	0
-#define	VMEM_ADDR_MAX	(~(vmem_addr_t)0)
+#define	VMEM_ADDR_MIN		0
+#define	VMEM_ADDR_QCACHE_MIN	1
+#define	VMEM_ADDR_MAX		(~(vmem_addr_t)0)
 
 typedef int (vmem_import_t)(void *, vmem_size_t, int, vmem_addr_t *);
 typedef void (vmem_release_t)(void *, vmem_addr_t, vmem_size_t);
@@ -72,6 +74,12 @@ void vmem_destroy(vmem_t *);
 
 void vmem_set_import(vmem_t *vm, vmem_import_t *importfn,
     vmem_release_t *releasefn, void *arg, vmem_size_t import_quantum);
+
+/*
+ * Set a limit on the total size of a vmem.
+ */
+
+void vmem_set_limit(vmem_t *vm, vmem_size_t limit);
 
 /*
  * Set a callback for reclaiming memory when space is exhausted:

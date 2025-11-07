@@ -1,8 +1,6 @@
 /*
  * Fundamental constants relating to ethernet.
  *
- * $FreeBSD: releng/12.2/sys/net/ethernet.h 358209 2020-02-21 04:48:25Z pfg $
- *
  */
 
 #ifndef _NET_ETHERNET_H_
@@ -43,7 +41,7 @@
 #define	M_HASFCS	M_PROTO5	/* FCS included at end of frame */
 
 /*
- * Ethernet CRC32 polynomials (big- and little-endian verions).
+ * Ethernet CRC32 polynomials (big- and little-endian versions).
  */
 #define	ETHER_CRC_POLY_LE	0xedb88320
 #define	ETHER_CRC_POLY_BE	0x04c11db6
@@ -71,9 +69,14 @@ struct ether_addr {
 } __packed;
 
 #define	ETHER_IS_MULTICAST(addr) (*(addr) & 0x01) /* is address mcast/bcast? */
+#define	ETHER_IS_IPV6_MULTICAST(addr) \
+	(((addr)[0] == 0x33) && ((addr)[1] == 0x33))
 #define	ETHER_IS_BROADCAST(addr) \
 	(((addr)[0] & (addr)[1] & (addr)[2] & \
 	  (addr)[3] & (addr)[4] & (addr)[5]) == 0xff)
+#define	ETHER_IS_ZERO(addr) \
+	(((addr)[0] | (addr)[1] | (addr)[2] | \
+	  (addr)[3] | (addr)[4] | (addr)[5]) == 0x00)
 
 /*
  * 802.1q Virtual LAN header.
@@ -360,10 +363,13 @@ struct ether_vlan_header {
 #define	ETHERTYPE_PBB		0x88E7	/* 802.1Q Provider Backbone Bridges */
 #define	ETHERTYPE_FCOE		0x8906	/* Fibre Channel over Ethernet */
 #define	ETHERTYPE_LOOPBACK	0x9000	/* Loopback: used to test interfaces */
+#define	ETHERTYPE_8021Q9100	0x9100	/* IEEE 802.1Q stacking (proprietary) */
 #define	ETHERTYPE_LBACK		ETHERTYPE_LOOPBACK	/* DEC MOP loopback */
 #define	ETHERTYPE_XNSSM		0x9001	/* 3Com (Formerly Bridge Communications), XNS Systems Management */
 #define	ETHERTYPE_TCPSM		0x9002	/* 3Com (Formerly Bridge Communications), TCP/IP Systems Management */
 #define	ETHERTYPE_BCLOOP	0x9003	/* 3Com (Formerly Bridge Communications), loopback detection */
+#define	ETHERTYPE_8021Q9200	0x9200	/* IEEE 802.1Q stacking (proprietary) */
+#define	ETHERTYPE_8021Q9300	0x9300	/* IEEE 802.1Q stacking (proprietary) */
 #define	ETHERTYPE_DEBNI		0xAAAA	/* DECNET? Used by VAX 6220 DEBNI */
 #define	ETHERTYPE_SONIX		0xFAF5	/* Sonix Arpeggio */
 #define	ETHERTYPE_VITAL		0xFF00	/* BBN VITAL-LanBridge cache wakeups */
@@ -408,24 +414,31 @@ struct ether_vlan_header {
 #define	IEEE8021Q_PCP_BE	0	/* Best effort (default) */
 #define	IEEE8021Q_PCP_EE	2	/* Excellent effort */
 #define	IEEE8021Q_PCP_CA	3	/* Critical applications */
-#define	IEEE8021Q_PCP_VI	4	/* Video, < 100ms latency */
-#define	IEEE8021Q_PCP_VO	5	/* Video, < 10ms latency */
+#define	IEEE8021Q_PCP_VI	4	/* Video, < 100ms latency and jitter */
+#define	IEEE8021Q_PCP_VO	5	/* Voice, < 10ms latency and jitter */
 #define	IEEE8021Q_PCP_IC	6	/* Internetwork control */
 #define	IEEE8021Q_PCP_NC	7	/* Network control (highest) */
 
 #ifdef _KERNEL
+
+#include <sys/_eventhandler.h>
 
 struct ifnet;
 struct mbuf;
 struct route;
 struct sockaddr;
 struct bpf_if;
+struct ether_8021q_tag;
 
 extern	uint32_t ether_crc32_le(const uint8_t *, size_t);
 extern	uint32_t ether_crc32_be(const uint8_t *, size_t);
 extern	void ether_demux(struct ifnet *, struct mbuf *);
 extern	void ether_ifattach(struct ifnet *, const u_int8_t *);
 extern	void ether_ifdetach(struct ifnet *);
+#ifdef VIMAGE
+struct vnet;
+extern	void ether_reassign(struct ifnet *, struct vnet *, char *);
+#endif
 extern	int  ether_ioctl(struct ifnet *, u_long, caddr_t);
 extern	int  ether_output(struct ifnet *, struct mbuf *,
 	    const struct sockaddr *, struct route *);
@@ -433,16 +446,21 @@ extern	int  ether_output_frame(struct ifnet *, struct mbuf *);
 extern	char *ether_sprintf(const u_int8_t *);
 void	ether_vlan_mtap(struct bpf_if *, struct mbuf *,
 	    void *, u_int);
-struct mbuf  *ether_vlanencap(struct mbuf *, uint16_t);
-bool	ether_8021q_frame(struct mbuf **mp, struct ifnet *ife, struct ifnet *p,
-	    uint16_t vid, uint8_t pcp);
+struct mbuf  *ether_vlanencap_proto(struct mbuf *, uint16_t, uint16_t);
+bool	ether_8021q_frame(struct mbuf **mp, struct ifnet *ife,
+		struct ifnet *p, const struct ether_8021q_tag *);
 void	ether_gen_addr(struct ifnet *ifp, struct ether_addr *hwaddr);
+void	ether_gen_addr_byname(const char *nameunit, struct ether_addr *hwaddr);
 
-#ifdef _SYS_EVENTHANDLER_H_
+static __inline struct mbuf *ether_vlanencap(struct mbuf *m, uint16_t tag)
+{
+
+	return ether_vlanencap_proto(m, tag, ETHERTYPE_VLAN);
+}
+
 /* new ethernet interface attached event */
 typedef void (*ether_ifattach_event_handler_t)(void *, struct ifnet *);
 EVENTHANDLER_DECLARE(ether_ifattach_event, ether_ifattach_event_handler_t);
-#endif
 
 #else /* _KERNEL */
 

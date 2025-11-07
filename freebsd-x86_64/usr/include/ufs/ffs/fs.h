@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)fs.h	8.13 (Berkeley) 3/21/95
- * $FreeBSD: releng/11.3/sys/ufs/ffs/fs.h 344861 2019-03-06 23:59:56Z mckusick $
  */
 
 #ifndef _UFS_FFS_FS_H_
@@ -130,16 +131,18 @@
  * of pointers to blocks of struct csum; now there are just a few
  * pointers and the remaining space is padded with fs_ocsp[].
  *
- * NOCSPTRS determines the size of this padding. One pointer (fs_csp)
- * is taken away to point to a contiguous array of struct csum for
- * all cylinder groups; a second (fs_maxcluster) points to an array
- * of cluster sizes that is computed as cylinder groups are inspected,
- * and the third points to an array that tracks the creation of new
- * directories. A fourth pointer, fs_active, is used when creating
- * snapshots; it points to a bitmap of cylinder groups for which the
- * free-block bitmap has changed since the snapshot operation began.
+ * NOCSPTRS determines the size of this padding. Historically this
+ * space was used to store pointers to structures that summaried
+ * filesystem usage and layout information. However, these pointers
+ * left various kernel pointers in the superblock which made otherwise
+ * identical superblocks appear to have differences. So, all the
+ * pointers in the superblock were moved to a fs_summary_info structure
+ * reducing the superblock to having only a single pointer to this
+ * structure. When writing the superblock to disk, this pointer is
+ * temporarily NULL'ed out so that the kernel pointer will not appear
+ * in the on-disk copy of the superblock.
  */
-#define	NOCSPTRS	((128 / sizeof(void *)) - 4)
+#define	NOCSPTRS	((128 / sizeof(void *)) - 1)
 
 /*
  * A summary of contiguous blocks of various sizes is maintained
@@ -217,10 +220,11 @@
 #define	FFS_SET_CWD		12	/* set current directory */
 #define	FFS_SET_DOTDOT		13	/* set inode number for ".." */
 #define	FFS_UNLINK		14	/* remove a name in the filesystem */
-#define	FFS_SET_INODE		15	/* update an on-disk inode */
-#define	FFS_SET_BUFOUTPUT	16	/* set buffered writing on descriptor */
+/* Was FFS_SET_INODE		15 */
+/* Was FFS_SET_BUFOUTPUT	16 */
 #define	FFS_SET_SIZE		17	/* set inode size */
-#define	FFS_MAXID		17	/* number of valid ffs ids */
+#define	FFS_ADJ_DEPTH		18	/* adjust directory inode depth */
+#define	FFS_MAXID		18	/* number of valid ffs ids */
 
 /*
  * Command structure passed in to the filesystem to adjust filesystem values.
@@ -238,14 +242,12 @@ struct fsck_cmd {
  * A recovery structure placed at the end of the boot block area by newfs
  * that can be used by fsck to search for alternate superblocks.
  */
-#define RESID	(4096 - 20)	/* disk sector size minus recovery area size */
 struct fsrecovery {
-	char	block[RESID];	/* unused part of sector */
 	int32_t	fsr_magic;	/* magic number */
 	int32_t	fsr_fsbtodb;	/* fsbtodb and dbtofsb shift constant */
 	int32_t	fsr_sblkno;	/* offset of super-block in filesys */
 	int32_t	fsr_fpg;	/* blocks per group * fs_frag */
-	u_int32_t fsr_ncg;	/* number of cylinder groups */
+	uint32_t fsr_ncg;	/* number of cylinder groups */
 };
 
 /*
@@ -270,6 +272,32 @@ struct csum_total {
 };
 
 /*
+ * Pointers to super block summary information. Placed in a separate
+ * structure so there is just one pointer in the superblock.
+ *
+ * The pointers in this structure are used as follows:
+ *   fs_contigdirs references an array that tracks the creation of new
+ *	directories
+ *   fs_csp references a contiguous array of struct csum for
+ *	all cylinder groups
+ *   fs_maxcluster references an array of cluster sizes that is computed
+ *	as cylinder groups are inspected
+ *   fs_active is used when creating snapshots; it points to a bitmap
+ *	of cylinder groups for which the free-block bitmap has changed
+ *	since the snapshot operation began.
+ */
+struct fs_summary_info {
+	uint8_t	*si_contigdirs;		/* (u) # of contig. allocated dirs */
+	struct	csum *si_csp;		/* (u) cg summary info buffer */
+	int32_t	*si_maxcluster;		/* (u) max cluster in each cyl group */
+	uint64_t *si_active;		/* (u) used by snapshots to track fs */
+};
+#define fs_contigdirs	fs_si->si_contigdirs
+#define fs_csp		fs_si->si_csp
+#define fs_maxcluster	fs_si->si_maxcluster
+#define fs_active	fs_si->si_active
+
+/*
  * Super block for an FFS filesystem.
  */
 struct fs {
@@ -284,7 +312,7 @@ struct fs {
 	int32_t  fs_old_time;		/* last time written */
 	int32_t	 fs_old_size;		/* number of blocks in fs */
 	int32_t	 fs_old_dsize;		/* number of data blocks in fs */
-	u_int32_t fs_ncg;		/* number of cylinder groups */
+	uint32_t fs_ncg;		/* number of cylinder groups */
 	int32_t	 fs_bsize;		/* size of basic blocks in fs */
 	int32_t	 fs_fsize;		/* size of frag blocks in fs */
 	int32_t	 fs_frag;		/* number of frags in a block in fs */
@@ -307,7 +335,7 @@ struct fs {
 	int32_t	 fs_spare1[2];		/* old fs_csmask */
 					/* old fs_csshift */
 	int32_t	 fs_nindir;		/* value of NINDIR */
-	u_int32_t fs_inopb;		/* value of INOPB */
+	uint32_t fs_inopb;		/* value of INOPB */
 	int32_t	 fs_old_nspf;		/* value of NSPF */
 /* yet another configuration parameter */
 	int32_t	 fs_optim;		/* optimization preference, see below */
@@ -324,7 +352,7 @@ struct fs {
 	int32_t  fs_old_spc;		/* sectors per cylinder */
 	int32_t	 fs_old_ncyl;		/* cylinders in filesystem */
 	int32_t	 fs_old_cpg;		/* cylinders per group */
-	u_int32_t fs_ipg;		/* inodes per group */
+	uint32_t fs_ipg;		/* inodes per group */
 	int32_t	 fs_fpg;		/* blocks per group * fs_frag */
 /* this data must be re-computed after crashes */
 	struct	csum fs_old_cstotal;	/* cylinder summary information */
@@ -333,23 +361,21 @@ struct fs {
 	int8_t   fs_clean;		/* filesystem is clean flag */
 	int8_t 	 fs_ronly;		/* mounted read-only flag */
 	int8_t   fs_old_flags;		/* old FS_ flags */
-	u_char	 fs_fsmnt[MAXMNTLEN];	/* name mounted on */
-	u_char	 fs_volname[MAXVOLLEN];	/* volume name */
-	u_int64_t fs_swuid;		/* system-wide uid */
+	uint8_t	 fs_fsmnt[MAXMNTLEN];	/* name mounted on */
+	uint8_t	 fs_volname[MAXVOLLEN];	/* volume name */
+	uint64_t fs_swuid;		/* system-wide uid */
 	int32_t  fs_pad;		/* due to alignment of fs_swuid */
 /* these fields retain the current block allocation info */
 	int32_t	 fs_cgrotor;		/* last cg searched */
 	void 	*fs_ocsp[NOCSPTRS];	/* padding; was list of fs_cs buffers */
-	u_int8_t *fs_contigdirs;	/* (u) # of contig. allocated dirs */
-	struct	csum *fs_csp;		/* (u) cg summary info buffer */
-	int32_t	*fs_maxcluster;		/* (u) max cluster in each cyl group */
-	u_int	*fs_active;		/* (u) used by snapshots to track fs */
+	struct	 fs_summary_info *fs_si;/* In-core pointer to summary info */
 	int32_t	 fs_old_cpc;		/* cyl per cycle in postbl */
 	int32_t	 fs_maxbsize;		/* maximum blocking factor permitted */
 	int64_t	 fs_unrefs;		/* number of unreferenced inodes */
 	int64_t  fs_providersize;	/* size of underlying GEOM provider */
 	int64_t	 fs_metaspace;		/* size of area reserved for metadata */
-	int64_t	 fs_sparecon64[14];	/* old rotation block list head */
+	int64_t	 fs_sparecon64[13];	/* old rotation block list head */
+	int64_t	 fs_sblockactualloc;	/* byte offset of this superblock */
 	int64_t	 fs_sblockloc;		/* byte offset of standard superblock */
 	struct	csum_total fs_cstotal;	/* (u) cylinder summary information */
 	ufs_time_t fs_time;		/* last time written */
@@ -357,19 +383,21 @@ struct fs {
 	int64_t	 fs_dsize;		/* number of data blocks in fs */
 	ufs2_daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	int64_t	 fs_pendingblocks;	/* (u) blocks being freed */
-	u_int32_t fs_pendinginodes;	/* (u) inodes being freed */
+	uint32_t fs_pendinginodes;	/* (u) inodes being freed */
 	uint32_t fs_snapinum[FSMAXSNAP];/* list of snapshot inode numbers */
-	u_int32_t fs_avgfilesize;	/* expected average file size */
-	u_int32_t fs_avgfpdir;		/* expected # of files per directory */
+	uint32_t fs_avgfilesize;	/* expected average file size */
+	uint32_t fs_avgfpdir;		/* expected # of files per directory */
 	int32_t	 fs_save_cgsize;	/* save real cg size to use fs_bsize */
 	ufs_time_t fs_mtime;		/* Last mount or fsck time. */
 	int32_t  fs_sujfree;		/* SUJ free list */
-	int32_t	 fs_sparecon32[23];	/* reserved for future constants */
+	int32_t	 fs_sparecon32[21];	/* reserved for future constants */
+	uint32_t fs_ckhash;		/* if CK_SUPERBLOCK, its check-hash */
+	uint32_t fs_metackhash;	/* metadata check-hash, see CK_ below */
 	int32_t  fs_flags;		/* see FS_ flags below */
 	int32_t	 fs_contigsumsize;	/* size of cluster summary array */ 
 	int32_t	 fs_maxsymlinklen;	/* max length of an internal symlink */
 	int32_t	 fs_old_inodefmt;	/* format of on-disk inodes */
-	u_int64_t fs_maxfilesize;	/* maximum representable file size */
+	uint64_t fs_maxfilesize;	/* maximum representable file size */
 	int64_t	 fs_qbmask;		/* ~fs_bmask for use with 64-bit size */
 	int64_t	 fs_qfmask;		/* ~fs_fmask for use with 64-bit size */
 	int32_t	 fs_state;		/* validate fs_clean field */
@@ -391,7 +419,6 @@ CTASSERT(sizeof(struct fs) == 1376);
 #define	FS_UFS1_MAGIC	0x011954	/* UFS1 fast filesystem magic number */
 #define	FS_UFS2_MAGIC	0x19540119	/* UFS2 fast filesystem magic number */
 #define	FS_BAD_MAGIC	0x19960408	/* UFS incomplete newfs magic number */
-#define	FS_OKAY		0x7c269d38	/* superblock checksum */
 #define	FS_42INODEFMT	-1		/* 4.2BSD inode format */
 #define	FS_44INODEFMT	2		/* 4.4BSD inode format */
 
@@ -407,18 +434,27 @@ CTASSERT(sizeof(struct fs) == 1376);
  * The FS_UNCLEAN flag is set by the kernel when the filesystem was
  * mounted with fs_clean set to zero. The FS_DOSOFTDEP flag indicates
  * that the filesystem should be managed by the soft updates code.
- * Note that the FS_NEEDSFSCK flag is set and cleared only by the
- * fsck utility. It is set when background fsck finds an unexpected
+ * Note that the FS_NEEDSFSCK flag is set and cleared by the fsck
+ * utility. It is set when background fsck finds an unexpected
  * inconsistency which requires a traditional foreground fsck to be
  * run. Such inconsistencies should only be found after an uncorrectable
- * disk error. A foreground fsck will clear the FS_NEEDSFSCK flag when
- * it has successfully cleaned up the filesystem. The kernel uses this
+ * disk error. The FS_NEEDSFSCK can also be set when a mounted filesystem
+ * discovers an internal inconsistency such as freeing a freed inode.
+ * A foreground fsck will clear the FS_NEEDSFSCK flag when it has
+ * successfully cleaned up the filesystem. The kernel uses this
  * flag to enforce that inconsistent filesystems be mounted read-only.
- * The FS_INDEXDIRS flag when set indicates that the kernel maintains
- * on-disk auxiliary indexes (such as B-trees) for speeding directory
- * accesses. Kernels that do not support auxiliary indices clear the
- * flag to indicate that the indices need to be rebuilt (by fsck) before
- * they can be used.
+ *
+ * The FS_METACKHASH flag when set indicates that the kernel maintains
+ * one or more check hashes. The actual set of supported check hashes
+ * is stored in the fs_metackhash field. Kernels that do not support
+ * check hashes clear the FS_METACKHASH flag to indicate that the
+ * check hashes need to be rebuilt (by fsck) before they can be used.
+ *
+ * When a filesystem is mounted, any flags not included in FS_SUPPORTED
+ * are cleared. This lets newer features know that the filesystem has
+ * been run on an older version of the filesystem and thus that data
+ * structures associated with those features are out-of-date and need
+ * to be rebuilt.
  *
  * FS_ACLS indicates that POSIX.1e ACLs are administratively enabled
  * for the file system, so they should be loaded from extended attributes,
@@ -429,24 +465,60 @@ CTASSERT(sizeof(struct fs) == 1376);
  * labels into extended attributes on the file system rather than maintain
  * a single mount label for all objects.
  */
-#define	FS_UNCLEAN	0x0001	/* filesystem not clean at mount */
-#define	FS_DOSOFTDEP	0x0002	/* filesystem using soft dependencies */
-#define	FS_NEEDSFSCK	0x0004	/* filesystem needs sync fsck before mount */
-#define	FS_SUJ       	0x0008	/* Filesystem using softupdate journal */
-#define	FS_ACLS		0x0010	/* file system has POSIX.1e ACLs enabled */
-#define	FS_MULTILABEL	0x0020	/* file system is MAC multi-label */
-#define	FS_GJOURNAL	0x0040	/* gjournaled file system */
-#define	FS_FLAGS_UPDATED 0x0080	/* flags have been moved to new location */
-#define	FS_NFS4ACLS	0x0100	/* file system has NFSv4 ACLs enabled */
-#define	FS_INDEXDIRS	0x0200	/* kernel supports indexed directories */
-#define	FS_TRIM		0x0400	/* issue BIO_DELETE for deleted blocks */
+#define	FS_UNCLEAN	0x00000001 /* filesystem not clean at mount */
+#define	FS_DOSOFTDEP	0x00000002 /* filesystem using soft dependencies */
+#define	FS_NEEDSFSCK	0x00000004 /* filesystem needs sync fsck before mount */
+#define	FS_SUJ       	0x00000008 /* Filesystem using softupdate journal */
+#define	FS_ACLS		0x00000010 /* file system has POSIX.1e ACLs enabled */
+#define	FS_MULTILABEL	0x00000020 /* file system is MAC multi-label */
+#define	FS_GJOURNAL	0x00000040 /* gjournaled file system */
+#define	FS_FLAGS_UPDATED 0x0000080 /* flags have been moved to new location */
+#define	FS_NFS4ACLS	0x00000100 /* file system has NFSv4 ACLs enabled */
+#define	FS_METACKHASH	0x00000200 /* kernel supports metadata check hashes */
+#define	FS_TRIM		0x00000400 /* issue BIO_DELETE for deleted blocks */
+#define	FS_SUPPORTED	0x00FFFFFF /* supported flags, others cleared at mount*/
+/*
+ * Things that we may someday support, but currently do not.
+ * These flags are all cleared so we know if we ran on a kernel
+ * that does not support them.
+ */
+#define	FS_INDEXDIRS	0x01000000 /* kernel supports indexed directories */
+#define	FS_VARBLKSIZE	0x02000000 /* kernel supports variable block sizes */
+#define	FS_COOLOPT1	0x04000000 /* kernel supports cool option 1 */
+#define	FS_COOLOPT2	0x08000000 /* kernel supports cool option 2 */
+#define	FS_COOLOPT3	0x10000000 /* kernel supports cool option 3 */
+#define	FS_COOLOPT4	0x20000000 /* kernel supports cool option 4 */
+#define	FS_COOLOPT5	0x40000000 /* kernel supports cool option 5 */
+#define	FS_COOLOPT6	0x80000000 /* kernel supports cool option 6 */
+
+/*
+ * The fs_metackhash field indicates the types of metadata check-hash
+ * that are maintained for a filesystem. Not all filesystems check-hash
+ * all metadata.
+ */
+#define	CK_SUPERBLOCK	0x0001	/* the superblock */
+#define	CK_CYLGRP	0x0002	/* the cylinder groups */
+#define	CK_INODE	0x0004	/* inodes */
+#define	CK_INDIR	0x0008	/* indirect blocks */
+#define	CK_DIR		0x0010	/* directory contents */
+#define	CK_SUPPORTED	0x0007	/* supported flags, others cleared at mount */
+/*
+ * The BX_FSPRIV buffer b_xflags are used to track types of data in buffers.
+ */
+#define	BX_SUPERBLOCK	0x00010000	/* superblock */
+#define	BX_CYLGRP	0x00020000	/* cylinder groups */
+#define	BX_INODE	0x00040000	/* inodes */
+#define	BX_INDIR	0x00080000	/* indirect blocks */
+#define	BX_DIR		0x00100000	/* directory contents */
+
+#define	PRINT_UFS_BUF_XFLAGS "\20\25dir\24indir\23inode\22cylgrp\21superblock"
 
 /*
  * Macros to access bits in the fs_active array.
  */
-#define	ACTIVECGNUM(fs, cg)	((fs)->fs_active[(cg) / (NBBY * sizeof(int))])
-#define	ACTIVECGOFF(cg)		(1 << ((cg) % (NBBY * sizeof(int))))
-#define	ACTIVESET(fs, cg)	do {					\
+#define	ACTIVECGNUM(fs, cg)  ((fs)->fs_active[(cg) / (NBBY * sizeof(uint64_t))])
+#define	ACTIVECGOFF(cg)	     (1 << ((cg) % (NBBY * sizeof(uint64_t))))
+#define	ACTIVESET(fs, cg)    do {					\
 	if ((fs)->fs_active)						\
 		ACTIVECGNUM((fs), (cg)) |= ACTIVECGOFF((cg));		\
 } while (0)
@@ -462,11 +534,11 @@ CTASSERT(sizeof(struct fs) == 1376);
  * cylinder group and the (struct cg) size.
  */
 #define	CGSIZE(fs) \
-    /* base cg */	(sizeof(struct cg) + sizeof(int32_t) + \
+    /* base cg */	(sizeof(struct cg) + \
     /* old btotoff */	(fs)->fs_old_cpg * sizeof(int32_t) + \
-    /* old boff */	(fs)->fs_old_cpg * sizeof(u_int16_t) + \
+    /* old boff */	(fs)->fs_old_cpg * sizeof(uint16_t) + \
     /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
-    /* block map */	howmany((fs)->fs_fpg, NBBY) +\
+    /* block map */	howmany((fs)->fs_fpg, NBBY) + sizeof(int32_t) + \
     /* if present */	((fs)->fs_contigsumsize <= 0 ? 0 : \
     /* cluster sum */	(fs)->fs_contigsumsize * sizeof(int32_t) + \
     /* cluster map */	howmany(fragstoblks(fs, (fs)->fs_fpg), NBBY)))
@@ -489,31 +561,31 @@ struct cg {
 	int32_t	 cg_firstfield;		/* historic cyl groups linked list */
 	int32_t	 cg_magic;		/* magic number */
 	int32_t  cg_old_time;		/* time last written */
-	u_int32_t cg_cgx;		/* we are the cgx'th cylinder group */
+	uint32_t cg_cgx;		/* we are the cgx'th cylinder group */
 	int16_t	 cg_old_ncyl;		/* number of cyl's this cg */
 	int16_t  cg_old_niblk;		/* number of inode blocks this cg */
-	u_int32_t cg_ndblk;		/* number of data blocks this cg */
+	uint32_t cg_ndblk;		/* number of data blocks this cg */
 	struct	 csum cg_cs;		/* cylinder summary information */
-	u_int32_t cg_rotor;		/* position of last used block */
-	u_int32_t cg_frotor;		/* position of last used frag */
-	u_int32_t cg_irotor;		/* position of last used inode */
-	u_int32_t cg_frsum[MAXFRAG];	/* counts of available frags */
+	uint32_t cg_rotor;		/* position of last used block */
+	uint32_t cg_frotor;		/* position of last used frag */
+	uint32_t cg_irotor;		/* position of last used inode */
+	uint32_t cg_frsum[MAXFRAG];	/* counts of available frags */
 	int32_t	 cg_old_btotoff;	/* (int32) block totals per cylinder */
-	int32_t	 cg_old_boff;		/* (u_int16) free block positions */
-	u_int32_t cg_iusedoff;		/* (u_int8) used inode map */
-	u_int32_t cg_freeoff;		/* (u_int8) free block map */
-	u_int32_t cg_nextfreeoff;	/* (u_int8) next available space */
-	u_int32_t cg_clustersumoff;	/* (u_int32) counts of avail clusters */
-	u_int32_t cg_clusteroff;		/* (u_int8) free cluster map */
-	u_int32_t cg_nclusterblks;	/* number of clusters this cg */
-	u_int32_t cg_niblk;		/* number of inode blocks this cg */
-	u_int32_t cg_initediblk;		/* last initialized inode */
-	u_int32_t cg_unrefs;		/* number of unreferenced inodes */
-	int32_t	 cg_sparecon32[2];	/* reserved for future use */
+	int32_t	 cg_old_boff;		/* (uint16) free block positions */
+	uint32_t cg_iusedoff;		/* (uint8) used inode map */
+	uint32_t cg_freeoff;		/* (uint8) free block map */
+	uint32_t cg_nextfreeoff;	/* (uint8) next available space */
+	uint32_t cg_clustersumoff;	/* (uint32) counts of avail clusters */
+	uint32_t cg_clusteroff;		/* (uint8) free cluster map */
+	uint32_t cg_nclusterblks;	/* number of clusters this cg */
+	uint32_t cg_niblk;		/* number of inode blocks this cg */
+	uint32_t cg_initediblk;		/* last initialized inode */
+	uint32_t cg_unrefs;		/* number of unreferenced inodes */
+	int32_t	 cg_sparecon32[1];	/* reserved for future use */
+	uint32_t cg_ckhash;		/* check-hash of this cg */
 	ufs_time_t cg_time;		/* time last written */
 	int64_t	 cg_sparecon64[3];	/* reserved for future use */
-	u_int8_t cg_space[1];		/* space for cylinder group maps */
-/* actually longer */
+	/* actually longer - space used for cylinder group maps */
 };
 
 /*
@@ -521,11 +593,11 @@ struct cg {
  */
 #define	cg_chkmagic(cgp) ((cgp)->cg_magic == CG_MAGIC)
 #define	cg_inosused(cgp) \
-    ((u_int8_t *)((u_int8_t *)(cgp) + (cgp)->cg_iusedoff))
+    ((uint8_t *)((uint8_t *)(cgp) + (cgp)->cg_iusedoff))
 #define	cg_blksfree(cgp) \
-    ((u_int8_t *)((u_int8_t *)(cgp) + (cgp)->cg_freeoff))
+    ((uint8_t *)((uint8_t *)(cgp) + (cgp)->cg_freeoff))
 #define	cg_clustersfree(cgp) \
-    ((u_int8_t *)((u_int8_t *)(cgp) + (cgp)->cg_clusteroff))
+    ((uint8_t *)((uint8_t *)(cgp) + (cgp)->cg_clusteroff))
 #define	cg_clustersum(cgp) \
     ((int32_t *)((uintptr_t)(cgp) + (cgp)->cg_clustersumoff))
 
@@ -590,7 +662,7 @@ struct cg {
 	(((off_t)(frag)) << (fs)->fs_fshift)
 #define	lblktosize(fs, blk)	/* calculates ((off_t)blk * fs->fs_bsize) */ \
 	(((off_t)(blk)) << (fs)->fs_bshift)
-/* Use this only when `blk' is known to be small, e.g., < NDADDR. */
+/* Use this only when `blk' is known to be small, e.g., < UFS_NDADDR. */
 #define	smalllblktosize(fs, blk)    /* calculates (blk * fs->fs_bsize) */ \
 	((blk) << (fs)->fs_bshift)
 #define	lblkno(fs, loc)		/* calculates (loc / fs->fs_bsize) */ \
@@ -623,11 +695,12 @@ struct cg {
  * Determining the size of a file block in the filesystem.
  */
 #define	blksize(fs, ip, lbn) \
-	(((lbn) >= NDADDR || (ip)->i_size >= smalllblktosize(fs, (lbn) + 1)) \
+	(((lbn) >= UFS_NDADDR || (ip)->i_size >= \
+	    (uint64_t)smalllblktosize(fs, (lbn) + 1)) \
 	    ? (fs)->fs_bsize \
 	    : (fragroundup(fs, blkoff(fs, (ip)->i_size))))
 #define	sblksize(fs, size, lbn) \
-	(((lbn) >= NDADDR || (size) >= ((lbn) + 1) << (fs)->fs_bshift) \
+	(((lbn) >= UFS_NDADDR || (size) >= ((lbn) + 1) << (fs)->fs_bshift) \
 	  ? (fs)->fs_bsize \
 	  : (fragroundup(fs, blkoff(fs, (size)))))
 
@@ -637,7 +710,7 @@ struct cg {
 #define	NINDIR(fs)	((fs)->fs_nindir)
 
 /*
- * Indirect lbns are aligned on NDADDR addresses where single indirects
+ * Indirect lbns are aligned on UFS_NDADDR addresses where single indirects
  * are the negated address of the lowest lbn reachable, double indirects
  * are this lbn - 1 and triple indirects are this lbn - 2.  This yields
  * an unusual bit order to determine level.
@@ -681,7 +754,7 @@ lbn_offset(struct fs *fs, int level)
 /*
  * Softdep journal record format.
  */
-
+#define	JOP_UNKNOWN	0	/* JOP operation is unknown */
 #define	JOP_ADDREF	1	/* Add a reference to an inode. */
 #define	JOP_REMREF	2	/* Remove a reference from an inode. */
 #define	JOP_NEWBLK	3	/* Allocate a block. */
@@ -689,11 +762,22 @@ lbn_offset(struct fs *fs, int level)
 #define	JOP_MVREF	5	/* Move a reference from one off to another. */
 #define	JOP_TRUNC	6	/* Partial truncation record. */
 #define	JOP_SYNC	7	/* fsync() complete record. */
+#define	JOP_NUMJOPTYPES	8
+#define JOP_NAMES {	\
+        "unknown",	\
+	"JOP_ADDREF",	\
+	"JOP_REMREF",	\
+	"JOP_NEWBLK",	\
+	"JOP_FREEBLK",	\
+	"JOP_MVREF",	\
+	"JOP_TRUNC",	\
+	"JOP_SYNC" }
+#define JOP_OPTYPE(op) \
+	(op) < JOP_NUMJOPTYPES ? joptype[op] : joptype[JOP_UNKNOWN]
 
 #define	JREC_SIZE	32	/* Record and segment header size. */
 
 #define	SUJ_MIN		(4 * 1024 * 1024)	/* Minimum journal size */
-#define	SUJ_MAX		(32 * 1024 * 1024)	/* Maximum journal size */
 #define	SUJ_FILE	".sujournal"		/* Journal file name */
 
 /*
@@ -782,7 +866,7 @@ CTASSERT(sizeof(union jrec) == JREC_SIZE);
 #endif
 
 extern int inside[], around[];
-extern u_char *fragtbl[];
+extern uint8_t *fragtbl[];
 
 /*
  * IOCTLs used for filesystem write suspension.

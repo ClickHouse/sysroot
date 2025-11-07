@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2004-2006 Pawel Jakub Dawidek <pjd@FreeBSD.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/geom/raid3/g_raid3.h 326270 2017-11-27 15:17:37Z pfg $
  */
 
 #ifndef	_G_RAID3_H_
@@ -69,28 +67,10 @@
 #ifdef _KERNEL
 extern u_int g_raid3_debug;
 
-#define	G_RAID3_DEBUG(lvl, ...)	do {					\
-	if (g_raid3_debug >= (lvl)) {					\
-		printf("GEOM_RAID3");					\
-		if (g_raid3_debug > 0)					\
-			printf("[%u]", lvl);				\
-		printf(": ");						\
-		printf(__VA_ARGS__);					\
-		printf("\n");						\
-	}								\
-} while (0)
-#define	G_RAID3_LOGREQ(lvl, bp, ...)	do {				\
-	if (g_raid3_debug >= (lvl)) {					\
-		printf("GEOM_RAID3");					\
-		if (g_raid3_debug > 0)					\
-			printf("[%u]", lvl);				\
-		printf(": ");						\
-		printf(__VA_ARGS__);					\
-		printf(" ");						\
-		g_print_bio(bp);					\
-		printf("\n");						\
-	}								\
-} while (0)
+#define	G_RAID3_DEBUG(lvl, ...) \
+    _GEOM_DEBUG("GEOM_RAID3", g_raid3_debug, (lvl), NULL, __VA_ARGS__)
+#define	G_RAID3_LOGREQ(lvl, bp, ...) \
+    _GEOM_DEBUG("GEOM_RAID3", g_raid3_debug, (lvl), (bp), __VA_ARGS__)
 
 #define	G_RAID3_BIO_CFLAG_REGULAR	0x01
 #define	G_RAID3_BIO_CFLAG_SYNC		0x02

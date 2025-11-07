@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2006-2007 Ivan Voras <ivoras@freebsd.org>
  * All rights reserved.
  *
@@ -22,15 +24,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/geom/virstor/g_virstor.h 172302 2007-09-23 07:34:23Z pjd $
  */
 
 #ifndef _G_VIRSTOR_H_
 #define _G_VIRSTOR_H_
 
 #define	G_VIRSTOR_CLASS_NAME "VIRSTOR"
-
 
 #define VIRSTOR_MAP_ALLOCATED 1
 struct virstor_map_entry {
@@ -40,35 +39,17 @@ struct virstor_map_entry {
 };
 
 #define	VIRSTOR_MAP_ENTRY_SIZE (sizeof(struct virstor_map_entry))
-#define	VIRSTOR_MAP_BLOCK_ENTRIES (MAXPHYS / VIRSTOR_MAP_ENTRY_SIZE)
-/* Struct size is guarded by CTASSERT in main source */
+#define	VIRSTOR_MAP_BLOCK_ENTRIES (maxphys / VIRSTOR_MAP_ENTRY_SIZE)
+/* Struct size is guarded by MPASS in main source */
 
 #ifdef _KERNEL
 
-#define	LOG_MSG(lvl, ...)       do {					\
-        if (g_virstor_debug >= (lvl)) {					\
-                printf("GEOM_" G_VIRSTOR_CLASS_NAME);			\
-                if (lvl > 0)						\
-                        printf("[%u]", lvl);				\
-                printf(": ");						\
-                printf(__VA_ARGS__);					\
-                printf("\n");						\
-        }								\
-} while (0)
+#define	LOG_MSG(lvl, ...) \
+    _GEOM_DEBUG("GEOM_VIRSTOR", g_virstor_debug, (lvl), NULL, __VA_ARGS__)
 #define	LOG_MESSAGE LOG_MSG
 
-#define	LOG_REQ(lvl, bp, ...)  do {					\
-        if (g_virstor_debug >= (lvl)) {					\
-                printf("GEOM_" G_VIRSTOR_CLASS_NAME);			\
-                if (lvl > 0)						\
-                        printf("[%u]", lvl);				\
-                printf(": ");						\
-                printf(__VA_ARGS__);					\
-                printf(" ");						\
-                g_print_bio(bp);					\
-                printf("\n");						\
-        }								\
-} while (0)
+#define	LOG_REQ(lvl, bp, ...) \
+    _GEOM_DEBUG("GEOM_VIRSTOR", g_virstor_debug, (lvl), (bp), __VA_ARGS__)
 #define	LOG_REQUEST LOG_REQ
 
 /* "critical" system announcements (e.g. "geom is up") */
@@ -86,7 +67,6 @@ struct virstor_map_entry {
 /* superfluous debug info (large volumes of data) */
 #define	LVL_MOREDEBUG	15
 
-
 /* Component data */
 struct g_virstor_component {
 	struct g_consumer	*gcons;
@@ -97,7 +77,6 @@ struct g_virstor_component {
 	unsigned int		 chunk_reserved;
 	unsigned int		 flags;
 };
-
 
 /* Internal geom instance data */
 struct g_virstor_softc {
@@ -125,11 +104,6 @@ struct g_virstor_bio_q {
 	STAILQ_ENTRY(g_virstor_bio_q) linkage;
 };
 
-
 #endif	/* _KERNEL */
-
-#ifndef _PATH_DEV
-#define _PATH_DEV "/dev/"
-#endif
 
 #endif	/* !_G_VIRSTOR_H_ */

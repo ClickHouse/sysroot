@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2006 IronPort Systems Inc. <ambrisko@ironport.com>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/ipmi.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef __SYS_IPMI_H__
@@ -31,9 +31,11 @@
 
 #define IPMI_MAX_ADDR_SIZE		0x20
 #define IPMI_MAX_RX			1024
-#define IPMI_BMC_SLAVE_ADDR		0x20 /* Linux Default slave address */
-#define IPMI_BMC_CHANNEL		0x0f /* Linux BMC channel */
 
+#define IPMI_BMC_CHANNEL		0x0f /* Linux BMC channel */
+#define IPMI_IPMB_CHANNEL		0x00
+
+#define IPMI_BMC_SLAVE_ADDR		0x20 /* Linux Default slave address */
 #define IPMI_BMC_SMS_LUN		0x02
 
 #define IPMI_SYSTEM_INTERFACE_ADDR_TYPE	0x0c
@@ -56,8 +58,25 @@
 #define IPMI_ASYNC_EVENT_RECV_TYPE      2
 #define IPMI_CMD_RECV_TYPE              3
 
+#define	IPMI_CHASSIS_REQUEST		0x00
+# define IPMI_CHASSIS_CONTROL		0x02
+#  define IPMI_CC_POWER_DOWN		0x0
+#  define IPMI_CC_POWER_UP		0x1
+#  define IPMI_CC_POWER_CYCLE		0x2
+#  define IPMI_CC_HARD_RESET		0x3
+#  define IPMI_CC_PULSE_DI		0x4
+#  define IPMI_CC_SOFT_OVERTEMP		0x5
+
 #define IPMI_APP_REQUEST		0x06
 #define IPMI_GET_DEVICE_ID		0x01
+# define IPMI_ADS_CHASSIS		0x80
+# define IPMI_ADS_BRIDGE		0x40
+# define IPMI_ADS_EVENT_GEN		0x20
+# define IPMI_ADS_EVENT_RCV		0x10
+# define IPMI_ADS_FRU_INV		0x08
+# define IPMI_ADS_SEL			0x04
+# define IPMI_ADS_SDR			0x02
+# define IPMI_ADS_SENSOR		0x01
 #define IPMI_CLEAR_FLAGS		0x30
 #define IPMI_GET_MSG_FLAGS		0x31
 # define IPMI_MSG_AVAILABLE		0x01
@@ -72,7 +91,14 @@
 
 #define IPMI_SET_WD_TIMER_SMS_OS	0x04
 #define IPMI_SET_WD_TIMER_DONT_STOP	0x40
+#define IPMI_SET_WD_ACTION_NONE		0x00
 #define IPMI_SET_WD_ACTION_RESET	0x01
+#define IPMI_SET_WD_ACTION_POWER_DOWN	0x02
+#define IPMI_SET_WD_ACTION_POWER_CYCLE	0x03
+#define IPMI_SET_WD_PREACTION_NONE	(0x00 << 4)
+#define IPMI_SET_WD_PREACTION_SMI	(0x01 << 4)
+#define IPMI_SET_WD_PREACTION_NMI	(0x02 << 4)
+#define IPMI_SET_WD_PREACTION_MI	(0x03 << 4)
 
 struct ipmi_msg {
 	unsigned char	netfn;
@@ -100,7 +126,6 @@ struct ipmi_cmdspec {
 	unsigned char	netfn;
 	unsigned char	cmd;
 };
-
 
 struct ipmi_addr {
 	int		addr_type;

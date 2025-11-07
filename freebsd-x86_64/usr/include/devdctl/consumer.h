@@ -28,8 +28,6 @@
  * POSSIBILITY OF SUCH DAMAGES.
  *
  * Authors: Justin T. Gibbs     (Spectra Logic Corporation)
- *
- * $FreeBSD: releng/11.3/lib/libdevdctl/consumer.h 301087 2016-05-31 23:26:45Z asomers $
  */
 
 /**

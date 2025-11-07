@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsmount.h	8.3 (Berkeley) 3/30/95
- * $FreeBSD: releng/12.2/sys/nfsclient/nfsmount.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NFSCLIENT_NFSMOUNT_H_

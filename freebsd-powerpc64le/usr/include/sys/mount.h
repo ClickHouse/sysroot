@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)mount.h	8.21 (Berkeley) 5/20/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_MOUNT_H_
@@ -52,7 +51,12 @@
 
 typedef struct fsid { int32_t val[2]; } fsid_t;	/* filesystem id type */
 
-#define fsidcmp(a, b) memcmp((a), (b), sizeof(fsid_t))
+/* Returns non-zero if fsids are different. */
+static __inline int
+fsidcmp(const fsid_t *a, const fsid_t *b)
+{
+	return (a->val[0] != b->val[0] || a->val[1] != b->val[1]);
+}
 
 /*
  * File identifier.
@@ -196,6 +200,7 @@ _Static_assert(sizeof(struct mount_pcpu) == 16,
  * 	l - mnt_listmtx
  *	m - mountlist_mtx
  *	i - interlock
+ *	i* - interlock of uppers' list head
  *	v - vnode freelist mutex
  *
  * Unmarked fields are considered stable as long as a ref is held.
@@ -221,7 +226,7 @@ struct mount {
 	int		mnt_writeopcount;	/* (i) write syscalls pending */
 	struct vfsoptlist *mnt_opt;		/* current mount options */
 	struct vfsoptlist *mnt_optnew;		/* new options passed to fs */
-	int		mnt_maxsymlinklen;	/* max size of short symlink */
+	struct ucred	*mnt_exjail;		/* (i) jail which did exports */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
 	struct ucred	*mnt_cred;		/* credentials of mounter */
 	void *		mnt_data;		/* private data */
@@ -240,8 +245,8 @@ struct mount {
 	struct vnodelst	mnt_lazyvnodelist;	/* (l) list of lazy vnodes */
 	int		mnt_lazyvnodelistsize;	/* (l) # of lazy vnodes */
 	struct lock	mnt_explock;		/* vfs_export walkers lock */
-	TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
-	TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
+	TAILQ_ENTRY(mount) mnt_upper_link;	/* (i*) we in the all uppers */
+	TAILQ_HEAD(, mount) mnt_uppers;		/* (i) upper mounts over us */
 };
 
 /*
@@ -377,9 +382,7 @@ struct mntoptnames {
 #define	MNT_EXTLSCERTUSER 0x0000010000000000ULL /* require TLS with user cert */
 
 /*
- * Flags set by internal operations,
- * but visible to the user.
- * XXX some of these are not quite right.. (I've never seen the root flag set)
+ * Flags set by internal operations, but visible to the user.
  */
 #define	MNT_LOCAL	0x0000000000001000ULL /* filesystem is stored locally */
 #define	MNT_QUOTA	0x0000000000002000ULL /* quotas are enabled on fs */
@@ -649,6 +652,7 @@ struct ovfsconf {
 #define	VFCF_DELEGADMIN	0x00800000	/* supports delegated administration */
 #define	VFCF_SBDRY	0x01000000	/* Stop at Boundary: defer stop requests
 					   to kernel->user (AST) transition */
+#define	VFCF_FILEMOUNT	0x02000000	/* allow mounting files */
 
 typedef uint32_t fsctlop_t;
 
@@ -776,6 +780,8 @@ typedef int vfs_sysctl_t(struct mount *mp, fsctlop_t op,
 typedef void vfs_susp_clean_t(struct mount *mp);
 typedef void vfs_notify_lowervp_t(struct mount *mp, struct vnode *lowervp);
 typedef void vfs_purge_t(struct mount *mp);
+struct sbuf;
+typedef int vfs_report_lockf_t(struct mount *mp, struct sbuf *sb);
 
 struct vfsops {
 	vfs_mount_t		*vfs_mount;
@@ -797,7 +803,8 @@ struct vfsops {
 	vfs_notify_lowervp_t	*vfs_reclaim_lowervp;
 	vfs_notify_lowervp_t	*vfs_unlink_lowervp;
 	vfs_purge_t		*vfs_purge;
-	vfs_mount_t		*vfs_spare[6];	/* spares for ABI compat */
+	vfs_report_lockf_t	*vfs_report_lockf;
+	vfs_mount_t		*vfs_spare[5];	/* spares for ABI compat */
 };
 
 vfs_statfs_t	__vfs_statfs;
@@ -945,6 +952,9 @@ vfs_statfs_t	__vfs_statfs;
  * exported vnode operations
  */
 
+/* Define this to indicate that vfs_exjail_clone() exists for ZFS to use. */
+#define	VFS_SUPPORTS_EXJAIL_CLONE	1
+
 int	dounmount(struct mount *, int, struct thread *);
 
 int	kernel_mount(struct mntarg *ma, uint64_t flags);
@@ -982,8 +992,10 @@ int	vfs_setpublicfs			    /* set publicly exported fs */
 	    (struct mount *, struct netexport *, struct export_args *);
 void	vfs_periodic(struct mount *, int);
 int	vfs_busy(struct mount *, int);
+void	vfs_exjail_clone(struct mount *, struct mount *);
 int	vfs_export			 /* process mount export info */
-	    (struct mount *, struct export_args *);
+	    (struct mount *, struct export_args *, int);
+void	vfs_free_addrlist(struct netexport *);
 void	vfs_allocate_syncvnode(struct mount *);
 void	vfs_deallocate_syncvnode(struct mount *);
 int	vfs_donmount(struct thread *td, uint64_t fsflags,
@@ -997,6 +1009,7 @@ void	vfs_mount_error(struct mount *, const char *, ...);
 void	vfs_mountroot(void);			/* mount our root filesystem */
 void	vfs_mountedfrom(struct mount *, const char *from);
 void	vfs_notify_upper(struct vnode *, int);
+struct mount *vfs_ref_from_vp(struct vnode *);
 void	vfs_ref(struct mount *);
 void	vfs_rel(struct mount *);
 struct mount *vfs_mount_alloc(struct vnode *, struct vfsconf *, const char *,
@@ -1004,6 +1017,9 @@ struct mount *vfs_mount_alloc(struct vnode *, struct vfsconf *, const char *,
 int	vfs_suser(struct mount *, struct thread *);
 void	vfs_unbusy(struct mount *);
 void	vfs_unmountall(void);
+int	vfs_remount_ro(struct mount *mp);
+int	vfs_report_lockf(struct mount *mp, struct sbuf *sb);
+
 extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 extern	struct mtx_padalign mountlist_mtx;
 extern	struct nfs_public nfs_pub;

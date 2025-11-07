@@ -1,5 +1,4 @@
 /*	$OpenBSD: libgen.h,v 1.4 1999/05/28 22:00:22 espie Exp $	*/
-/*	$FreeBSD: releng/12.2/include/libgen.h 326719 2017-12-08 22:06:18Z ed $	*/
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause

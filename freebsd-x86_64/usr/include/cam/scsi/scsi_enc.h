@@ -1,5 +1,6 @@
-/* $FreeBSD: releng/11.3/sys/cam/scsi/scsi_enc.h 291126 2015-11-21 10:22:01Z mav $ */
 /*-
+ * SPDX-License-Identifier: (BSD-2-Clause OR GPL-2.0)
+ *
  * Copyright (c) 2000 by Matthew Jacob
  * All rights reserved.
  *
@@ -73,23 +74,23 @@
  *
  *
  * An application finds out how many elements an enclosure instance
- * is managing by performing a ENCIOC_GETNELM operation. It then
- * performs a ENCIOC_GETELMMAP to get the map that contains the
- * elment identifiers for all elements (see encioc_element_t below).
+ * manages by performing a ENCIOC_GETNELM operation. It then
+ * performs an ENCIOC_GETELMMAP to get the map that contains the
+ * element identifiers for all elements (see encioc_element_t below).
  * This information is static.
  * 
  * The application may perform ENCIOC_GETELMSTAT operations to retrieve
- * status on an element (see the enc_elm_status_t structure below),
- * ENCIOC_SETELMSTAT operations to set status for an element.
+ * status on an element (see the encioc_elm_status_t structure below),
+ * and ENCIOC_SETELMSTAT operations to set status for an element.
  *
- * Similarly, overall enclosure status me be fetched or set via
- * ENCIOC_GETENCSTAT or  ENCIOC_SETENCSTAT operations (see encioc_enc_status_t
+ * Similarly, overall enclosure status may be fetched or set via
+ * ENCIOC_GETENCSTAT or ENCIOC_SETENCSTAT operations (see encioc_enc_status_t
  * below).
  *
  * Readers should note that there is nothing that requires either a set
  * or a clear operation to actually latch and do anything in the target.
  *
- * A ENCIOC_INIT operation causes the enclosure to be initialized.
+ * An ENCIOC_INIT operation causes the enclosure to be initialized.
  */
 
 /* Element Types */
@@ -118,9 +119,43 @@ typedef enum {
 	ELMTYP_SCSI_INI		= 0x15,
 	ELMTYP_SUBENC		= 0x16,
 	ELMTYP_ARRAY_DEV	= 0x17,
-	ELMTYP_SAS_EXP		= 0x18, /* SAS expander */
-	ELMTYP_SAS_CONN		= 0x19  /* SAS connector */
+	ELMTYP_SAS_EXP		= 0x18,	/* SAS Expander */
+	ELMTYP_SAS_CONN		= 0x19,	/* SAS Connector */
+	ELMTYP_LAST		= ELMTYP_SAS_CONN
 } elm_type_t;
+
+#define	ELM_TYPE_NAMES	{				\
+	"Unspecified",					\
+	"Device Slot",					\
+	"Power Supply",					\
+	"Cooling",					\
+	"Temperature Sensor",				\
+	"Door",						\
+	"Audible alarm",				\
+	"Enclosure Services Controller Electronics",	\
+	"SCC Controller Electronics",			\
+	"Nonvolatile Cache",				\
+	"Invalid Operation Reason",			\
+	"Uninterruptible Power Supply",			\
+	"Display",					\
+	"Key Pad Entry",				\
+	"Enclosure",					\
+	"SCSI Port/Transceiver",			\
+	"Language",					\
+	"Communication Port",				\
+	"Voltage Sensor",				\
+	"Current Sensor",				\
+	"SCSI Target Port",				\
+	"SCSI Initiator Port",				\
+	"Simple Subenclosure",				\
+	"Array Device Slot",				\
+	"SAS Expander",					\
+	"SAS Connector"					\
+}
+
+#ifdef _KERNEL
+extern const char *elm_type_names[];
+#endif
 
 typedef struct encioc_element {
 	/* Element Index */

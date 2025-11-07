@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1999 John D. Polstra
  * Copyright (c) 1999,2001 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
@@ -23,8 +25,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/linker_set.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_LINKER_SET_H_
@@ -40,8 +40,11 @@
  * For ELF, this is done by constructing a separate segment for each set.
  */
 
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) && (!defined(_CALL_ELF) || _CALL_ELF == 1)
 /*
+ * ELFv1 pointers to functions are actaully pointers to function
+ * descriptors.
+ *
  * Move the symbol pointer from ".text" to ".data" segment, to make
  * the GCC compiler happy:
  */
@@ -54,17 +57,27 @@
  * Private macros, not to be used outside this header file.
  */
 #ifdef __GNUCLIKE___SECTION
-#define __MAKE_SET(set, sym)				\
-	__GLOBL(__CONCAT(__start_set_,set));		\
-	__GLOBL(__CONCAT(__stop_set_,set));		\
-	static void const * __MAKE_SET_CONST		\
+
+/*
+ * The userspace address sanitizer inserts redzones around global variables,
+ * violating the assumption that linker set elements are packed.
+ */
+#ifdef _KERNEL
+#define	__NOASAN
+#else
+#define	__NOASAN	__nosanitizeaddress
+#endif
+
+#define __MAKE_SET_QV(set, sym, qv)			\
+	__WEAK(__CONCAT(__start_set_,set));		\
+	__WEAK(__CONCAT(__stop_set_,set));		\
+	static void const * qv				\
+	__NOASAN					\
 	__set_##set##_sym_##sym __section("set_" #set)	\
 	__used = &(sym)
+#define __MAKE_SET(set, sym)	__MAKE_SET_QV(set, sym, __MAKE_SET_CONST)
 #else /* !__GNUCLIKE___SECTION */
-#ifndef lint
 #error this file needs to be ported to your compiler
-#endif /* lint */
-#define __MAKE_SET(set, sym)	extern void const * const (__set_##set##_sym_##sym)
 #endif /* __GNUCLIKE___SECTION */
 
 /*
@@ -72,6 +85,7 @@
  */
 #define TEXT_SET(set, sym)	__MAKE_SET(set, sym)
 #define DATA_SET(set, sym)	__MAKE_SET(set, sym)
+#define DATA_WSET(set, sym)	__MAKE_SET_QV(set, sym, )
 #define BSS_SET(set, sym)	__MAKE_SET(set, sym)
 #define ABS_SET(set, sym)	__MAKE_SET(set, sym)
 #define SET_ENTRY(set, sym)	__MAKE_SET(set, sym)

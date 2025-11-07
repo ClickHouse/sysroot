@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 1994, Henrik Vestergaard Draboel
  * All rights reserved.
  *
@@ -27,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/rtprio.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_RTPRIO_H_
@@ -42,6 +42,7 @@
 
 /* priority types.  Start at 1 to catch uninitialized fields. */
 
+#define RTP_PRIO_ITHD		PRI_ITHD	/* Interrupt thread. */
 #define RTP_PRIO_REALTIME	PRI_REALTIME	/* real time process */
 #define RTP_PRIO_NORMAL		PRI_TIMESHARE	/* time sharing process */
 #define RTP_PRIO_IDLE		PRI_IDLE	/* idle process */

@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)unistd.h	8.2 (Berkeley) 1/7/94
- * $FreeBSD$
  */
 
 #ifndef _SYS_UNISTD_H_
@@ -196,6 +195,20 @@
     RFTHREAD | RFSIGSHARE | RFLINUXTHPN | RFSTOPPED | RFHIGHPID | RFTSIGZMB | \
     RFPROCDESC | RFSPAWN | RFPPWAIT)
 #define	RFKERNELONLY	(RFSTOPPED | RFHIGHPID | RFPROCDESC)
+
+/* kcmp() options. */
+#define	KCMP_FILE	100
+#define	KCMP_FILEOBJ	101
+#define	KCMP_FILES	102
+#define	KCMP_SIGHAND	103
+#define	KCMP_VM		104
+
+#define	SWAPOFF_FORCE	0x00000001
+
+/*
+ * close_range() options.
+ */
+#define	CLOSE_RANGE_CLOEXEC	(1<<2)
 
 #endif /* __BSD_VISIBLE */
 

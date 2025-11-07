@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2005 Robert N. M. Watson
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/lib/libmemstat/memstat.h 326219 2017-11-26 02:00:33Z pfg $
  */
 
 #ifndef _MEMSTAT_H_
@@ -118,6 +116,13 @@ int	memstat_kvm_malloc(struct memory_type_list *list, void *kvm_handle);
 int	memstat_kvm_uma(struct memory_type_list *list, void *kvm_handle);
 
 /*
+ * General malloc routines.
+ */
+size_t	memstat_malloc_zone_get_count(void);
+size_t	memstat_malloc_zone_get_size(size_t n);
+int	memstat_malloc_zone_used(const struct memory_type *mtp, size_t n);
+
+/*
  * Accessor methods for struct memory_type.
  */
 const char	*memstat_get_name(const struct memory_type *mtp);
@@ -136,6 +141,7 @@ uint64_t	 memstat_get_count(const struct memory_type *mtp);
 uint64_t	 memstat_get_free(const struct memory_type *mtp);
 uint64_t	 memstat_get_failures(const struct memory_type *mtp);
 uint64_t	 memstat_get_sleeps(const struct memory_type *mtp);
+uint64_t	 memstat_get_xdomain(const struct memory_type *mtp);
 void		*memstat_get_caller_pointer(const struct memory_type *mtp,
 		    int index);
 void		 memstat_set_caller_pointer(struct memory_type *mtp,

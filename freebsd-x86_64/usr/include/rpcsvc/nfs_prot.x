@@ -35,7 +35,6 @@
 %/*static char sccsid[] = "from: @(#)nfs_prot.x	2.1 88/08/01 4.0 RPCSRC";*/
 %#endif /* not lint */
 %#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD: releng/11.3/include/rpcsvc/nfs_prot.x 259117 2013-12-09 04:26:50Z hrs $");
 #endif
 
 const NFS_PORT          = 2049;

@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Ed Schouten <ed@FreeBSD.org>
  * All rights reserved.
@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/tty.h 360258 2020-04-24 13:31:22Z kevans $
  */
 
 #ifndef _SYS_TTY_H_
@@ -132,6 +130,9 @@ struct tty {
 	void		*t_devswsoftc;	/* (c) Soft config, for drivers. */
 	void		*t_hooksoftc;	/* (t) Soft config, for hooks. */
 	struct cdev	*t_dev;		/* (c) Primary character device. */
+
+	size_t		t_prbufsz;	/* (t) SIGINFO buffer size. */
+	char		t_prbuf[];	/* (t) SIGINFO buffer. */
 };
 
 /*
@@ -141,7 +142,7 @@ struct xtty {
 	size_t	xt_size;	/* Structure size. */
 	size_t	xt_insize;	/* Input queue size. */
 	size_t	xt_incc;	/* Canonicalized characters. */
-	size_t	xt_inlc;	/* Input line charaters. */
+	size_t	xt_inlc;	/* Input line characters. */
 	size_t	xt_inlow;	/* Input low watermark. */
 	size_t	xt_outsize;	/* Output queue size. */
 	size_t	xt_outcc;	/* Output queue usage. */
@@ -197,6 +198,7 @@ void	tty_wakeup(struct tty *tp, int flags);
 /* System messages. */
 int	tty_checkoutq(struct tty *tp);
 int	tty_putchar(struct tty *tp, char c);
+int	tty_putstrn(struct tty *tp, const char *p, size_t n);
 
 int	tty_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
     struct thread *td);

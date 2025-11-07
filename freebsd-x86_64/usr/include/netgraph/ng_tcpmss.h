@@ -1,6 +1,8 @@
 /*-
  * ng_tcpmss.h
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2004, Alexey Popov <lollypop@flexuser.ru>
  * All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netgraph/ng_tcpmss.h 147231 2005-06-10 08:02:34Z glebius $
  */
 
 #ifndef _NETGRAPH_TCPMSS_H_
@@ -54,7 +54,6 @@ struct ng_tcpmss_hookstat {
 	{ "FixedPkts",	&ng_parse_uint64_type	},	\
 	{ NULL }					\
 }
-
 
 /* Structure for NGM_TCPMSS_CONFIG. */
 struct ng_tcpmss_config {

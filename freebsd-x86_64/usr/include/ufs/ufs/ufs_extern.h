@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ufs_extern.h	8.10 (Berkeley) 5/14/95
- * $FreeBSD: releng/11.3/sys/ufs/ufs/ufs_extern.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _UFS_UFS_EXTERN_H_
@@ -56,7 +57,7 @@ extern struct vop_vector ufs_vnodeops;
 int	 ufs_bmap(struct vop_bmap_args *);
 int	 ufs_bmaparray(struct vnode *, ufs2_daddr_t, ufs2_daddr_t *,
 	    struct buf *, int *, int *);
-int	 ufs_fhtovp(struct mount *, struct ufid *, int, struct vnode **);
+int	 ufs_bmap_seekdata(struct vnode *, off_t *);
 int	 ufs_checkpath(ino_t, ino_t, struct inode *, struct ucred *, ino_t *);
 void	 ufs_dirbad(struct inode *, doff_t, char *);
 int	 ufs_dirbadentry(struct vnode *, struct direct *, int);
@@ -66,7 +67,7 @@ int	 ufs_extwrite(struct vop_write_args *);
 void	 ufs_makedirentry(struct inode *, struct componentname *,
 	    struct direct *);
 int	 ufs_direnter(struct vnode *, struct vnode *, struct direct *,
-	    struct componentname *, struct buf *, int);
+	    struct componentname *, struct buf *);
 int	 ufs_dirremove(struct vnode *, struct inode *, int, int);
 int	 ufs_dirrewrite(struct inode *, struct inode *, ino_t, int, int);
 int	 ufs_lookup_ino(struct vnode *, struct vnode **, struct componentname *,
@@ -76,7 +77,7 @@ int	 ufs_inactive(struct vop_inactive_args *);
 int	 ufs_init(struct vfsconf *);
 void	 ufs_itimes(struct vnode *vp);
 int	 ufs_lookup(struct vop_cachedlookup_args *);
-void	 ufs_prepare_reclaim(struct vnode *vp);
+int	 ufs_need_inactive(struct vop_need_inactive_args *);
 int	 ufs_readdir(struct vop_readdir_args *);
 int	 ufs_reclaim(struct vop_reclaim_args *);
 void	 ffs_snapgone(struct inode *);
@@ -116,6 +117,13 @@ void	softdep_revert_rmdir(struct inode *, struct inode *);
  *
  * Note: The general vfs code typically limits the sequential heuristic
  * count to 127.  See sequential_heuristic() in kern/vfs_vnops.c
+ *
+ * The BA_CLRBUF flag specifies that the existing content of the block
+ * will not be completely overwritten by the caller, so buffers for new
+ * blocks must be cleared and buffers for existing blocks must be read.
+ * When BA_CLRBUF is not set the buffer will be completely overwritten
+ * and there is no reason to clear them or to spend I/O fetching existing
+ * data. The BA_CLRBUF flag is handled in the UFS_BALLOC() functions.
  */
 #define	BA_CLRBUF	0x00010000	/* Clear invalid areas of buffer. */
 #define	BA_METAONLY	0x00020000	/* Return indirect block buffer. */

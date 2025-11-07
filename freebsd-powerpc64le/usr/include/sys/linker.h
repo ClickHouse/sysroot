@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997-2000 Doug Rabson
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_LINKER_H_
@@ -82,8 +80,10 @@ struct linker_file {
     int			id;		/* unique id */
     caddr_t		address;	/* load address */
     size_t		size;		/* size of file */
-    caddr_t		ctors_addr;	/* address of .ctors */
-    size_t		ctors_size;	/* size of .ctors */
+    caddr_t		ctors_addr;	/* address of .ctors/.init_array */
+    size_t		ctors_size;	/* size of .ctors/.init_array */
+    caddr_t		dtors_addr;	/* address of .dtors/.fini_array */
+    size_t		dtors_size;	/* size of .dtors/.fini_array */
     int			ndeps;		/* number of dependencies */
     linker_file_t*	deps;		/* list of dependencies */
     STAILQ_HEAD(, common_symbol) common; /* list of common symbols */
@@ -196,6 +196,15 @@ int linker_search_symbol_name(caddr_t value, char *buf, u_int buflen,
 /* HWPMC helper */
 void *linker_hwpmc_list_objects(void);
 
+/* kldload/kldunload syscalls blocking */
+#define	LINKER_UB_UNLOCK	0x0001	/* busy: unlock kld_sx locked on
+					   return */
+#define	LINKER_UB_LOCKED	0x0002	/* busy/unbusy: kld_sx locked on
+					   entry */
+#define	LINKER_UB_PCATCH	0x0004	/* busy: sleep interruptible */
+int linker_kldload_busy(int flags);
+void linker_kldload_unbusy(int flags);
+
 #endif	/* _KERNEL */
 
 /*
@@ -215,6 +224,7 @@ void *linker_hwpmc_list_objects(void);
 #define MODINFOMD_SSYM		0x0003		/* start of symbols */
 #define MODINFOMD_ESYM		0x0004		/* end of symbols */
 #define MODINFOMD_DYNAMIC	0x0005		/* _DYNAMIC pointer */
+#define MODINFOMD_MB2HDR	0x0006		/* MB2 header info */
 /* These values are MD on PowerPC */
 #if !defined(__powerpc__)
 #define MODINFOMD_ENVP		0x0006		/* envp[] */

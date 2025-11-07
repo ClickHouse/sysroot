@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2004-2009 Pawel Jakub Dawidek <pjd@FreeBSD.org>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/geom/gate/g_gate.h 238119 2012-07-04 20:16:28Z pjd $
  */
 
 #ifndef _G_GATE_H_
@@ -89,40 +89,21 @@ struct g_gate_softc {
 	uint32_t		 sc_queue_count;	/* P: sc_queue_mtx */
 	uint32_t		 sc_queue_size;		/* P: (read-only) */
 	u_int			 sc_timeout;		/* P: (read-only) */
-	struct g_consumer	*sc_readcons;		/* P: XXX */
-	off_t			 sc_readoffset;		/* P: XXX */
+	struct g_consumer	*sc_readcons;		/* P: sc_read_mtx */
+	off_t			 sc_readoffset;		/* P: sc_read_mtx */
 	struct callout		 sc_callout;		/* P: (modified only
 							       from callout
 							       thread) */
-	uintptr_t		 sc_seq;		/* P: (modified only
-							       from g_down
-							       thread) */
+	uintptr_t		 sc_seq;		/* P: sc_queue_mtx */
 	LIST_ENTRY(g_gate_softc) sc_next;		/* P: g_gate_list_mtx */
 	char			 sc_info[G_GATE_INFOSIZE]; /* P: (read-only) */
+	struct mtx		 sc_read_mtx;
 };
 
-#define	G_GATE_DEBUG(lvl, ...)	do {					\
-	if (g_gate_debug >= (lvl)) {					\
-		printf("GEOM_GATE");					\
-		if (g_gate_debug > 0)					\
-			printf("[%u]", lvl);				\
-		printf(": ");						\
-		printf(__VA_ARGS__);					\
-		printf("\n");						\
-	}								\
-} while (0)
-#define	G_GATE_LOGREQ(lvl, bp, ...)	do {				\
-	if (g_gate_debug >= (lvl)) {					\
-		printf("GEOM_GATE");					\
-		if (g_gate_debug > 0)					\
-			printf("[%u]", lvl);				\
-		printf(": ");						\
-		printf(__VA_ARGS__);					\
-		printf(" ");						\
-		g_print_bio(bp);					\
-		printf("\n");						\
-	}								\
-} while (0)
+#define	G_GATE_DEBUG(lvl, ...) \
+    _GEOM_DEBUG("GEOM_GATE", g_gate_debug, (lvl), NULL, __VA_ARGS__)
+#define	G_GATE_LOGREQ(lvl, bp, ...) \
+    _GEOM_DEBUG("GEOM_GATE", g_gate_debug, (lvl), (bp), __VA_ARGS__)
 #endif	/* !_KERNEL */
 
 struct g_gate_ctl_create {

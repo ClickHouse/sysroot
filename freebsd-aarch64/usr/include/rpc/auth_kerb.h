@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/include/rpc/auth_kerb.h 326024 2017-11-20 19:45:28Z pfg $ */
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *

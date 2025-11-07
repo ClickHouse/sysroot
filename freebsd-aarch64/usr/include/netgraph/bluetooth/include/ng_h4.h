@@ -3,7 +3,7 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001-2002 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_h4.h,v 1.1 2002/11/24 19:47:05 max Exp $
- * $FreeBSD: releng/12.2/sys/netgraph/bluetooth/include/ng_h4.h 326272 2017-11-27 15:23:17Z pfg $
  * 
  * Based on:
  * ---------
@@ -112,4 +111,3 @@ typedef struct {
 #define NGM_H4_NODE_RESET_STAT	8
 
 #endif /* _NETGRAPH_H4_H_ */
-

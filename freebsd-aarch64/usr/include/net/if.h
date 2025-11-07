@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)if.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD: releng/12.2/sys/net/if.h 352647 2019-09-24 06:30:34Z kib $
  */
 
 #ifndef _NET_IF_H_
@@ -144,7 +143,7 @@ struct if_data {
 #define	IFF_DEBUG	0x4		/* (n) turn on debugging */
 #define	IFF_LOOPBACK	0x8		/* (i) is a loopback net */
 #define	IFF_POINTOPOINT	0x10		/* (i) is a point-to-point link */
-/*			0x20		   was IFF_SMART */
+#define	IFF_KNOWSEPOCH	0x20		/* (i) calls if_input in net epoch */
 #define	IFF_DRV_RUNNING	0x40		/* (d) resources allocated */
 #define	IFF_NOARP	0x80		/* (n) no address resolution protocol */
 #define	IFF_PROMISC	0x100		/* (n) receive all packets */
@@ -163,7 +162,7 @@ struct if_data {
 #define	IFF_DYING	0x200000	/* (n) interface is winding down */
 #define	IFF_RENAMING	0x400000	/* (n) interface is being renamed */
 #define	IFF_NOGROUP	0x800000	/* (n) interface is not part of any groups */
-
+#define	IFF_NETLINK_1	0x1000000	/* (n) used by netlink */
 
 /*
  * Old names for driver flags so that user space tools can continue to use
@@ -178,7 +177,7 @@ struct if_data {
 #define	IFF_CANTCHANGE \
 	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_DRV_RUNNING|IFF_DRV_OACTIVE|\
 	    IFF_SIMPLEX|IFF_MULTICAST|IFF_ALLMULTI|IFF_PROMISC|\
-	    IFF_DYING|IFF_CANTCONFIG)
+	    IFF_DYING|IFF_CANTCONFIG|IFF_KNOWSEPOCH)
 
 /*
  * Values for if_link_state.
@@ -210,7 +209,7 @@ struct if_data {
  *   contains the enabled optional feature & capabilites that can be used
  *   individually per packet and are specified in the mbuf pkthdr.csum_flags
  *   field.  IFCAP_* and CSUM_* do not match one to one and CSUM_* may be
- *   more detailed or differenciated than IFCAP_*.
+ *   more detailed or differentiated than IFCAP_*.
  *   Hwassist features are defined CSUM_* in sys/mbuf.h
  *
  * Capabilities that cannot be arbitrarily changed with ifconfig/ioctl
@@ -246,6 +245,12 @@ struct if_data {
 #define	IFCAP_HWSTATS		0x800000 /* manages counters internally */
 #define	IFCAP_TXRTLMT		0x1000000 /* hardware supports TX rate limiting */
 #define	IFCAP_HWRXTSTMP		0x2000000 /* hardware rx timestamping */
+#define	IFCAP_MEXTPG		0x4000000 /* understands M_EXTPG mbufs */
+#define	IFCAP_TXTLS4		0x8000000 /* can do TLS encryption and segmentation for TCP */
+#define	IFCAP_TXTLS6		0x10000000 /* can do TLS encryption and segmentation for TCP6 */
+#define	IFCAP_VXLAN_HWCSUM	0x20000000 /* can do IFCAN_HWCSUM on VXLANs */
+#define	IFCAP_VXLAN_HWTSO	0x40000000 /* can do IFCAP_TSO on VXLANs */
+#define	IFCAP_TXTLS_RTLMT	0x80000000 /* can do TLS with rate limiting */
 
 #define IFCAP_HWCSUM_IPV6	(IFCAP_RXCSUM_IPV6 | IFCAP_TXCSUM_IPV6)
 
@@ -253,6 +258,7 @@ struct if_data {
 #define	IFCAP_TSO	(IFCAP_TSO4 | IFCAP_TSO6)
 #define	IFCAP_WOL	(IFCAP_WOL_UCAST | IFCAP_WOL_MCAST | IFCAP_WOL_MAGIC)
 #define	IFCAP_TOE	(IFCAP_TOE4 | IFCAP_TOE6)
+#define	IFCAP_TXTLS	(IFCAP_TXTLS4 | IFCAP_TXTLS6)
 
 #define	IFCAP_CANTCHANGE	(IFCAP_NETMAP)
 
@@ -280,7 +286,7 @@ struct if_msghdr {
  * extensible after ifm_data_off or within ifm_data.  Both the if_msghdr and
  * if_data now have a member field detailing the struct length in addition to
  * the routing message length.  Macros are provided to find the start of
- * ifm_data and the start of the socket address strucutres immediately following
+ * ifm_data and the start of the socket address structures immediately following
  * struct if_msghdrl given a pointer to struct if_msghdrl.
  */
 #define	IF_MSGHDRL_IFM_DATA(_l) \
@@ -322,7 +328,7 @@ struct ifa_msghdr {
  * extensible after ifam_metric or within ifam_data.  Both the ifa_msghdrl and
  * if_data now have a member field detailing the struct length in addition to
  * the routing message length.  Macros are provided to find the start of
- * ifm_data and the start of the socket address strucutres immediately following
+ * ifm_data and the start of the socket address structures immediately following
  * struct ifa_msghdrl given a pointer to struct ifa_msghdrl.
  */
 #define	IFA_MSGHDRL_IFAM_DATA(_l) \
@@ -387,7 +393,7 @@ struct ifreq_buffer {
  * definitions which begin with ifr_name.  The
  * remainder may be interface specific.
  */
-struct	ifreq {
+struct ifreq {
 	char	ifr_name[IFNAMSIZ];		/* if name, e.g. "en0" */
 	union {
 		struct	sockaddr ifru_addr;
@@ -461,11 +467,11 @@ struct ifmediareq {
 	int	*ifm_ulist;		/* media words */
 };
 
-struct  ifdrv {
-	char            ifd_name[IFNAMSIZ];     /* if name, e.g. "en0" */
-	unsigned long   ifd_cmd;
-	size_t          ifd_len;
-	void            *ifd_data;
+struct ifdrv {
+	char		ifd_name[IFNAMSIZ];	/* if name, e.g. "en0" */
+	unsigned long	ifd_cmd;
+	size_t		ifd_len;
+	void		*ifd_data;
 };
 
 /* 
@@ -487,7 +493,7 @@ struct ifstat {
  * for machine (useful for programs which
  * must know all networks accessible).
  */
-struct	ifconf {
+struct ifconf {
 	int	ifc_len;		/* size of associated buffer */
 	union {
 		caddr_t	ifcu_buf;
@@ -524,10 +530,8 @@ struct ifgroupreq {
 		char	ifgru_group[IFNAMSIZ];
 		struct	ifg_req *ifgru_groups;
 	} ifgr_ifgru;
-#ifndef _KERNEL
 #define ifgr_group	ifgr_ifgru.ifgru_group
 #define ifgr_groups	ifgr_ifgru.ifgru_groups
-#endif
 };
 
 /*
@@ -598,6 +602,9 @@ struct ifdownreason {
 MALLOC_DECLARE(M_IFADDR);
 MALLOC_DECLARE(M_IFMADDR);
 #endif
+
+extern struct sx ifnet_detach_sxlock;
+
 #endif
 
 #ifndef _KERNEL

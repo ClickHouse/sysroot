@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -30,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_var.h 347154 2019-05-05 12:28:39Z tuexen $");
-
 #ifndef _NETINET_SCTP_VAR_H_
 #define _NETINET_SCTP_VAR_H_
 
@@ -41,7 +40,6 @@ __FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_var.h 347154 2019-05-05 12:28:3
 #if defined(_KERNEL) || defined(__Userspace__)
 
 extern struct pr_usrreqs sctp_usrreqs;
-
 
 #define sctp_feature_on(inp, feature)  (inp->sctp_features |= feature)
 #define sctp_feature_off(inp, feature) (inp->sctp_features &= ~feature)
@@ -84,7 +82,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 
 #define	sctp_sbspace(asoc, sb) ((long) ((sctp_maxspace(sb) > (asoc)->sb_cc) ? (sctp_maxspace(sb) - (asoc)->sb_cc) : 0))
 
-#define	sctp_sbspace_failedmsgs(sb) ((long) ((sctp_maxspace(sb) > (sb)->sb_cc) ? (sctp_maxspace(sb) - (sb)->sb_cc) : 0))
+#define	sctp_sbspace_failedmsgs(sb) ((long) ((sctp_maxspace(sb) > SCTP_SBAVAIL(sb)) ? (sctp_maxspace(sb) - SCTP_SBAVAIL(sb)) : 0))
 
 #define sctp_sbspace_sub(a,b) (((a) > (b)) ? ((a) - (b)) : 0)
 
@@ -180,17 +178,10 @@ extern struct pr_usrreqs sctp_usrreqs;
 	} \
 }
 
-
 #define sctp_free_remote_addr(__net) { \
 	if ((__net)) {  \
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->rxt_timer.timer); \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->pmtu_timer.timer); \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->hb_timer.timer); \
-			if ((__net)->ro.ro_rt) { \
-				RTFREE((__net)->ro.ro_rt); \
-				(__net)->ro.ro_rt = NULL; \
-			} \
+			RO_NHFREE(&(__net)->ro); \
 			if ((__net)->src_addr_selected) { \
 				sctp_free_ifa((__net)->ro._s_addr); \
 				(__net)->ro._s_addr = NULL; \
@@ -204,7 +195,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 }
 
 #define sctp_sbfree(ctl, stcb, sb, m) { \
-	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_cc, SCTP_BUF_LEN((m))); \
+	SCTP_SB_DECR(sb, SCTP_BUF_LEN((m))); \
 	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_mbcnt, MSIZE); \
 	if (((ctl)->do_not_ref_stcb == 0) && stcb) {\
 		SCTP_SAVE_ATOMIC_DECREMENT(&(stcb)->asoc.sb_cc, SCTP_BUF_LEN((m))); \
@@ -216,7 +207,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 }
 
 #define sctp_sballoc(stcb, sb, m) { \
-	atomic_add_int(&(sb)->sb_cc,SCTP_BUF_LEN((m))); \
+	SCTP_SB_INCR(sb, SCTP_BUF_LEN((m))); \
 	atomic_add_int(&(sb)->sb_mbcnt, MSIZE); \
 	if (stcb) { \
 		atomic_add_int(&(stcb)->asoc.sb_cc, SCTP_BUF_LEN((m))); \
@@ -226,7 +217,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 	    SCTP_BUF_TYPE(m) != MT_OOBDATA) \
 		atomic_add_int(&(sb)->sb_ctl,SCTP_BUF_LEN((m))); \
 }
-
 
 #define sctp_ucount_incr(val) { \
 	val++; \
@@ -327,8 +317,8 @@ struct sctp_inpcb;
 struct sctp_tcb;
 struct sctphdr;
 
-
 void sctp_close(struct socket *so);
+void sctp_abort(struct socket *so);
 int sctp_disconnect(struct socket *so);
 void sctp_ctlinput(int, struct sockaddr *, void *);
 int sctp_ctloutput(struct socket *, struct sockopt *);
@@ -336,7 +326,7 @@ int sctp_ctloutput(struct socket *, struct sockopt *);
 void sctp_input_with_port(struct mbuf *, int, uint16_t);
 int sctp_input(struct mbuf **, int *, int);
 #endif
-void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
+void sctp_pathmtu_adjustment(struct sctp_tcb *, uint32_t, bool);
 void sctp_drain(void);
 void sctp_init(void);
 void

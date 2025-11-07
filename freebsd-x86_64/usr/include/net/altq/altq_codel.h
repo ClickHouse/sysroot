@@ -36,8 +36,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/net/altq/altq_codel.h 287120 2015-08-24 23:40:36Z loos $
  */
 
 #ifndef _ALTQ_ALTQ_CODEL_H_
@@ -56,6 +54,12 @@ struct codel_ifstats {
 	struct pktcntr	cl_xmitcnt;	/* transmitted packet counter */
 	struct pktcntr	cl_dropcnt;	/* dropped packet counter */
 };
+
+/*
+ * CBQ_STATS_VERSION is defined in altq.h to work around issues stemming
+ * from mixing of public-API and internal bits in each scheduler-specific
+ * header.
+ */
 
 #ifdef _KERNEL
 #include <net/altq/altq_classq.h>

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1998-2010 Luigi Rizzo, Universita` di Pisa
  * Portions Copyright (c) 2000 Akamba Corp.
  * All rights reserved
@@ -23,8 +25,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netinet/ip_dummynet.h 300779 2016-05-26 21:40:13Z truckman $
  */
 
 #ifndef _IP_DUMMYNET_H
@@ -129,7 +129,7 @@ struct dn_link {
 	 * XXX what about burst ?
 	 */
 	int32_t		link_nr;
-	int		bandwidth;	/* bit/s or bits/tick.   */
+	uint32_t	bandwidth;	/* bit/s or bits/tick.   */
 	int		delay;		/* ms and ticks */
 	uint64_t	burst;		/* scaled. bits*Hz  XXX */
 };
@@ -186,7 +186,6 @@ struct dn_flow {
 	uint32_t	drops;
 };
 
-
 /*
  * Scheduler template, mostly indicating the name, number,
  * sched_mask and buckets.
@@ -202,7 +201,6 @@ struct dn_sch {
 	struct ipfw_flow_id sched_mask; /* M */
 };
 
-
 /* A delay profile is attached to a link.
  * Note that a profile, as any other object, cannot be longer than 2^16
  */
@@ -214,7 +212,7 @@ struct dn_profile {
 	char	name[ED_MAX_NAME_LEN];
 	int	link_nr;
 	int	loss_level;
-	int	bandwidth;			// XXX use link bandwidth?
+	uint32_t	bandwidth;			// XXX use link bandwidth?
 	int	samples_no;			/* actual len of samples[] */
 	int	samples[ED_MAX_SAMPLES_NO];	/* may be shorter */
 };
@@ -275,7 +273,7 @@ the objects used by dummynet:
    to delay and bandwidth;
  + dn_profile describes a delay profile;
  + dn_flow describes the flow status (flow id, statistics)
-   
+
  + dn_sch describes a scheduler
  + dn_fs describes a flowset (msk, weight, queue parameters)
 

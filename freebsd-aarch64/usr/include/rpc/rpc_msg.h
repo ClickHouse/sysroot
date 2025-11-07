@@ -31,7 +31,6 @@
  *
  *	from: @(#)rpc_msg.h 1.7 86/07/16 SMI
  *	from: @(#)rpc_msg.h	2.1 88/07/29 4.0 RPCSRC
- * $FreeBSD: releng/12.2/include/rpc/rpc_msg.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 /*

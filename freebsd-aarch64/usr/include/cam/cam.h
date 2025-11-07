@@ -1,7 +1,7 @@
 /*-
  * Data structures and definitions for the CAM system.
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/cam/cam.h 326265 2017-11-27 15:12:43Z pfg $
  */
 
 #ifndef _CAM_CAM_H
@@ -278,7 +276,6 @@ typedef enum {
 	/* SCSI Bus Busy */
 	CAM_SCSI_BUSY		= 0x3f,
 
-
 	/*
 	 * Flags
 	 */
@@ -304,7 +301,7 @@ typedef enum {
 	/*
 	 * Target Specific Adjunct Status
 	 */
-	
+
 	/* sent sense with status */
 	CAM_SENT_SENSE		= 0x40000000
 } cam_status;
@@ -378,6 +375,8 @@ caddr_t	cam_quirkmatch(caddr_t target, caddr_t quirk_table, int num_entries,
 		       int entry_size, cam_quirkmatch_t *comp_func);
 
 void	cam_strvis(u_int8_t *dst, const u_int8_t *src, int srclen, int dstlen);
+void	cam_strvis_flag(u_int8_t *dst, const u_int8_t *src, int srclen,
+			int dstlen, uint32_t flags);
 void	cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
 			uint32_t flags);
 
@@ -403,11 +402,9 @@ void	cam_error_print(struct cam_device *device, union ccb *ccb,
 __END_DECLS
 
 #ifdef _KERNEL
-static __inline void cam_init_pinfo(cam_pinfo *pinfo);
-
 static __inline void cam_init_pinfo(cam_pinfo *pinfo)
 {
-	pinfo->priority = CAM_PRIORITY_NONE;	
+	pinfo->priority = CAM_PRIORITY_NONE;
 	pinfo->index = CAM_UNQUEUED_INDEX;
 }
 #endif

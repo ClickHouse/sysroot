@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2016 Adam Starak <starak.adam@gmail.com>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/cnv.h 336346 2018-07-16 15:02:21Z kevans $
  */
 
 #ifndef	_CNV_H_
@@ -72,7 +72,6 @@ const nvlist_t * const	*cnvlist_get_nvlist_array(const void *cookie, size_t *nit
 int			 cnvlist_get_descriptor(const void *cookie);
 const int		*cnvlist_get_descriptor_array(const void *cookie, size_t *nitemsp);
 #endif
-
 
 /*
  * The cnvlist_take functions returns value associated with the given cookie and

@@ -31,7 +31,6 @@
  *
  *	from: @(#)clnt.h 1.31 94/04/29 SMI
  *	from: @(#)clnt.h	2.1 88/07/29 4.0 RPCSRC
- * $FreeBSD: releng/12.2/include/rpc/clnt.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 /*

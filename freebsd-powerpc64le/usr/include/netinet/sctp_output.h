@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifndef _NETINET_SCTP_OUTPUT_H_
 #define _NETINET_SCTP_OUTPUT_H_
 
@@ -117,7 +114,7 @@ void sctp_send_asconf(struct sctp_tcb *, struct sctp_nets *, int addr_locked);
 
 void sctp_send_asconf_ack(struct sctp_tcb *);
 
-int sctp_get_frag_point(struct sctp_tcb *, struct sctp_association *);
+uint32_t sctp_get_frag_point(struct sctp_tcb *);
 
 void sctp_toss_old_cookies(struct sctp_tcb *, struct sctp_association *);
 

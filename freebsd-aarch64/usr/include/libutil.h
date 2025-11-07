@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/lib/libutil/libutil.h 336746 2018-07-26 18:34:38Z ian $
  */
 
 #ifndef _LIBUTIL_H_
@@ -98,6 +96,8 @@ int	flopen(const char *_path, int _flags, ...);
 int	flopenat(int _dirfd, const char *_path, int _flags, ...);
 int	forkpty(int *_amaster, char *_name,
 	    struct termios *_termp, struct winsize *_winp);
+const char *
+	getlocalbase(void);
 void	hexdump(const void *_ptr, int _length, const char *_hdr, int _flags);
 int	humanize_number(char *_buf, size_t _len, int64_t _number,
 	    const char *_suffix, int _scale, int _flags);
@@ -107,6 +107,8 @@ struct kinfo_vmentry *
 	kinfo_getvmmap(pid_t _pid, int *_cntp);
 struct kinfo_vmobject *
 	kinfo_getvmobject(int *_cntp);
+struct kinfo_vmobject *
+	kinfo_getswapvmobject(int *_cntp);
 struct kinfo_proc *
 	kinfo_getallproc(int *_cntp);
 struct kinfo_proc *

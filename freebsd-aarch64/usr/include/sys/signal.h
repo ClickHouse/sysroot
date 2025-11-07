@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)signal.h	8.4 (Berkeley) 5/4/95
- * $FreeBSD: releng/12.2/sys/sys/signal.h 353102 2019-10-04 12:18:03Z kib $
  */
 
 #ifndef _SYS_SIGNAL_H_
@@ -332,6 +331,7 @@ struct siginfo32 {
 #define FPE_FLTRES	6	/* Floating point inexact result.	*/
 #define FPE_FLTINV	7	/* Invalid floating point operation.	*/
 #define FPE_FLTSUB	8	/* Subscript out of range.		*/
+#define FPE_FLTIDO	9	/* Input denormal operation		*/
 
 /* codes for SIGTRAP */
 #define TRAP_BRKPT	1	/* Process breakpoint.			*/

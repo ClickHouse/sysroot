@@ -1,6 +1,7 @@
 /*	@(#)auth_des.h	2.2 88/07/29 4.0 RPCSRC; from 1.3 88/02/08 SMI */
-/*	$FreeBSD: releng/11.3/include/rpc/auth_des.h 331722 2018-03-29 02:50:57Z eadler $ */
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2009, Sun Microsystems, Inc.
  * All rights reserved.
  *

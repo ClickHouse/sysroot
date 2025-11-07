@@ -60,7 +60,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)in.h	8.3 (Berkeley) 1/3/94
- * $FreeBSD$
  */
 
 #ifndef __KAME_NETINET_IN_H_INCLUDED_
@@ -219,18 +218,10 @@ extern const struct in6_addr in6addr_linklocal_allv2routers;
 
 /*
  * Equality
- * NOTE: Some of kernel programming environment (for example, openbsd/sparc)
- * does not supply memcmp().  For userland memcmp() is preferred as it is
- * in ANSI standard.
  */
-#ifdef _KERNEL
-#define IN6_ARE_ADDR_EQUAL(a, b)			\
-    (bcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
-#else
 #if __BSD_VISIBLE
 #define IN6_ARE_ADDR_EQUAL(a, b)			\
     (memcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
-#endif
 #endif
 
 /*
@@ -668,10 +659,10 @@ struct ip6_mtuinfo {
 struct cmsghdr;
 struct ip6_hdr;
 
+int	in6_cksum(struct mbuf *, uint8_t, uint32_t, uint32_t);
+int	in6_cksum_partial(struct mbuf *, uint8_t, uint32_t, uint32_t, uint32_t);
 int	in6_cksum_pseudo(struct ip6_hdr *, uint32_t, uint8_t, uint16_t);
-int	in6_cksum(struct mbuf *, u_int8_t, u_int32_t, u_int32_t);
-int	in6_cksum_partial(struct mbuf *, u_int8_t, u_int32_t, u_int32_t,
-			  u_int32_t);
+
 int	in6_localaddr(struct in6_addr *);
 int	in6_localip(struct in6_addr *);
 int	in6_ifhasaddr(struct ifnet *, struct in6_addr *);

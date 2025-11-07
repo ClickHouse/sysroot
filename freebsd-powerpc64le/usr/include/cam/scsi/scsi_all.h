@@ -13,8 +13,6 @@
  * functioning of this software in any circumstances.
  *
  * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
- *
- * $FreeBSD$
  */
 
 /*
@@ -2818,30 +2816,6 @@ struct scsi_vpd_sfs
 	uint8_t page_length[2];
 	uint8_t reserved[4];
 	uint8_t codes[];
-};
-
-/*
- * Block Device Characteristics VPD Page based on
- * T10/1799-D Revision 31
- */
-struct scsi_vpd_block_characteristics
-{
-	u_int8_t device;
-	u_int8_t page_code;
-#define SVPD_BDC			0xB1
-	u_int8_t page_length[2];
-	u_int8_t medium_rotation_rate[2];
-#define SVPD_BDC_RATE_NOT_REPORTED	0x00
-#define SVPD_BDC_RATE_NON_ROTATING	0x01
-	u_int8_t reserved1;
-	u_int8_t nominal_form_factor;
-#define SVPD_BDC_FORM_NOT_REPORTED	0x00
-#define SVPD_BDC_FORM_5_25INCH		0x01
-#define SVPD_BDC_FORM_3_5INCH		0x02
-#define SVPD_BDC_FORM_2_5INCH		0x03
-#define SVPD_BDC_FORM_1_5INCH		0x04
-#define SVPD_BDC_FORM_LESSTHAN_1_5INCH	0x05
-	u_int8_t reserved2[56];
 };
 
 /*

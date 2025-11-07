@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2008-2009 Stacey Son <sson@FreeBSD.org> 
  *
  * Redistribution and use in source and binary forms, with or without
@@ -21,10 +23,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/lockstat.h 334437 2018-05-31 15:58:28Z mjg $
  */
- 
+
 /*
  * DTrace lockstat provider definitions
  */
@@ -63,12 +63,19 @@ SDT_PROBE_DECLARE(lockstat, , , sx__spin);
 SDT_PROBE_DECLARE(lockstat, , , sx__upgrade);
 SDT_PROBE_DECLARE(lockstat, , , sx__downgrade);
 
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__acquire);
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__release);
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__disown);
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__block);
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__upgrade);
+SDT_PROBE_DECLARE(lockstat, , , lockmgr__downgrade);
+
 SDT_PROBE_DECLARE(lockstat, , , thread__spin);
 
 #define	LOCKSTAT_WRITER		0
 #define	LOCKSTAT_READER		1
 
-extern volatile int lockstat_enabled;
+extern volatile bool lockstat_enabled;
 
 #ifdef KDTRACE_HOOKS
 
@@ -88,22 +95,32 @@ extern volatile int lockstat_enabled;
 	SDT_PROBE5(lockstat, , , probe, lp, arg1, arg2, arg3, arg4)
 
 #define	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(probe, lp, c, wt, f, l) do { \
-	lock_profile_obtain_lock_success(&(lp)->lock_object, c, wt, f, l); \
+	lock_profile_obtain_lock_success(&(lp)->lock_object, false, c, wt, f, l); \
+	LOCKSTAT_RECORD0(probe, lp);					\
+} while (0)
+
+#define	LOCKSTAT_PROFILE_OBTAIN_SPIN_LOCK_SUCCESS(probe, lp, c, wt, f, l) do { \
+	lock_profile_obtain_lock_success(&(lp)->lock_object, true, c, wt, f, l); \
 	LOCKSTAT_RECORD0(probe, lp);					\
 } while (0)
 
 #define	LOCKSTAT_PROFILE_OBTAIN_RWLOCK_SUCCESS(probe, lp, c, wt, f, l, a) do { \
-	lock_profile_obtain_lock_success(&(lp)->lock_object, c, wt, f, l); \
+	lock_profile_obtain_lock_success(&(lp)->lock_object, false, c, wt, f, l); \
 	LOCKSTAT_RECORD1(probe, lp, a);					\
 } while (0)
 
 #define	LOCKSTAT_PROFILE_RELEASE_LOCK(probe, lp) do {			\
-	lock_profile_release_lock(&(lp)->lock_object);			\
+	lock_profile_release_lock(&(lp)->lock_object, false);		\
+	LOCKSTAT_RECORD0(probe, lp);					\
+} while (0)
+
+#define	LOCKSTAT_PROFILE_RELEASE_SPIN_LOCK(probe, lp) do {		\
+	lock_profile_release_lock(&(lp)->lock_object, true);		\
 	LOCKSTAT_RECORD0(probe, lp);					\
 } while (0)
 
 #define	LOCKSTAT_PROFILE_RELEASE_RWLOCK(probe, lp, a) do {		\
-	lock_profile_release_lock(&(lp)->lock_object);			\
+	lock_profile_release_lock(&(lp)->lock_object, false);		\
 	LOCKSTAT_RECORD1(probe, lp, a);					\
 } while (0)
 
@@ -121,13 +138,19 @@ uint64_t lockstat_nsecs(struct lock_object *);
 #define	LOCKSTAT_RECORD4(probe, lp, arg1, arg2, arg3, arg4)
 
 #define	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(probe, lp, c, wt, f, l)	\
-	lock_profile_obtain_lock_success(&(lp)->lock_object, c, wt, f, l)
+	lock_profile_obtain_lock_success(&(lp)->lock_object, false, c, wt, f, l)
+
+#define	LOCKSTAT_PROFILE_OBTAIN_SPIN_LOCK_SUCCESS(probe, lp, c, wt, f, l)	\
+	lock_profile_obtain_lock_success(&(lp)->lock_object, true, c, wt, f, l)
 
 #define	LOCKSTAT_PROFILE_OBTAIN_RWLOCK_SUCCESS(probe, lp, c, wt, f, l, a) \
 	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(probe, lp, c, wt, f, l)
 
 #define	LOCKSTAT_PROFILE_RELEASE_LOCK(probe, lp)  			\
-	lock_profile_release_lock(&(lp)->lock_object)
+	lock_profile_release_lock(&(lp)->lock_object, false)
+
+#define	LOCKSTAT_PROFILE_RELEASE_SPIN_LOCK(probe, lp)  			\
+	lock_profile_release_lock(&(lp)->lock_object, true)
 
 #define	LOCKSTAT_PROFILE_RELEASE_RWLOCK(probe, lp, a)  			\
 	LOCKSTAT_PROFILE_RELEASE_LOCK(probe, lp)

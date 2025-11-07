@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)string.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/12.2/include/string.h 326024 2017-11-20 19:45:28Z pfg $
  */
 
 #ifndef _STRING_H_
@@ -66,6 +65,9 @@ void	*memcpy(void * __restrict, const void * __restrict, size_t);
 void	*memmem(const void *, size_t, const void *, size_t) __pure;
 #endif
 void	*memmove(void *, const void *, size_t);
+#if __BSD_VISIBLE
+void	*mempcpy(void * __restrict, const void * __restrict, size_t);
+#endif
 void	*memset(void *, int, size_t);
 #if __POSIX_VISIBLE >= 200809
 char	*stpcpy(char * __restrict, const char * __restrict);
@@ -78,6 +80,7 @@ char	*strcat(char * __restrict, const char * __restrict);
 char	*strchr(const char *, int) __pure;
 #if __BSD_VISIBLE
 char	*strchrnul(const char*, int) __pure;
+int	 strverscmp(const char *, const char *) __pure;
 #endif
 int	 strcmp(const char *, const char *) __pure;
 int	 strcoll(const char *, const char *);
@@ -140,7 +143,7 @@ int	 timingsafe_bcmp(const void *, const void *, size_t);
 int	 timingsafe_memcmp(const void *, const void *, size_t);
 #endif /* __BSD_VISIBLE */
 
-#if __POSIX_VISIBLE >= 200809 || defined(_XLOCALE_H_)
+#if __POSIX_VISIBLE >= 200112 || defined(_XLOCALE_H_)
 #include <xlocale/_string.h>
 #endif
 

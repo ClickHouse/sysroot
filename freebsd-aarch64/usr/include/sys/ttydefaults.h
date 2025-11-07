@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ttydefaults.h	8.4 (Berkeley) 1/21/94
- * $FreeBSD: releng/12.2/sys/sys/ttydefaults.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 /*
@@ -46,7 +45,7 @@
 /*
  * Defaults on "first" open.
  */
-#define	TTYDEF_IFLAG	(BRKINT	| ICRNL	| IMAXBEL | IXON | IXANY)
+#define	TTYDEF_IFLAG	(BRKINT	| ICRNL	| IMAXBEL | IXON | IXANY | IUTF8)
 #define	TTYDEF_OFLAG	(OPOST | ONLCR)
 #define	TTYDEF_LFLAG_NOECHO (ICANON | ISIG | IEXTEN)
 #define	TTYDEF_LFLAG_ECHO (TTYDEF_LFLAG_NOECHO \

@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)socket.h	8.4 (Berkeley) 2/21/94
- * $FreeBSD$
  */
 
 #ifndef _SYS_SOCKET_H_
@@ -147,6 +146,7 @@ typedef	__uintptr_t	uintptr_t;
 #define	SO_NO_OFFLOAD	0x00004000	/* socket cannot be offloaded */
 #define	SO_NO_DDP	0x00008000	/* disable direct data placement */
 #define	SO_REUSEPORT_LB	0x00010000	/* reuse with load balancing */
+#define	SO_RERROR	0x00020000	/* keep track of receive errors */
 
 /*
  * Additional options, not kept in so_options.
@@ -263,6 +263,7 @@ struct accept_filter_arg {
 #define	AF_ARP		35
 #define	AF_BLUETOOTH	36		/* Bluetooth sockets */
 #define	AF_IEEE80211	37		/* IEEE 802.11 protocol */
+#define	AF_NETLINK	38		/* Netlink protocol */
 #define	AF_INET_SDP	40		/* OFED Socket Direct Protocol ipv4 */
 #define	AF_INET6_SDP	42		/* OFED Socket Direct Protocol ipv6 */
 #define	AF_HYPERV	43		/* HyperV sockets */
@@ -388,6 +389,7 @@ struct sockproto {
 #define	PF_ARP		AF_ARP
 #define	PF_BLUETOOTH	AF_BLUETOOTH
 #define	PF_IEEE80211	AF_IEEE80211
+#define	PF_NETLINK	AF_NETLINK
 #define	PF_INET_SDP	AF_INET_SDP
 #define	PF_INET6_SDP	AF_INET6_SDP
 
@@ -469,7 +471,7 @@ struct msghdr {
 #endif
 #ifdef _KERNEL
 #define	MSG_MORETOCOME	 0x00100000	/* additional data pending */
-#define	MSG_TLSAPPDATA	 0x00200000	/* only soreceive() app. data (TLS) */
+#define	MSG_TLSAPPDATA	 0x00200000	/* do not soreceive() alert rec. (TLS) */
 #endif
 
 /*

@@ -7,8 +7,6 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  * ----------------------------------------------------------------------------
- *
- * $FreeBSD: releng/12.2/sys/sys/timetc.h 326823 2017-12-13 16:13:17Z pfg $
  */
 
 #ifndef _SYS_TIMETC_H_
@@ -95,5 +93,12 @@ void	cpu_tick_calibration(void);
 #ifdef SYSCTL_DECL
 SYSCTL_DECL(_kern_timecounter);
 #endif
+
+/**
+ * clockcalib(clk, clkname):
+ * Return the frequency of the provided timer, as calibrated against the
+ * current best-available timecounter.
+ */
+uint64_t clockcalib(uint64_t (*)(void), const char *);
 
 #endif /* !_SYS_TIMETC_H_ */

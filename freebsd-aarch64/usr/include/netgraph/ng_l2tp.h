@@ -35,8 +35,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_l2tp.h 298813 2016-04-29 21:25:05Z pfg $
  */
 
 #ifndef _NETGRAPH_NG_L2TP_H_

@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netinet/ip_carp.h 356622 2020-01-11 00:11:29Z bz $	*/
 /*	$OpenBSD: ip_carp.h,v 1.8 2004/07/29 22:12:15 mcbride Exp $	*/
 
 /*-

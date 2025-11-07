@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2012 Chelsio Communications, Inc.
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/netinet/toecore.h 239511 2012-08-21 18:09:33Z np $
  */
 
 #ifndef _NETINET_TOE_H_
@@ -33,9 +33,14 @@
 #error "no user-serviceable parts inside"
 #endif
 
+#include <sys/_eventhandler.h>
+
 struct tcpopt;
 struct tcphdr;
 struct in_conninfo;
+struct tcp_info;
+struct nhop_object;
+struct ktls_session;
 
 struct toedev {
 	TAILQ_ENTRY(toedev) link;	/* glue for toedev_list */
@@ -45,7 +50,7 @@ struct toedev {
 	 * Active open.  If a failure occurs, it is reported back by the driver
 	 * via toe_connect_failed.
 	 */
-	int (*tod_connect)(struct toedev *, struct socket *, struct rtentry *,
+	int (*tod_connect)(struct toedev *, struct socket *, struct nhop_object *,
 	    struct sockaddr *);
 
 	/* Passive open. */
@@ -89,7 +94,7 @@ struct toedev {
 
 	/* XXX.  Route has been redirected. */
 	void (*tod_route_redirect)(struct toedev *, struct ifnet *,
-	    struct rtentry *, struct rtentry *);
+	    struct nhop_object *, struct nhop_object *);
 
 	/* Syncache interaction. */
 	void (*tod_syncache_added)(struct toedev *, void *);
@@ -99,9 +104,16 @@ struct toedev {
 
 	/* TCP socket option */
 	void (*tod_ctloutput)(struct toedev *, struct tcpcb *, int, int);
+
+	/* Update software state */
+	void (*tod_tcp_info)(struct toedev *, const struct tcpcb *,
+	    struct tcp_info *);
+
+	/* Create a TLS session */
+	int (*tod_alloc_tls_session)(struct toedev *, struct tcpcb *,
+	    struct ktls_session *, int);
 };
 
-#include <sys/eventhandler.h>
 typedef	void (*tcp_offload_listen_start_fn)(void *, struct tcpcb *);
 typedef	void (*tcp_offload_listen_stop_fn)(void *, struct tcpcb *);
 EVENTHANDLER_DECLARE(tcp_offload_listen_start, tcp_offload_listen_start_fn);
@@ -122,7 +134,7 @@ int toe_l2_resolve(struct toedev *, struct ifnet *, struct sockaddr *,
 void toe_connect_failed(struct toedev *, struct inpcb *, int);
 
 void toe_syncache_add(struct in_conninfo *, struct tcpopt *, struct tcphdr *,
-    struct inpcb *, void *, void *);
+    struct inpcb *, void *, void *, uint8_t);
 int  toe_syncache_expand(struct in_conninfo *, struct tcpopt *, struct tcphdr *,
     struct socket **);
 

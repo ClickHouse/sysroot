@@ -1,7 +1,8 @@
-/*	$FreeBSD: releng/11.3/sys/netipsec/ipsec6.h 331722 2018-03-29 02:50:57Z eadler $	*/
 /*	$KAME: ipsec.h,v 1.44 2001/03/23 08:08:47 itojun Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *

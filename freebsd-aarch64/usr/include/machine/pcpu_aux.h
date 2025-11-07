@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2019 The FreeBSD Foundation
  *
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/arm64/include/pcpu_aux.h 354093 2019-10-25 18:56:46Z mav $
  */
 
 #ifndef _MACHINE_PCPU_AUX_H_
@@ -47,6 +45,6 @@
  */
 _Static_assert(PAGE_SIZE % sizeof(struct pcpu) == 0, "fix pcpu size");
 
-extern struct pcpu __pcpu[];
+extern struct pcpu pcpu0;
 
 #endif	/* _MACHINE_PCPU_AUX_H_ */

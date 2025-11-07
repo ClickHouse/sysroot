@@ -2,6 +2,8 @@
  * Data structures and definitions for dealing with the 
  * Common Access Method Transport (xpt) layer.
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
  *
@@ -25,18 +27,22 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/cam_xpt.h 291716 2015-12-03 20:54:55Z ken $
  */
 
 #ifndef _CAM_CAM_XPT_H
 #define _CAM_CAM_XPT_H 1
+
+#ifdef _KERNEL
+#include <sys/cdefs.h>
+#include <cam/cam_ccb.h>
+#endif
 
 /* Forward Declarations */
 union ccb;
 struct cam_periph;
 struct cam_ed;
 struct cam_sim;
+struct sbuf;
 
 /*
  * Definition of a CAM path.  Paths are created from bus, target, and lun ids
@@ -77,8 +83,8 @@ void			xpt_setup_ccb_flags(struct ccb_hdr *ccb_h,
 void			xpt_setup_ccb(struct ccb_hdr *ccb_h,
 				      struct cam_path *path,
 				      u_int32_t priority);
-void			xpt_merge_ccb(union ccb *master_ccb,
-				      union ccb *slave_ccb);
+void			xpt_merge_ccb(union ccb *dst_ccb,
+				      union ccb *src_ccb);
 cam_status		xpt_create_path(struct cam_path **new_path_ptr,
 					struct cam_periph *perph,
 					path_id_t path_id,
@@ -102,6 +108,7 @@ void			xpt_print_device(struct cam_ed *device);
 void			xpt_print(struct cam_path *path, const char *fmt, ...);
 int			xpt_path_string(struct cam_path *path, char *str,
 					size_t str_len);
+int			xpt_path_sbuf(struct cam_path *path, struct sbuf *sb);
 path_id_t		xpt_path_path_id(struct cam_path *path);
 target_id_t		xpt_path_target_id(struct cam_path *path);
 lun_id_t		xpt_path_lun_id(struct cam_path *path);
@@ -130,10 +137,27 @@ cam_status		xpt_compile_path(struct cam_path *new_path,
 					 lun_id_t lun_id);
 cam_status		xpt_clone_path(struct cam_path **new_path,
 				      struct cam_path *path);
-void			xpt_copy_path(struct cam_path *new_path,
-				      struct cam_path *path);
 
 void			xpt_release_path(struct cam_path *path);
+
+const char *		xpt_action_name(uint32_t action);
+void			xpt_pollwait(union ccb *start_ccb, uint32_t timeout);
+uint32_t		xpt_poll_setup(union ccb *start_ccb);
+void			xpt_sim_poll(struct cam_sim *sim);
+
+/*
+ * Perform a path inquiry at the request priority. The bzero may be
+ * unnecessary.
+ */
+static inline void
+xpt_path_inq(struct ccb_pathinq *cpi, struct cam_path *path)
+{
+
+	bzero(cpi, sizeof(*cpi));
+	xpt_setup_ccb(&cpi->ccb_h, path, CAM_PRIORITY_NORMAL);
+	cpi->ccb_h.func_code = XPT_PATH_INQ;
+	xpt_action((union ccb *)cpi);
+}
 
 #endif /* _KERNEL */
 

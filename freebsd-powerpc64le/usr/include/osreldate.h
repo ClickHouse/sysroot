@@ -29,5 +29,5 @@
 #error "<osreldate.h> cannot be used in the kernel, use <sys/param.h>"
 #else
 #undef __FreeBSD_version
-#define __FreeBSD_version 1300139
+#define __FreeBSD_version 1304000
 #endif

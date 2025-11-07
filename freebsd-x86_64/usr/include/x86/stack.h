@@ -22,8 +22,6 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- * $FreeBSD: releng/11.3/sys/x86/include/stack.h 287645 2015-09-11 03:54:37Z markj $
  */
 
 #ifndef _X86_STACK_H
@@ -55,7 +53,7 @@ struct i386_frame {
 #endif /* __amd64__ */
 
 #ifdef _KERNEL
-int	stack_nmi_handler(struct trapframe *);
+void	stack_capture_intr(void);
 #endif
 
 #endif /* !_X86_STACK_H */

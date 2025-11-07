@@ -35,8 +35,6 @@
  *
  *      @(#)bpf.h	8.1 (Berkeley) 6/10/93
  *	@(#)bpf.h	1.34 (LBL)     6/16/96
- *
- * $FreeBSD$
  */
 
 #ifndef _NET_BPF_H_
@@ -55,8 +53,8 @@ typedef	int64_t	  bpf_int64;
 typedef	u_int64_t bpf_u_int64;
 
 /*
- * Alignment macros.  BPF_WORDALIGN rounds up to the next
- * even multiple of BPF_ALIGNMENT.
+ * Alignment macros.  BPF_WORDALIGN rounds up to the next multiple of
+ * BPF_ALIGNMENT.
  */
 #define BPF_ALIGNMENT sizeof(long)
 #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
@@ -153,6 +151,7 @@ struct bpf_zbuf {
 #define	BIOCSETFNR	_IOW('B', 130, struct bpf_program)
 #define	BIOCGTSTAMP	_IOR('B', 131, u_int)
 #define	BIOCSTSTAMP	_IOW('B', 132, u_int)
+#define	BIOCSETVLANPCP	_IOW('B', 133, u_int)
 
 /* Obsolete */
 #define	BIOCGSEESENT	BIOCGDIRECTION
@@ -432,15 +431,13 @@ int	 bpf_get_bp_params(struct bpf_if *, u_int *, u_int *);
 void	 bpfilterattach(int);
 u_int	 bpf_filter(const struct bpf_insn *, u_char *, u_int, u_int);
 
-static __inline int
+static __inline bool
 bpf_peers_present(struct bpf_if *bpf)
 {
 	struct bpf_if_ext *ext;
 
 	ext = (struct bpf_if_ext *)bpf;
-	if (!CK_LIST_EMPTY(&ext->bif_dlist))
-		return (1);
-	return (0);
+	return (!CK_LIST_EMPTY(&ext->bif_dlist));
 }
 
 #define	BPF_TAP(_ifp,_pkt,_pktlen) do {				\

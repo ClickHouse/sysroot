@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tcp_seq.h	8.3 (Berkeley) 6/21/95
- * $FreeBSD$
  */
 
 #ifndef _NETINET_TCP_SEQ_H_
@@ -43,6 +42,7 @@
 #define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
 #define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
 #define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
+#define	SEQ_SUB(a,b)	((int)((a)-(b)))
 
 #define	SEQ_MIN(a, b)	((SEQ_LT(a, b)) ? (a) : (b))
 #define	SEQ_MAX(a, b)	((SEQ_GT(a, b)) ? (a) : (b))

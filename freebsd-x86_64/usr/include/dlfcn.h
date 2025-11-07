@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/include/dlfcn.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _DLFCN_H_
@@ -45,6 +45,8 @@
 #define	RTLD_TRACE	0x200	/* Trace loaded objects and exit. */
 #define	RTLD_NODELETE	0x01000	/* Do not remove members. */
 #define	RTLD_NOLOAD	0x02000	/* Do not load if not already loaded. */
+#define	RTLD_DEEPBIND	0x04000	/* Put symbols from the dso ahead of
+				   the global list */
 
 /*
  * Request arguments for dlinfo().

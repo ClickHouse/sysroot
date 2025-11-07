@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1999 Poul-Henning Kamp.
  * Copyright (c) 2009 James Gritton.
@@ -25,8 +25,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_JAIL_H_
@@ -88,9 +86,11 @@ struct xprison {
 };
 #define	XPRISON_VERSION		3
 
-#define	PRISON_STATE_INVALID	0
-#define	PRISON_STATE_ALIVE	1
-#define	PRISON_STATE_DYING	2
+enum prison_state {
+    PRISON_STATE_INVALID = 0,	/* New prison, not ready to be seen */
+    PRISON_STATE_ALIVE,		/* Current prison, visible to all */
+    PRISON_STATE_DYING		/* Removed but holding resources, */
+};				/* optionally visible. */
 
 /*
  * Flags for jail_set and jail_get.
@@ -138,6 +138,7 @@ MALLOC_DECLARE(M_PRISON);
 #include <sys/osd.h>
 
 #define	HOSTUUIDLEN	64
+#define	DEFAULT_HOSTUUID	"00000000-0000-0000-0000-000000000000"
 #define	OSRELEASELEN	32
 
 struct racct;
@@ -146,7 +147,7 @@ struct prison_racct;
 /*
  * This structure describes a prison.  It is pointed to by all struct
  * ucreds's of the inmates.  pr_ref keeps track of them and is used to
- * delete the struture when the last inmate is dead.
+ * delete the structure when the last inmate is dead.
  *
  * Lock key:
  *   (a) allprison_lock
@@ -155,7 +156,9 @@ struct prison_racct;
  *   (m) locked by pr_mtx
  *   (p) locked by pr_mtx, and also at least shared allprison_lock required
  *       to update
- *   (r) atomic via refcount(9), pr_mtx required to decrement to zero
+ *   (q) locked by both pr_mtx and allprison_lock
+ *   (r) atomic via refcount(9), pr_mtx and allprison_lock required to
+ *       decrement to zero
  */
 struct prison {
 	TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
@@ -184,7 +187,9 @@ struct prison {
 	int		 pr_securelevel;		/* (p) securelevel */
 	int		 pr_enforce_statfs;		/* (p) statfs permission */
 	int		 pr_devfs_rsnum;		/* (p) devfs ruleset */
-	int		 pr_spare[3];
+	enum prison_state pr_state;			/* (q) state in life cycle */
+	volatile int	 pr_exportcnt;			/* (r) count of mount exports */
+	int		 pr_spare;
 	int		 pr_osreldate;			/* (c) kern.osreldate value */
 	unsigned long	 pr_hostid;			/* (p) jail hostid */
 	char		 pr_name[MAXHOSTNAMELEN];	/* (p) admin jail name */
@@ -221,6 +226,8 @@ struct prison_racct {
 					/* by this jail or an ancestor */
 #define	PR_IP6		0x04000000	/* IPv6 restricted or disabled */
 					/* by this jail or an ancestor */
+#define PR_COMPLETE_PROC 0x08000000	/* prison_complete called from */
+					/* prison_proc_free, releases uref */
 
 /*
  * Flags for pr_allow
@@ -239,7 +246,8 @@ struct prison_racct {
 #define	PR_ALLOW_SUSER			0x00000400
 #define	PR_ALLOW_RESERVED_PORTS		0x00008000
 #define	PR_ALLOW_KMEM_ACCESS		0x00010000	/* reserved, not used yet */
-#define	PR_ALLOW_ALL_STATIC		0x000187ff
+#define	PR_ALLOW_NFSD			0x00020000
+#define	PR_ALLOW_ALL_STATIC		0x000387ff
 
 /*
  * PR_ALLOW_DIFFERENCES determines which flags are able to be
@@ -335,6 +343,19 @@ prison_unlock(struct prison *pr)
 		else
 
 /*
+ * Traverse a prison's descendants, visiting both preorder and postorder.
+ */
+#define FOREACH_PRISON_DESCENDANT_PRE_POST(ppr, cpr, descend)		\
+	for ((cpr) = (ppr), (descend) = 1;				\
+	     ((cpr) = (descend)						\
+	      ? ((descend) = !LIST_EMPTY(&(cpr)->pr_children))		\
+		? LIST_FIRST(&(cpr)->pr_children)			\
+		: (cpr)							\
+	      : ((descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		? LIST_NEXT(cpr, pr_sibling)				\
+		: cpr->pr_parent) != (ppr);)
+
+/*
  * Attributes of the physical system, and the root of the jail tree.
  */
 extern struct	prison prison0;
@@ -393,6 +414,7 @@ void getjailname(struct ucred *cred, char *name, size_t len);
 void prison0_init(void);
 int prison_allow(struct ucred *, unsigned);
 int prison_check(struct ucred *cred1, struct ucred *cred2);
+bool prison_check_nfsd(struct ucred *cred);
 int prison_owns_vnet(struct ucred *);
 int prison_canseemount(struct ucred *cred, struct mount *mp);
 void prison_enforce_statfs(struct ucred *cred, struct mount *mp,
@@ -445,6 +467,7 @@ void prison_racct_foreach(void (*callback)(struct racct *racct,
 struct prison_racct *prison_racct_find(const char *name);
 void prison_racct_hold(struct prison_racct *prr);
 void prison_racct_free(struct prison_racct *prr);
+void vfs_exjail_delete(struct prison *);
 
 #endif /* _KERNEL */
 #endif /* !_SYS_JAIL_H_ */

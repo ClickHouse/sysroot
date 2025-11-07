@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)stdlib.h	8.5 (Berkeley) 5/19/95
- * $FreeBSD: releng/12.2/include/stdlib.h 338331 2018-08-26 18:04:54Z delphij $
  */
 
 #ifndef _STDLIB_H_
@@ -73,7 +72,11 @@ typedef struct {
 #define	EXIT_FAILURE	1
 #define	EXIT_SUCCESS	0
 
-#define	RAND_MAX	0x7ffffffd
+/*
+ * I.e., INT_MAX; rand(3) returns a signed integer but must produce output in
+ * the range [0, RAND_MAX], so half of the possible output range is unused.
+ */
+#define	RAND_MAX	0x7fffffff
 
 __BEGIN_DECLS
 #ifdef _XLOCALE_H_
@@ -207,7 +210,6 @@ double	 drand48(void);
 double	 erand48(unsigned short[3]);
 /* char	*fcvt(double, int, int * __restrict, int * __restrict); */
 /* char	*gcvt(double, int, int * __restrict, int * __restrict); */
-int	 grantpt(int);
 char	*initstate(unsigned int, char *, size_t);
 long	 jrand48(unsigned short[3]);
 char	*l64a(long);
@@ -219,8 +221,6 @@ char	*mktemp(char *);
 #endif
 long	 mrand48(void);
 long	 nrand48(unsigned short[3]);
-int	 posix_openpt(int);
-char	*ptsname(int);
 int	 putenv(char *);
 long	 random(void);
 unsigned short
@@ -228,8 +228,18 @@ unsigned short
 char	*setstate(/* const */ char *);
 void	 srand48(long);
 void	 srandom(unsigned int);
+#endif /* __XSI_VISIBLE */
+
+#if __XSI_VISIBLE
+int	 grantpt(int);
+int	 posix_openpt(int);
+char	*ptsname(int);
 int	 unlockpt(int);
 #endif /* __XSI_VISIBLE */
+#if __BSD_VISIBLE
+/* ptsname_r will be included in POSIX issue 8 */
+int	 ptsname_r(int, char *, size_t);
+#endif
 
 #if __BSD_VISIBLE
 extern const char *malloc_conf;
@@ -242,7 +252,7 @@ extern void (*malloc_message)(void *, const char *);
  * On platforms where alloca() is not in libc, programs which use it
  * will fail to link when compiled with non-GNU compilers.
  */
-#if __GNUC__ >= 2 || defined(__INTEL_COMPILER)
+#if __GNUC__ >= 2
 #undef  alloca	/* some GNU bits try to get cute and define this on their own */
 #define alloca(sz) __builtin_alloca(sz)
 #endif
@@ -297,6 +307,7 @@ int	 mergesort_b(void *, size_t, size_t, int (^)(const void *, const void *));
 #endif
 int	 mkostemp(char *, int);
 int	 mkostemps(char *, int, int);
+int	 mkostempsat(int, char *, int, int);
 void	 qsort_r(void *, size_t, size_t, void *,
 	    int (*)(void *, const void *, const void *));
 int	 radixsort(const unsigned char **, int, const unsigned char *,
@@ -308,7 +319,6 @@ int	 rpmatch(const char *);
 void	 setprogname(const char *);
 int	 sradixsort(const unsigned char **, int, const unsigned char *,
 	    unsigned);
-void	 sranddev(void);
 void	 srandomdev(void);
 long long
 	strtonum(const char *, long long, long long, const char **);
@@ -323,6 +333,11 @@ extern char *suboptarg;			/* getsubopt(3) external variable */
 #endif /* __BSD_VISIBLE */
 
 #if __EXT1_VISIBLE
+
+#ifndef _RSIZE_T_DEFINED
+#define _RSIZE_T_DEFINED
+typedef size_t rsize_t;
+#endif
 
 #ifndef _ERRNO_T_DEFINED
 #define _ERRNO_T_DEFINED
@@ -339,6 +354,9 @@ _Noreturn void abort_handler_s(const char * __restrict, void * __restrict,
     errno_t);
 /* K3.6.1.3 */
 void ignore_handler_s(const char * __restrict, void * __restrict, errno_t);
+/* K.3.6.3.2 */
+errno_t	 qsort_s(void *, rsize_t, rsize_t,
+    int (*)(const void *, const void *, void *), void *);
 #endif /* __EXT1_VISIBLE */
 
 __END_DECLS

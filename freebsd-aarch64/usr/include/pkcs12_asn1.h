@@ -300,7 +300,7 @@ ASN1EXP void   ASN1CALL free_PKCS12_CertBag  (PKCS12_CertBag *);
 /*
 PKCS12-PBEParams ::= SEQUENCE {
   salt            OCTET STRING,
-  iterations      INTEGER (0..-1) OPTIONAL,
+  iterations      INTEGER (0..4294967295) OPTIONAL,
 }
 */
 

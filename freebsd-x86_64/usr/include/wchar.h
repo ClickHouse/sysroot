@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: (BSD-2-Clause)
+ *
  * Copyright (c)1999 Citrus Project,
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/include/wchar.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 /*-
@@ -170,6 +170,9 @@ wchar_t	*wmemchr(const wchar_t *, wchar_t, size_t) __pure;
 int	wmemcmp(const wchar_t *, const wchar_t *, size_t) __pure;
 wchar_t	*wmemcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
 wchar_t	*wmemmove(wchar_t *, const wchar_t *, size_t);
+#if __BSD_VISIBLE
+wchar_t	*wmempcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
+#endif
 wchar_t	*wmemset(wchar_t *, wchar_t, size_t);
 int	wprintf(const wchar_t * __restrict, ...);
 int	wscanf(const wchar_t * __restrict, ...);

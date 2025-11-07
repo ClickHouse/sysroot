@@ -1,5 +1,6 @@
-/* $FreeBSD: releng/11.3/lib/libusb/libusb.h 331722 2018-03-29 02:50:57Z eadler $ */
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2009 Sylvestre Gallon. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +53,7 @@ enum libusb_class_code {
 	LIBUSB_CLASS_AUDIO = 1,
 	LIBUSB_CLASS_COMM = 2,
 	LIBUSB_CLASS_HID = 3,
+	LIBUSB_CLASS_PHYSICAL = 5,
 	LIBUSB_CLASS_PTP = 6,
 	LIBUSB_CLASS_IMAGE = 6,
 	LIBUSB_CLASS_PRINTER = 7,
@@ -176,6 +178,21 @@ enum libusb_bos_type {
 	LIBUSB_BT_CONTAINER_ID = 4,
 };
 
+enum libusb_capability {
+	/* libusb supports libusb_has_capability(). */
+	LIBUSB_CAP_HAS_CAPABILITY = 0,
+	/* Hotplug support is available. */
+	LIBUSB_CAP_HAS_HOTPLUG,
+	/* Can access HID devices without requiring user intervention. */
+	LIBUSB_CAP_HAS_HID_ACCESS,
+
+	/*
+	 * Supports detaching of the default USB driver with
+	 * libusb_detach_kernel_driver().
+	 */
+	LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER,
+};
+
 enum libusb_error {
 	LIBUSB_SUCCESS = 0,
 	LIBUSB_ERROR_IO = -1,
@@ -248,6 +265,14 @@ typedef enum {
 	LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT = 2,
 } libusb_hotplug_event;
 
+enum libusb_option {
+	LIBUSB_OPTION_LOG_LEVEL = 0,
+	LIBUSB_OPTION_USE_USBDK = 1,
+	LIBUSB_OPTION_NO_DEVICE_DISCOVERY = 2,
+	LIBUSB_OPTION_WEAK_AUTHORITY = 2,
+	LIBUSB_OPTION_MAX = 3,
+};
+
 /* libusb structures */
 
 struct libusb_context;
@@ -268,6 +293,13 @@ struct libusb_version {
 	const uint16_t nano;
 	const char *rc;
 	const char *describe;
+};
+
+struct libusb_init_option {
+	enum libusb_option option;
+	union {
+		int64_t ival;
+	} value;
 };
 
 typedef struct libusb_context libusb_context;
@@ -447,7 +479,9 @@ const struct libusb_version *libusb_get_version(void);
 const char *libusb_strerror(int code);
 const char *libusb_error_name(int code);
 int	libusb_init(libusb_context ** context);
+int	libusb_init_context(libusb_context **, const struct libusb_init_option [], int num_options);
 void	libusb_exit(struct libusb_context *ctx);
+int	libusb_has_capability(uint32_t capability);
 
 /* Device handling and enumeration */
 
@@ -531,6 +565,7 @@ void	libusb_lock_events(libusb_context * ctx);
 void	libusb_unlock_events(libusb_context * ctx);
 int	libusb_event_handling_ok(libusb_context * ctx);
 int	libusb_event_handler_active(libusb_context * ctx);
+void	libusb_interrupt_event_handler(libusb_context *ctx);
 void	libusb_lock_event_waiters(libusb_context * ctx);
 void	libusb_unlock_event_waiters(libusb_context * ctx);
 int	libusb_wait_for_event(libusb_context * ctx, struct timeval *tv);

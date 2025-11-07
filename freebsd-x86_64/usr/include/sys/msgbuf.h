@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1981, 1984, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)msgbuf.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/11.3/sys/sys/msgbuf.h 338109 2018-08-20 17:27:30Z kevans $
  */
 
 #ifndef _SYS_MSGBUF_H_
@@ -48,6 +49,7 @@ struct msgbuf {
 	int	   msg_lastpri;		/* saved priority value */
 	u_int      msg_flags;
 #define MSGBUF_NEEDNL	0x01	/* set when newline needed */
+#define MSGBUF_WRAP	0x02	/* buffer has wrapped around */
 	struct mtx msg_lock;		/* mutex to protect the buffer */
 };
 
@@ -55,8 +57,10 @@ struct msgbuf {
 #define	MSGBUF_SEQNORM(mbp, seq)	(((seq) + (mbp)->msg_seqmod) % \
     (mbp)->msg_seqmod)
 #define	MSGBUF_SEQ_TO_POS(mbp, seq)	((seq) % (mbp)->msg_size)
-/* Subtract sequence numbers.  Note that only positive values result. */
-#define	MSGBUF_SEQSUB(mbp, seq1, seq2)	(MSGBUF_SEQNORM((mbp), (seq1) - (seq2)))
+/* Add/subtract normalized sequence numbers.  Normalized values result. */
+#define	MSGBUF_SEQADD(mbp, seq1, seq2)	(((seq1) + (seq2)) % (mbp)->msg_seqmod)
+#define	MSGBUF_SEQSUB(mbp, seq1, seq2)	((seq1) >= (seq2) ? (seq1) - (seq2) : \
+    (seq1) + (mbp)->msg_seqmod - (seq2))
 
 #ifdef _KERNEL
 extern int	msgbufsize;
@@ -76,6 +80,7 @@ void	msgbuf_init(struct msgbuf *mbp, void *ptr, int size);
 int	msgbuf_peekbytes(struct msgbuf *mbp, char *buf, int buflen,
 	    u_int *seqp);
 void	msgbuf_reinit(struct msgbuf *mbp, void *ptr, int size);
+void	msgbuf_duplicate(struct msgbuf *src, struct msgbuf *dst, char *msgptr);
 
 #ifndef MSGBUF_SIZE
 #define	MSGBUF_SIZE	(32768 * 3)

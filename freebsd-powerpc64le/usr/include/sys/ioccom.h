@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ioccom.h	8.3 (Berkeley) 1/9/95
- * $FreeBSD$
  */
 
 #ifndef	_SYS_IOCCOM_H_
@@ -79,7 +78,10 @@
 #define	IOCPARM_IVAL(x)	((int)(intptr_t)(void *)*(caddr_t *)(void *)(x))
 #endif
 
-#else
+#define	_IOC_INVALID	(_IOC_VOID|_IOC_INOUT)	/* Never valid cmd value,
+						   use as filler */
+
+#elif !defined(_STANDALONE)
 
 #include <sys/cdefs.h>
 

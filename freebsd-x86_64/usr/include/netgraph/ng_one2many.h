@@ -36,8 +36,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/11.3/sys/netgraph/ng_one2many.h 219127 2011-03-01 13:10:56Z ae $
  */
 
 #ifndef _NETGRAPH_NG_ONE2MANY_H_
@@ -111,4 +109,3 @@ enum {
 };
 
 #endif /* _NETGRAPH_NG_ONE2MANY_H_ */
-

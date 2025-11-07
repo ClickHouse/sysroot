@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/fs/nfs/nfsrvcache.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NFS_NFSRVCACHE_H_
@@ -53,7 +51,7 @@ struct nfsrvcache {
 	u_int32_t	rc_xid;			/* rpc id number */
 	time_t		rc_timestamp;		/* Time done */
 	union {
-		mbuf_t repmb;			/* Reply mbuf list OR */
+		struct mbuf *repmb;		/* Reply mbuf list OR */
 		int repstat;			/* Reply status */
 	} rc_un;
 	union {

@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/ah.h 326023 2017-11-20 19:43:44Z pfg $	*/
 /*	$KAME: ah.h,v 1.13 2000/10/18 21:28:00 itojun Exp $	*/
 
 /*-

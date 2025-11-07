@@ -1,7 +1,8 @@
-/* $FreeBSD: releng/11.3/sys/fs/msdosfs/fat.h 139776 2005-01-06 18:10:42Z imp $ */
 /*	$NetBSD: fat.h,v 1.12 1997/11/17 15:36:36 ws Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (C) 1994, 1997 Wolfgang Solfrank.
  * Copyright (C) 1994, 1997 TooLs GmbH.
  * All rights reserved.
@@ -48,6 +49,8 @@
  * October 1992
  */
 
+#ifndef _FS_MSDOSFS_FAT_H_
+#define	_FS_MSDOSFS_FAT_H_
 /*
  * Some useful cluster numbers.
  */
@@ -66,10 +69,10 @@
 
 /*
  * MSDOSFS:
- * Return true if filesystem uses 12 bit fats. Microsoft Programmer's
+ * Return true if filesystem uses 12 bit FATs. Microsoft Programmer's
  * Reference says if the maximum cluster number in a filesystem is greater
- * than 4078 ((CLUST_RSRVS - CLUST_FIRST) & FAT12_MASK) then we've got a
- * 16 bit fat filesystem. While mounting, the result of this test is stored
+ * than 4084 ((CLUST_RSRVD - CLUST_FIRST) & FAT12_MASK) then we've got a
+ * 16 bit FAT filesystem. While mounting, the result of this test is stored
  * in pm_fatentrysize.
  */
 #define	FAT12(pmp)	(pmp->pm_fatmask == FAT12_MASK)
@@ -78,13 +81,13 @@
 
 #define	MSDOSFSEOF(pmp, cn)	((((cn) | ~(pmp)->pm_fatmask) & CLUST_EOFS) == CLUST_EOFS)
 
-#ifdef _KERNEL
+#if defined (_KERNEL) || defined(MAKEFS)
 /*
  * These are the values for the function argument to the function
  * fatentry().
  */
-#define	FAT_GET		0x0001	/* get a fat entry */
-#define	FAT_SET		0x0002	/* set a fat entry */
+#define	FAT_GET		0x0001	/* get a FAT entry */
+#define	FAT_SET		0x0002	/* set a FAT entry */
 #define	FAT_GET_AND_SET	(FAT_GET | FAT_SET)
 
 /*
@@ -93,12 +96,19 @@
 #define	DE_CLEAR	1	/* Zero out the blocks allocated */
 
 int pcbmap(struct denode *dep, u_long findcn, daddr_t *bnp, u_long *cnp, int* sp);
-int clusterfree(struct msdosfsmount *pmp, u_long cn, u_long *oldcnp);
+void clusterfree(struct msdosfsmount *pmp, u_long cn);
 int clusteralloc(struct msdosfsmount *pmp, u_long start, u_long count, u_long fillwith, u_long *retcluster, u_long *got);
 int fatentry(int function, struct msdosfsmount *pmp, u_long cluster, u_long *oldcontents, u_long newcontents);
 int freeclusterchain(struct msdosfsmount *pmp, u_long startchain);
 int extendfile(struct denode *dep, u_long count, struct buf **bpp, u_long *ncp, int flags);
 void fc_purge(struct denode *dep, u_int frcn);
-int markvoldirty(struct msdosfsmount *pmp, int dirty);
+int markvoldirty_upgrade(struct msdosfsmount *pmp, bool dirty, bool rw_upgrade);
 
-#endif	/* _KERNEL */
+static inline int
+markvoldirty(struct msdosfsmount *pmp, bool dirty)
+{
+	return (markvoldirty_upgrade(pmp, dirty, false));
+}
+
+#endif	/* _KERNEL || MAKEFS */
+#endif	/* !_FS_MSDOSFS_FAT_H_ */

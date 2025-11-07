@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -15,7 +17,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)exec.h	8.3 (Berkeley) 1/21/94
- * $FreeBSD: releng/11.3/sys/sys/exec.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _SYS_EXEC_H_
@@ -58,6 +59,16 @@ struct ps_strings {
 	unsigned int ps_nenvstr; /* the number of environment strings */
 };
 
+/* Coredump output parameters. */
+struct coredump_params {
+	off_t		offset;
+	struct ucred	*active_cred;
+	struct ucred	*file_cred;
+	struct thread	*td;
+	struct vnode	*vp;
+	struct compressor *comp;
+};
+
 struct image_params;
 
 struct execsw {
@@ -75,13 +86,23 @@ struct execsw {
  * Prefer the kern.ps_strings or kern.proc.ps_strings sysctls to this constant.
  */
 #define	PS_STRINGS	(USRSTACK - sizeof(struct ps_strings))
-#define	SPARE_USRSPACE	4096
+#define	PROC_PS_STRINGS(p)	\
+	((p)->p_vmspace->vm_stacktop - (p)->p_sysent->sv_psstringssz)
 
 int exec_map_first_page(struct image_params *);        
 void exec_unmap_first_page(struct image_params *);       
 
 int exec_register(const struct execsw *);
 int exec_unregister(const struct execsw *);
+
+enum uio_seg;
+
+#define   CORE_BUF_SIZE   (16 * 1024)
+
+int core_write(struct coredump_params *, const void *, size_t, off_t,
+    enum uio_seg, size_t *);
+int core_output(char *, size_t, off_t, struct coredump_params *, void *);
+int sbuf_drain_core_output(void *, const char *, int);
 
 extern int coredump_pack_fileinfo;
 extern int coredump_pack_vmmapinfo;

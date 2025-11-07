@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2008 Yahoo!, Inc.
  * All rights reserved.
  * Written by: John Baldwin <jhb@FreeBSD.org>
@@ -28,8 +30,6 @@
  * SUCH DAMAGE.
  *
  * LSI MPT-Fusion Host Adapter FreeBSD userland interface
- *
- * $FreeBSD: releng/11.3/sys/sys/mpt_ioctl.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _MPT_IOCTL_H_

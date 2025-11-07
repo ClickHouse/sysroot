@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2009 Rick Macklem, University of Guelph
  * All rights reserved.
  *
@@ -22,13 +24,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/nfs/nfsrvstate.h 298788 2016-04-29 16:07:25Z pfg $
  */
 
 #ifndef _NFS_NFSRVSTATE_H_
 #define	_NFS_NFSRVSTATE_H_
 
+#if defined(_KERNEL) || defined(KERNEL)
 /*
  * Definitions for NFS V4 server state handling.
  */
@@ -44,6 +45,10 @@ LIST_HEAD(nfslockhead, nfslock);
 LIST_HEAD(nfslockhashhead, nfslockfile);
 LIST_HEAD(nfssessionhead, nfsdsession);
 LIST_HEAD(nfssessionhashhead, nfsdsession);
+TAILQ_HEAD(nfslayouthead, nfslayout);
+SLIST_HEAD(nfsdsdirhead, nfsdsdir);
+TAILQ_HEAD(nfsdevicehead, nfsdevice);
+LIST_HEAD(nfsdontlisthead, nfsdontlist);
 
 /*
  * List head for nfsusrgrp.
@@ -51,18 +56,18 @@ LIST_HEAD(nfssessionhashhead, nfsdsession);
 TAILQ_HEAD(nfsuserhashhead, nfsusrgrp);
 
 #define	NFSCLIENTHASH(id)						\
-	(&nfsclienthash[(id).lval[1] % nfsrv_clienthashsize])
+	(&NFSD_VNET(nfsclienthash)[(id).lval[1] % nfsrv_clienthashsize])
 #define	NFSSTATEHASH(clp, id)						\
 	(&((clp)->lc_stateid[(id).other[2] % nfsrv_statehashsize]))
 #define	NFSUSERHASH(id)							\
-	(&nfsuserhash[(id) % nfsrv_lughashsize])
+	(&NFSD_VNET(nfsuserhash)[(id) % nfsrv_lughashsize])
 #define	NFSUSERNAMEHASH(p, l)						\
-	(&nfsusernamehash[((l)>=4?(*(p)+*((p)+1)+*((p)+2)+*((p)+3)):*(p)) \
+	(&NFSD_VNET(nfsusernamehash)[((l)>=4?(*(p)+*((p)+1)+*((p)+2)+*((p)+3)):*(p)) \
 		% nfsrv_lughashsize])
 #define	NFSGROUPHASH(id)						\
-	(&nfsgrouphash[(id) % nfsrv_lughashsize])
+	(&NFSD_VNET(nfsgrouphash)[(id) % nfsrv_lughashsize])
 #define	NFSGROUPNAMEHASH(p, l)						\
-	(&nfsgroupnamehash[((l)>=4?(*(p)+*((p)+1)+*((p)+2)+*((p)+3)):*(p)) \
+	(&NFSD_VNET(nfsgroupnamehash)[((l)>=4?(*(p)+*((p)+1)+*((p)+2)+*((p)+3)):*(p)) \
 		% nfsrv_lughashsize])
 
 struct nfssessionhash {
@@ -70,7 +75,15 @@ struct nfssessionhash {
 	struct nfssessionhashhead	list;
 };
 #define	NFSSESSIONHASH(f) 						\
-	(&nfssessionhash[nfsrv_hashsessionid(f) % nfsrv_sessionhashsize])
+	(&NFSD_VNET(nfssessionhash)[nfsrv_hashsessionid(f) %		\
+	 nfsrv_sessionhashsize])
+
+struct nfslayouthash {
+	struct mtx		mtx;
+	struct nfslayouthead	list;
+};
+#define	NFSLAYOUTHASH(f) 						\
+	(&nfslayouthash[nfsrv_hashfh(f) % nfsrv_layouthashsize])
 
 /*
  * Client server structure for V4. It is doubly linked into two lists.
@@ -85,6 +98,7 @@ struct nfsclient {
 	struct nfsstatehead lc_deleg;		/* Delegations */
 	struct nfsstatehead lc_olddeleg;	/* and old delegations */
 	struct nfssessionhead lc_session;	/* List of NFSv4.1 sessions */
+	uint64_t	lc_prevsess;		/* CreateSession cache */
 	time_t		lc_expiry;		/* Expiry time (sec) */
 	time_t		lc_delegtime;		/* Old deleg expiry (sec) */
 	nfsquad_t	lc_clientid;		/* 64 bit clientid */
@@ -108,6 +122,33 @@ struct nfsclient {
 #define	CLOPS_CONFIRM		0x0001
 #define	CLOPS_RENEW		0x0002
 #define	CLOPS_RENEWOP		0x0004
+
+/*
+ * Structure for NFSv4.1 Layouts.
+ * Malloc'd to correct size for the lay_xdr.
+ */
+struct nfslayout {
+	TAILQ_ENTRY(nfslayout)	lay_list;
+	nfsv4stateid_t		lay_stateid;
+	nfsquad_t		lay_clientid;
+	fhandle_t		lay_fh;
+	char			lay_deviceid[NFSX_V4DEVICEID];
+	fsid_t			lay_fsid;
+	uint32_t		lay_layoutlen;
+	uint16_t		lay_mirrorcnt;
+	uint16_t		lay_trycnt;
+	uint16_t		lay_type;
+	uint16_t		lay_flags;
+	uint32_t		lay_xdr[0];
+};
+
+/* Flags for lay_flags. */
+#define	NFSLAY_READ	0x0001
+#define	NFSLAY_RW	0x0002
+#define	NFSLAY_RECALL	0x0004
+#define	NFSLAY_RETURNED	0x0008
+#define	NFSLAY_CALLB	0x0010
+#define	NFSLAY_NOSPC	0x0020
 
 /*
  * Structure for an NFSv4.1 session.
@@ -181,6 +222,7 @@ struct nfsstate {
 			time_t		expiry;
 			time_t		limit;
 			u_int64_t	compref;
+			time_t		last;
 		} deleg;
 	} ls_un;
 	struct nfslockfile	*ls_lfp;	/* Back pointer */
@@ -199,6 +241,7 @@ struct nfsstate {
 #define	ls_delegtime		ls_un.deleg.expiry
 #define	ls_delegtimelimit	ls_un.deleg.limit
 #define	ls_compref		ls_un.deleg.compref
+#define	ls_lastrecall		ls_un.deleg.last
 
 /*
  * Nfs lock structure.
@@ -288,9 +331,85 @@ struct nfsf_rec {
 	u_int32_t	numboots;		/* Number of boottimes */
 };
 
-#if defined(_KERNEL) || defined(KERNEL)
-void nfsrv_cleanclient(struct nfsclient *, NFSPROC_T *);
+void nfsrv_cleanclient(struct nfsclient *, NFSPROC_T *, bool, SVCXPRT **);
 void nfsrv_freedeleglist(struct nfsstatehead *);
-#endif
+
+/*
+ * This structure is used to create the list of device info entries for
+ * a GetDeviceInfo operation and stores the DS server info.
+ * The nfsdev_addrandhost field has the fully qualified host domain name
+ * followed by the network address in XDR.
+ * It is allocated with nfsrv_dsdirsize nfsdev_dsdir[] entries.
+ */
+struct nfsdevice {
+	TAILQ_ENTRY(nfsdevice)	nfsdev_list;
+	vnode_t			nfsdev_dvp;
+	struct nfsmount		*nfsdev_nmp;
+	char			nfsdev_deviceid[NFSX_V4DEVICEID];
+	uint16_t		nfsdev_hostnamelen;
+	uint16_t		nfsdev_fileaddrlen;
+	uint16_t		nfsdev_flexaddrlen;
+	uint16_t		nfsdev_mdsisset;
+	char			*nfsdev_fileaddr;
+	char			*nfsdev_flexaddr;
+	char			*nfsdev_host;
+	fsid_t			nfsdev_mdsfsid;
+	uint32_t		nfsdev_nextdir;
+	bool			nfsdev_nospc;
+	vnode_t			nfsdev_dsdir[0];
+};
+
+/*
+ * This structure holds the va_size, va_filerev, va_atime, va_mtime and
+ * va_bytes for the DS file and is stored in the metadata file's extended
+ * attribute pnfsd.dsattr.
+ * opnfsdsattr was missing the va_bytes field and, as such, it was updated.
+ */
+struct opnfsdsattr {
+	uint64_t	dsa_filerev;
+	uint64_t	dsa_size;
+	struct timespec	dsa_atime;
+	struct timespec	dsa_mtime;
+};
+
+struct pnfsdsattr {
+	uint64_t	dsa_filerev;
+	uint64_t	dsa_size;
+	struct timespec	dsa_atime;
+	struct timespec	dsa_mtime;
+	uint64_t	dsa_bytes;
+};
+
+/*
+ * This structure is a list element for a list the pNFS server uses to
+ * mark that the recovery of a mirror file is in progress.
+ */
+struct nfsdontlist {
+	LIST_ENTRY(nfsdontlist)	nfsmr_list;
+	uint32_t		nfsmr_flags;
+	fhandle_t		nfsmr_fh;
+};
+
+/* nfsmr_flags bits. */
+#define	NFSMR_DONTLAYOUT	0x00000001
+
+#endif	/* defined(_KERNEL) || defined(KERNEL) */
+
+/*
+ * This structure holds the information about the DS file and is stored
+ * in the metadata file's extended attribute called pnfsd.dsfile.
+ */
+#define	PNFS_FILENAME_LEN	(2 * sizeof(fhandle_t))
+struct pnfsdsfile {
+	fhandle_t	dsf_fh;
+	uint32_t	dsf_dir;
+	union {
+		struct sockaddr_in	sin;
+		struct sockaddr_in6	sin6;
+	} dsf_nam;
+	char		dsf_filename[PNFS_FILENAME_LEN + 1];
+};
+#define	dsf_sin		dsf_nam.sin
+#define	dsf_sin6	dsf_nam.sin6
 
 #endif	/* _NFS_NFSRVSTATE_H_ */

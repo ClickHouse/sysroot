@@ -283,7 +283,7 @@ colour:									\
 	if (color == C_BLACK)						\
 		deleteblack(head, parent, node);			\
 	head->count--;							\
-	return old;							\
+	return (old);							\
 }									\
 									\
 void									\

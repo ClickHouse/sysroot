@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1996 Berkeley Software Design, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,7 +28,6 @@
  * SUCH DAMAGE.
  *
  *	from BSDI $Id: ktr.h,v 1.10.2.7 2000/03/16 21:44:42 cp Exp $
- * $FreeBSD: releng/11.3/sys/sys/ktr_class.h 332078 2018-04-05 15:52:20Z markj $
  */
 
 #ifndef _SYS_KTR_CLASS_H_
@@ -56,7 +57,7 @@
 #define	KTR_SYSC	0x00002000		/* System call */
 #define	KTR_INIT	0x00004000		/* System initialization */
 #define	KTR_SPARE3	0x00008000		/* cxgb, drm2, ioat, ntb */
-#define	KTR_SPARE4	0x00010000		/* geom_sched */
+#define	KTR_SPARE4	0x00010000
 #define	KTR_EVH		0x00020000		/* Eventhandler */
 #define	KTR_VFS		0x00040000		/* VFS events */
 #define	KTR_VOP		0x00080000		/* Auto-generated vop events */

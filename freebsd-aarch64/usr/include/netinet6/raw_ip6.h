@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	$KAME: raw_ip6.h,v 1.2 2001/05/27 13:28:35 itojun Exp $
- * $FreeBSD: releng/12.2/sys/netinet6/raw_ip6.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NETINET6_RAW_IP6_H_

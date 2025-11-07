@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2004 Poul-Henning Kamp
  * All rights reserved.
@@ -28,13 +28,10 @@
  * This file contains definitions which pertain to serial ports as such,
  * (both async and sync), but which do not necessarily have anything to
  * do with tty processing.
- *
- * $FreeBSD: releng/12.2/sys/sys/serial.h 326256 2017-11-27 15:01:59Z pfg $
  */
 
 #ifndef _SYS_SERIAL_H_
 #define	_SYS_SERIAL_H_
-
 
 /*
  * Indentification of modem control signals.  These definitions match

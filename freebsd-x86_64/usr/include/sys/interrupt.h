@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/sys/interrupt.h 340016 2018-11-01 18:34:26Z jhb $
  */
 
 #ifndef _SYS_INTERRUPT_H_
@@ -31,6 +31,7 @@
 
 #include <sys/_lock.h>
 #include <sys/_mutex.h>
+#include <sys/ck.h>
 
 struct intr_event;
 struct intr_thread;
@@ -50,15 +51,17 @@ struct intr_handler {
 	char		 ih_name[MAXCOMLEN + 1]; /* Name of handler. */
 	struct intr_event *ih_event;	/* Event we are connected to. */
 	int		 ih_need;	/* Needs service. */
-	TAILQ_ENTRY(intr_handler) ih_next; /* Next handler for this event. */
+	CK_SLIST_ENTRY(intr_handler) ih_next; /* Next handler for this event. */
 	u_char		 ih_pri;	/* Priority of this handler. */
-	struct intr_thread *ih_thread;	/* Ithread for filtered handler. */
 };
 
 /* Interrupt handle flags kept in ih_flags */
+#define	IH_NET		0x00000001	/* Network. */
 #define	IH_EXCLUSIVE	0x00000002	/* Exclusive interrupt. */
 #define	IH_ENTROPY	0x00000004	/* Device is a good entropy source. */
 #define	IH_DEAD		0x00000008	/* Handler should be removed. */
+#define	IH_SUSP		0x00000010	/* Device is powered down. */
+#define	IH_CHANGED	0x40000000	/* Handler state is changed. */
 #define	IH_MPSAFE	0x80000000	/* Handler does not need Giant. */
 
 /*
@@ -103,7 +106,7 @@ struct intr_handler {
  */
 struct intr_event {
 	TAILQ_ENTRY(intr_event) ie_list;
-	TAILQ_HEAD(, intr_handler) ie_handlers; /* Interrupt handlers. */
+	CK_SLIST_HEAD(, intr_handler) ie_handlers; /* Interrupt handlers. */
 	char		ie_name[MAXCOMLEN + 1]; /* Individual event name. */
 	char		ie_fullname[MAXCOMLEN + 1];
 	struct mtx	ie_lock;
@@ -114,19 +117,22 @@ struct intr_event {
 	void		(*ie_post_filter)(void *);
 	int		(*ie_assign_cpu)(void *, int);
 	int		ie_flags;
+	int		ie_hflags;	/* Cumulative flags of all handlers. */
 	int		ie_count;	/* Loop counter. */
 	int		ie_warncnt;	/* Rate-check interrupt storm warns. */
 	struct timeval	ie_warntm;
 	int		ie_irq;		/* Physical irq number if !SOFT. */
 	int		ie_cpu;		/* CPU this event is bound to. */
+	volatile int	ie_phase;	/* Switched to establish a barrier. */
+	volatile int	ie_active[2];	/* Filters in ISR context. */
 };
 
 /* Interrupt event flags kept in ie_flags. */
 #define	IE_SOFT		0x000001	/* Software interrupt. */
-#define	IE_ENTROPY	0x000002	/* Interrupt is an entropy source. */
 #define	IE_ADDING_THREAD 0x000004	/* Currently building an ithread. */
 
-/* Flags to pass to sched_swi. */
+/* Flags to pass to swi_sched. */
+#define	SWI_FROMNMI	0x1
 #define	SWI_DELAY	0x2
 
 /*
@@ -136,7 +142,7 @@ struct intr_event {
 #define	SWI_TTY		0
 #define	SWI_NET		1
 #define	SWI_CAMBIO	2
-#define	SWI_VM		3
+#define	SWI_BUSDMA	3
 #define	SWI_CLOCK	4
 #define	SWI_TQ_FAST	5
 #define	SWI_TQ		6
@@ -144,18 +150,11 @@ struct intr_event {
 
 struct proc;
 
-extern struct	intr_event *tty_intr_event;
 extern struct	intr_event *clk_intr_event;
-extern void	*vm_ih;
 
 /* Counts and names for statistics (defined in MD code). */
-#if defined(__amd64__) || defined(__i386__)
-extern u_long 	*intrcnt;	/* counts for for each device and stray */
+extern u_long 	*intrcnt;	/* counts for each device and stray */
 extern char 	*intrnames;	/* string table containing device names */
-#else
-extern u_long 	intrcnt[];	/* counts for for each device and stray */
-extern char 	intrnames[];	/* string table containing device names */
-#endif
 extern size_t	sintrcnt;	/* size of intrcnt table */
 extern size_t	sintrnames;	/* size of intrnames table */
 
@@ -169,6 +168,9 @@ int	intr_event_add_handler(struct intr_event *ie, const char *name,
 int	intr_event_bind(struct intr_event *ie, int cpu);
 int	intr_event_bind_irqonly(struct intr_event *ie, int cpu);
 int	intr_event_bind_ithread(struct intr_event *ie, int cpu);
+struct _cpuset;
+int	intr_event_bind_ithread_cpuset(struct intr_event *ie,
+	    struct _cpuset *mask);
 int	intr_event_create(struct intr_event **event, void *source,
 	    int flags, int irq, void (*pre_ithread)(void *),
 	    void (*post_ithread)(void *), void (*post_filter)(void *),
@@ -177,13 +179,14 @@ int	intr_event_create(struct intr_event **event, void *source,
 int	intr_event_describe_handler(struct intr_event *ie, void *cookie,
 	    const char *descr);
 int	intr_event_destroy(struct intr_event *ie);
-void	intr_event_execute_handlers(struct proc *p, struct intr_event *ie);
 int	intr_event_handle(struct intr_event *ie, struct trapframe *frame);
 int	intr_event_remove_handler(void *cookie);
+int	intr_event_suspend_handler(void *cookie);
+int	intr_event_resume_handler(void *cookie);
 int	intr_getaffinity(int irq, int mode, void *mask);
 void	*intr_handler_source(void *cookie);
 int	intr_setaffinity(int irq, int mode, void *mask);
-void	_intr_drain(int irq);  /* Linux compat only. */
+void	_intr_drain(int irq);  /* LinuxKPI only. */
 int	swi_add(struct intr_event **eventp, const char *name,
 	    driver_intr_t handler, void *arg, int pri, enum intr_type flags,
 	    void **cookiep);

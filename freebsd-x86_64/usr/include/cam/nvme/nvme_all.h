@@ -1,6 +1,7 @@
 /*-
- * Copyright (c) 2015 Netflix, Inc
- * All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (c) 2015 Netflix, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -22,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/nvme/nvme_all.h 335166 2018-06-14 18:18:55Z mav $
  */
 
 #ifndef CAM_NVME_NVME_ALL_H
@@ -39,9 +38,12 @@ void	nvme_ns_cmd(struct ccb_nvmeio *nvmeio, uint8_t cmd, uint32_t nsid,
 
 int	nvme_identify_match(caddr_t identbuffer, caddr_t table_entry);
 
-void	nvme_print_ident(const struct nvme_controller_data *, const struct nvme_namespace_data *);
-const char *nvme_op_string(const struct nvme_command *);
+struct sbuf;
+void	nvme_print_ident(const struct nvme_controller_data *, const struct nvme_namespace_data *, struct sbuf *);
+const char *nvme_op_string(const struct nvme_command *, int admin);
 const char *nvme_cmd_string(const struct nvme_command *, char *, size_t);
+void nvme_cmd_sbuf(const struct nvme_command *, struct sbuf *sb);
+int nvme_command_sbuf(struct ccb_nvmeio *nvmeio, struct sbuf *sb);
 const void *nvme_get_identify_cntrl(struct cam_periph *);
 const void *nvme_get_identify_ns(struct cam_periph *);
 

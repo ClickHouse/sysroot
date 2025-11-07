@@ -11,8 +11,6 @@
  * use.
  *
  * Aug, 1994	Implemented on FreeBSD 1.1.5.1R (Toshiba AVS001WD)
- *
- * $FreeBSD: releng/11.3/sys/x86/include/apm_bios.h 215140 2010-11-11 19:36:21Z jkim $
  */
 
 #ifndef _X86_APM_BIOS_H_
@@ -75,7 +73,6 @@
 #define APME_CANTENTERSTATE	0x60
 #define APME_NOPMEVENT		0x80
 #define APME_NOAPMPRESENT	0x86
-
 
 /* device code */
 #define PMDV_APMBIOS		0x0000

@@ -1,7 +1,8 @@
-/*	$FreeBSD: releng/11.3/sys/netipsec/esp.h 331722 2018-03-29 02:50:57Z eadler $	*/
 /*	$KAME: esp.h,v 1.16 2000/10/18 21:28:00 itojun Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
@@ -62,6 +63,6 @@ struct esptail {
 	u_int8_t	esp_nxt;	/* Next header */
 	/*variable size, 32bit bound*/	/* Authentication data (new IPsec)*/
 };
-	
+
 #define ESP_ALEN	12	/* 96-bit authenticator */
 #endif /*_NETIPSEC_ESP_H_*/

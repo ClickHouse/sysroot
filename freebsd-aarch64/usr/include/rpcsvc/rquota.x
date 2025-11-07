@@ -8,7 +8,6 @@
 
 #ifndef RPC_HDR
 %#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD: releng/12.2/include/rpcsvc/rquota.x 336017 2018-07-05 22:56:13Z sef $");
 #endif
 
 const RQ_PATHLEN = 1024;

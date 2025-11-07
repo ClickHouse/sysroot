@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1999-2001 Robert N. M. Watson
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/ufs/ufs/extattr.h 326272 2017-11-27 15:23:17Z pfg $
  */
 /*
  * Developed by the TrustedBSD Project.
@@ -67,7 +65,7 @@ struct ufs_extattr_fileheader {
 struct ufs_extattr_header {
 	u_int	ueh_flags;	/* flags for attribute */
 	u_int	ueh_len;	/* local defined length; <= uef_size */
-	u_int32_t	ueh_i_gen;	/* generation number for sanity */
+	uint32_t	ueh_i_gen;	/* generation number for sanity */
 	/* data follows the header */
 };
 
@@ -95,7 +93,7 @@ struct extattr {
  *	content referenced by eap.
  */
 #define	EXTATTR_NEXT(eap) \
-	((struct extattr *)(((u_char *)(eap)) + (eap)->ea_length))
+	((struct extattr *)(__DECONST(char *, (eap)) + (eap)->ea_length))
 #define	EXTATTR_CONTENT(eap) \
 	(void *)(((u_char *)(eap)) + EXTATTR_BASE_LENGTH(eap))
 #define	EXTATTR_CONTENT_SIZE(eap) \
@@ -140,7 +138,7 @@ int	ufs_extattrctl(struct mount *mp, int cmd, struct vnode *filename,
 int	ufs_getextattr(struct vop_getextattr_args *ap);
 int	ufs_deleteextattr(struct vop_deleteextattr_args *ap);
 int	ufs_setextattr(struct vop_setextattr_args *ap);
-void	ufs_extattr_vnode_inactive(struct vnode *vp, struct thread *td);
+void	ufs_extattr_vnode_inactive(struct vnode *vp);
 
 #endif /* !_KERNEL */
 

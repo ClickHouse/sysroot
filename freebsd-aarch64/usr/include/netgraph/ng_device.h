@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2002 Mark Santcroos <marks@ripe.net>
  *
@@ -24,8 +24,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_device.h 326272 2017-11-27 15:23:17Z pfg $
- *
  */
 
 #ifndef _NETGRAPH_NG_DEVICE_H_
@@ -39,6 +37,7 @@
 /* Netgraph control messages */
 enum {
 	NGM_DEVICE_GET_DEVNAME,
+	NGM_DEVICE_ETHERALIGN,
 };
 
 #if 0

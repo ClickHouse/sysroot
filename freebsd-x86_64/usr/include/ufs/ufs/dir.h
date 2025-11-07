@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -32,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)dir.h	8.2 (Berkeley) 1/21/94
- * $FreeBSD: releng/11.3/sys/ufs/ufs/dir.h 347475 2019-05-10 23:46:42Z mckusick $
  */
 
 #ifndef _UFS_UFS_DIR_H_
@@ -57,7 +58,7 @@
  * the length of the entry, and the length of the name contained in
  * the entry.  These are followed by the name padded to a 4 byte boundary
  * with null bytes.  All names are guaranteed null terminated.
- * The maximum length of a name in a directory is MAXNAMLEN.
+ * The maximum length of a name in a directory is UFS_MAXNAMLEN.
  *
  * The macro DIRSIZ(fmt, dp) gives the amount of space required to represent
  * a directory entry.  Free space in a directory is represented by
@@ -72,14 +73,15 @@
  * dp->d_ino set to 0.
  */
 #define	DIRBLKSIZ	DEV_BSIZE
-#define	MAXNAMLEN	255
+#define	UFS_MAXNAMLEN	255
 
 struct	direct {
-	u_int32_t d_ino;		/* inode number of entry */
-	u_int16_t d_reclen;		/* length of this record */
-	u_int8_t  d_type; 		/* file type, see below */
-	u_int8_t  d_namlen;		/* length of string in d_name */
-	char	  d_name[MAXNAMLEN + 1];/* name with length <= MAXNAMLEN */
+	uint32_t d_ino;		/* inode number of entry */
+	uint16_t d_reclen;		/* length of this record */
+	uint8_t  d_type; 		/* file type, see below */
+	uint8_t  d_namlen;		/* length of string in d_name */
+	char	  d_name[UFS_MAXNAMLEN + 1];
+					/* name with length <= UFS_MAXNAMLEN */
 };
 
 /*
@@ -122,18 +124,18 @@ struct	direct {
 
 /*
  * Template for manipulating directories.  Should use struct direct's,
- * but the name field is MAXNAMLEN - 1, and this just won't do.
+ * but the name field is UFS_MAXNAMLEN - 1, and this just won't do.
  */
 struct dirtemplate {
-	u_int32_t	dot_ino;
+	uint32_t	dot_ino;
 	int16_t		dot_reclen;
-	u_int8_t	dot_type;
-	u_int8_t	dot_namlen;
+	uint8_t	dot_type;
+	uint8_t	dot_namlen;
 	char		dot_name[4];	/* must be multiple of 4 */
-	u_int32_t	dotdot_ino;
+	uint32_t	dotdot_ino;
 	int16_t		dotdot_reclen;
-	u_int8_t	dotdot_type;
-	u_int8_t	dotdot_namlen;
+	uint8_t	dotdot_type;
+	uint8_t	dotdot_namlen;
 	char		dotdot_name[4];	/* ditto */
 };
 
@@ -141,13 +143,13 @@ struct dirtemplate {
  * This is the old format of directories, sanz type element.
  */
 struct odirtemplate {
-	u_int32_t	dot_ino;
+	uint32_t	dot_ino;
 	int16_t		dot_reclen;
-	u_int16_t	dot_namlen;
+	uint16_t	dot_namlen;
 	char		dot_name[4];	/* must be multiple of 4 */
-	u_int32_t	dotdot_ino;
+	uint32_t	dotdot_ino;
 	int16_t		dotdot_reclen;
-	u_int16_t	dotdot_namlen;
+	uint16_t	dotdot_namlen;
 	char		dotdot_name[4];	/* ditto */
 };
 #endif /* !_DIR_H_ */

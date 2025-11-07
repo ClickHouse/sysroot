@@ -1,4 +1,3 @@
-/*	$FreeBSD: releng/12.2/sys/netipsec/key.h 338945 2018-09-26 14:47:51Z ae $	*/
 /*	$KAME: key.h,v 1.21 2001/07/27 03:51:30 itojun Exp $	*/
 
 /*-
@@ -78,7 +77,6 @@ void key_unregister_ifnet(struct secpolicy **, u_int);
 void key_delete_xform(const struct xformsw *);
 
 extern u_long key_random(void);
-extern void key_randomfill(void *, size_t);
 extern void key_freereg(struct socket *);
 extern int key_parse(struct mbuf *, struct socket *);
 extern void key_init(void);

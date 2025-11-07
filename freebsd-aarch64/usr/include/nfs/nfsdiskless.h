@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsdiskless.h	8.2 (Berkeley) 3/30/95
- * $FreeBSD: releng/12.2/sys/nfs/nfsdiskless.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NFSCLIENT_NFSDISKLESS_H_

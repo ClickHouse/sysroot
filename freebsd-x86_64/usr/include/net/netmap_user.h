@@ -1,4 +1,6 @@
-/*
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (C) 2011-2016 Universita` di Pisa
  * All rights reserved.
  *
@@ -26,7 +28,6 @@
  */
 
 /*
- * $FreeBSD: releng/11.3/sys/net/netmap_user.h 342033 2018-12-13 10:13:29Z vmaffione $
  *
  * Functions and macros to manipulate netmap structures and packets
  * in userspace. See netmap(4) for more information.
@@ -53,7 +54,7 @@
  * To compute the next index in a circular ring you can use
  *	i = nm_ring_next(ring, i);
  *
- * To ease porting apps from pcap to netmap we supply a few fuctions
+ * To ease porting apps from pcap to netmap we supply a few functions
  * that can be called to open, close, read and write on netmap in a way
  * similar to libpcap. Note that the read/write function depend on
  * an ioctl()/select()/poll() being issued to refill rings or push
@@ -91,6 +92,8 @@
 #include <sys/socket.h>		/* apple needs sockaddr */
 #include <net/if.h>		/* IFNAMSIZ */
 #include <ctype.h>
+#include <string.h>	/* memset */
+#include <sys/time.h>   /* gettimeofday */
 
 #ifndef likely
 #define likely(x)	__builtin_expect(!!(x), 1)
@@ -109,22 +112,21 @@
 	nifp, (nifp)->ring_ofs[index] )
 
 #define NETMAP_RXRING(nifp, index) _NETMAP_OFFSET(struct netmap_ring *,	\
-	nifp, (nifp)->ring_ofs[index + (nifp)->ni_tx_rings + 1] )
+	nifp, (nifp)->ring_ofs[index + (nifp)->ni_tx_rings + 		\
+		(nifp)->ni_host_tx_rings] )
 
 #define NETMAP_BUF(ring, index)				\
-	((char *)(ring) + (ring)->buf_ofs + ((index)*(ring)->nr_buf_size))
+	((char *)(ring) + (ring)->buf_ofs + ((size_t)(index)*(ring)->nr_buf_size))
 
 #define NETMAP_BUF_IDX(ring, buf)			\
 	( ((char *)(buf) - ((char *)(ring) + (ring)->buf_ofs) ) / \
 		(ring)->nr_buf_size )
-
 
 static inline uint32_t
 nm_ring_next(struct netmap_ring *r, uint32_t i)
 {
 	return ( unlikely(i + 1 == r->num_slots) ? 0 : i + 1);
 }
-
 
 /*
  * Return 1 if we have pending transmissions in the tx ring.
@@ -146,27 +148,6 @@ nm_ring_space(struct netmap_ring *ring)
                 ret += ring->num_slots;
         return ret;
 }
-
-
-#ifdef NETMAP_WITH_LIBS
-/*
- * Support for simple I/O libraries.
- * Include other system headers required for compiling this.
- */
-
-#ifndef HAVE_NETMAP_WITH_LIBS
-#define HAVE_NETMAP_WITH_LIBS
-
-#include <stdio.h>
-#include <sys/time.h>
-#include <sys/mman.h>
-#include <string.h>	/* memset */
-#include <sys/ioctl.h>
-#include <sys/errno.h>	/* EINVAL */
-#include <fcntl.h>	/* O_RDWR */
-#include <unistd.h>	/* close() */
-#include <signal.h>
-#include <stdlib.h>
 
 #ifndef ND /* debug macros */
 /* debug support */
@@ -196,6 +177,53 @@ nm_ring_space(struct netmap_ring *ring)
     } while (0)
 #endif
 
+/*
+ * this is a slightly optimized copy routine which rounds
+ * to multiple of 64 bytes and is often faster than dealing
+ * with other odd sizes. We assume there is enough room
+ * in the source and destination buffers.
+ */
+static inline void
+nm_pkt_copy(const void *_src, void *_dst, int l)
+{
+	const uint64_t *src = (const uint64_t *)_src;
+	uint64_t *dst = (uint64_t *)_dst;
+
+	if (unlikely(l >= 1024 || l % 64)) {
+		memcpy(dst, src, l);
+		return;
+	}
+	for (; likely(l > 0); l-=64) {
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+	}
+}
+
+#ifdef NETMAP_WITH_LIBS
+/*
+ * Support for simple I/O libraries.
+ * Include other system headers required for compiling this.
+ */
+
+#ifndef HAVE_NETMAP_WITH_LIBS
+#define HAVE_NETMAP_WITH_LIBS
+
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>	/* EINVAL */
+#include <fcntl.h>	/* O_RDWR */
+#include <unistd.h>	/* close() */
+#include <signal.h>
+#include <stdlib.h>
+
 struct nm_pkthdr {	/* first part is the same as pcap_pkthdr */
 	struct timeval	ts;
 	uint32_t	caplen;
@@ -223,7 +251,7 @@ struct nm_desc {
 	struct nm_desc *self; /* point to self if netmap. */
 	int fd;
 	void *mem;
-	uint32_t memsize;
+	size_t memsize;
 	int done_mmap;	/* set if mem is the result of mmap */
 	struct netmap_if * const nifp;
 	uint16_t first_tx_ring, last_tx_ring, cur_tx_ring;
@@ -261,39 +289,9 @@ struct nm_desc {
  * when the descriptor is open correctly, d->self == d
  * Eventually we should also use some magic number.
  */
-#define P2NMD(p)		((struct nm_desc *)(p))
+#define P2NMD(p)		((const struct nm_desc *)(p))
 #define IS_NETMAP_DESC(d)	((d) && P2NMD(d)->self == P2NMD(d))
 #define NETMAP_FD(d)		(P2NMD(d)->fd)
-
-
-/*
- * this is a slightly optimized copy routine which rounds
- * to multiple of 64 bytes and is often faster than dealing
- * with other odd sizes. We assume there is enough room
- * in the source and destination buffers.
- */
-static inline void
-nm_pkt_copy(const void *_src, void *_dst, int l)
-{
-	const uint64_t *src = (const uint64_t *)_src;
-	uint64_t *dst = (uint64_t *)_dst;
-
-	if (unlikely(l >= 1024 || l % 64)) {
-		memcpy(dst, src, l);
-		return;
-	}
-	for (; likely(l > 0); l-=64) {
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
-	}
-}
-
 
 /*
  * The callback, invoked on each received packet. Same as libpcap
@@ -306,7 +304,7 @@ typedef void (*nm_cb_t)(u_char *, const struct nm_pkthdr *, const u_char *d);
  * nm_open() opens a file descriptor, binds to a port and maps memory.
  *
  * ifname	(netmap:foo or vale:foo) is the port name
- *		a suffix can indicate the follwing:
+ *		a suffix can indicate the following:
  *		^		bind the host (sw) ring pair
  *		*		bind host and NIC ring pairs
  *		-NN		bind individual NIC ring pair
@@ -350,7 +348,6 @@ enum {
 	NM_OPEN_ARG3 =		0x400000,
 	NM_OPEN_RING_CFG =	0x800000, /* tx|rx rings|slots */
 };
-
 
 /*
  * nm_close()	closes and restores the port to its previous state
@@ -431,7 +428,6 @@ win_remove_fd_record(int fd)
 		break;
 	}
 }
-
 
 HANDLE
 win_get_netmap_handle(int fd)
@@ -619,7 +615,7 @@ nm_parse(const char *ifname, struct nm_desc *d, char *err)
 	const char *vpname = NULL;
 	u_int namelen;
 	uint32_t nr_ringid = 0, nr_flags;
-	char errmsg[MAXERRMSG] = "";
+	char errmsg[MAXERRMSG] = "", *tmp;
 	long num;
 	uint16_t nr_arg2 = 0;
 	enum { P_START, P_RNGSFXOK, P_GETNUM, P_FLAGS, P_FLAGSOK, P_MEMID } p_state;
@@ -685,7 +681,7 @@ nm_parse(const char *ifname, struct nm_desc *d, char *err)
 				nr_flags = NR_REG_PIPE_MASTER;
 				p_state = P_GETNUM;
 				break;
-			case '}': /* pipe (slave endoint) */
+			case '}': /* pipe (slave endpoint) */
 				nr_flags = NR_REG_PIPE_SLAVE;
 				p_state = P_GETNUM;
 				break;
@@ -716,12 +712,13 @@ nm_parse(const char *ifname, struct nm_desc *d, char *err)
 			port++;
 			break;
 		case P_GETNUM:
-			num = strtol(port, (char **)&port, 10);
+			num = strtol(port, &tmp, 10);
 			if (num < 0 || num >= NETMAP_RING_MASK) {
 				snprintf(errmsg, MAXERRMSG, "'%ld' out of range [0, %d)",
 						num, NETMAP_RING_MASK);
 				goto fail;
 			}
+			port = tmp;
 			nr_ringid = num & NETMAP_RING_MASK;
 			p_state = P_RNGSFXOK;
 			break;
@@ -763,11 +760,12 @@ nm_parse(const char *ifname, struct nm_desc *d, char *err)
 				snprintf(errmsg, MAXERRMSG, "double setting of memid");
 				goto fail;
 			}
-			num = strtol(port, (char **)&port, 10);
+			num = strtol(port, &tmp, 10);
 			if (num <= 0) {
 				snprintf(errmsg, MAXERRMSG, "invalid memid %ld, must be >0", num);
 				goto fail;
 			}
+			port = tmp;
 			nr_arg2 = num;
 			p_state = P_RNGSFXOK;
 			break;
@@ -917,7 +915,6 @@ nm_open(const char *ifname, const struct nmreq *req,
 		goto fail;
 	}
 
-
 #ifdef DEBUG_NETMAP_USER
     { /* debugging code */
 	int i;
@@ -949,7 +946,6 @@ fail:
 	return NULL;
 }
 
-
 static int
 nm_close(struct nm_desc *d)
 {
@@ -977,7 +973,8 @@ nm_close(struct nm_desc *d)
 static int
 nm_mmap(struct nm_desc *d, const struct nm_desc *parent)
 {
-	//XXX TODO: check if mmap is already done
+	if (d->done_mmap)
+		return 0;
 
 	if (IS_NETMAP_DESC(parent) && parent->mem &&
 	    parent->req.nr_arg2 == d->req.nr_arg2) {
@@ -1049,7 +1046,7 @@ nm_inject(struct nm_desc *d, const void *buf, size_t size)
 			ring->slot[i].flags = NS_MOREFRAG;
 			nm_pkt_copy(buf, NETMAP_BUF(ring, idx), ring->nr_buf_size);
 			i = nm_ring_next(ring, i);
-			buf = (char *)buf + ring->nr_buf_size;
+			buf = (const char *)buf + ring->nr_buf_size;
 		}
 		idx = ring->slot[i].buf_idx;
 		ring->slot[i].len = rem;
@@ -1061,7 +1058,6 @@ nm_inject(struct nm_desc *d, const void *buf, size_t size)
 	}
 	return 0; /* fail */
 }
-
 
 /*
  * Same prototype as pcap_dispatch(), only need to cast.
@@ -1112,7 +1108,7 @@ nm_dispatch(struct nm_desc *d, int cnt, nm_cb_t cb, u_char *arg)
 				slot = &ring->slot[i];
 				d->hdr.len += slot->len;
 				nbuf = (u_char *)NETMAP_BUF(ring, slot->buf_idx);
-				if (oldbuf != NULL && nbuf - oldbuf == ring->nr_buf_size &&
+				if (oldbuf != NULL && nbuf - oldbuf == (int)ring->nr_buf_size &&
 						oldlen == ring->nr_buf_size) {
 					d->hdr.caplen += slot->len;
 					oldbuf = nbuf;

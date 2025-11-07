@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/security/mac_biba/mac_biba.h 299187 2016-05-06 16:59:04Z pfg $
  */
 /*
  * Definitions for the TrustedBSD Biba integrity policy module.

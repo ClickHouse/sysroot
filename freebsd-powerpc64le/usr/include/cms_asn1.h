@@ -684,7 +684,7 @@ ASN1EXP void   ASN1CALL free_EnvelopedData  (EnvelopedData *);
 
 /*
 CMSRC2CBCParameter ::= SEQUENCE {
-  rc2ParameterVersion   INTEGER (0..-1),
+  rc2ParameterVersion   INTEGER (0..4294967295),
   iv                    OCTET STRING,
 }
 */

@@ -48,7 +48,6 @@
 
 /*
  *	$Id: nameser.h,v 1.16 2009/03/03 01:52:48 each Exp $
- * $FreeBSD: releng/12.2/include/arpa/nameser.h 326695 2017-12-08 15:57:29Z pfg $
  */
 
 #ifndef _ARPA_NAMESER_H_

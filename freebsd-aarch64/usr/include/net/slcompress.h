@@ -33,7 +33,6 @@
  *
  *	Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
  *	- Initial distribution.
- * $FreeBSD: releng/12.2/sys/net/slcompress.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NET_SLCOMPRESS_H_
@@ -105,7 +104,6 @@
 #define SPECIALS_MASK (NEW_S|NEW_A|NEW_W|NEW_U)
 
 #define TCP_PUSH_BIT 0x10
-
 
 /*
  * "state" data for each active tcp conversation on the wire.  This is

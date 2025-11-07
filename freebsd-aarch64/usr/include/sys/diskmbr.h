@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)disklabel.h	8.2 (Berkeley) 7/10/94
- * $FreeBSD: releng/12.2/sys/sys/diskmbr.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _SYS_DISKMBR_H_
@@ -37,9 +36,6 @@
 
 #include <sys/disk/mbr.h>
 #include <sys/ioccom.h>
-
-void dos_partition_dec(void const *pp, struct dos_partition *d);
-void dos_partition_enc(void *pp, struct dos_partition *d);
 
 #define DIOCSMBR 	_IOW('M', 129, u_char[512])
 

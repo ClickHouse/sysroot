@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2002 Maxime Henrion <mux@FreeBSD.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/sys/sys/kenv.h 326256 2017-11-27 15:01:59Z pfg $
  */
 
 #ifndef _SYS_KENV_H_
@@ -34,12 +32,28 @@
 /*
  * Constants for the kenv(2) syscall
  */
-#define KENV_GET	0
-#define KENV_SET	1
-#define KENV_UNSET	2
-#define KENV_DUMP	3
+#define KENV_GET		0
+#define KENV_SET		1
+#define KENV_UNSET		2
+#define KENV_DUMP		3
+#define KENV_DUMP_LOADER	4
+#define KENV_DUMP_STATIC	5
 
 #define KENV_MNAMELEN	128	/* Maximum name length (for the syscall) */
 #define KENV_MVALLEN	128	/* Maximum value length (for the syscall) */
+
+#ifdef _KERNEL
+/*
+ * Most of these variables should be const.
+ */
+extern bool dynamic_kenv;
+extern struct mtx kenv_lock;
+extern char *kern_envp;
+extern char *md_envp;
+extern char static_env[];
+extern char static_hints[];	/* by config for now */
+
+extern char **kenvp;
+#endif /* _KERNEL */
 
 #endif /* !_SYS_KENV_H_ */

@@ -29,7 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  *	$OpenBSD: pfvar.h,v 1.282 2009/01/29 15:12:28 pyr Exp $
- *	$FreeBSD: releng/12.2/sys/netpfil/pf/pf_altq.h 338209 2018-08-22 19:38:48Z pkelsey $
  */
 
 #ifndef	_NET_PF_ALTQ_H_
@@ -220,7 +219,7 @@ struct pf_kaltq {
 		struct fairq_opts        fairq_opts;
 	} pq_u;
 
-	uint32_t		 qid;		/* return value */
+	uint16_t		 qid;		/* return value */
 };
 #endif /* _KERNEL */
 

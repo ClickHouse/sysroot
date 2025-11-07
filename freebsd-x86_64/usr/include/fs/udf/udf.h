@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001, 2002 Scott Long <scottl@freebsd.org>
  * All rights reserved.
  *
@@ -22,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/fs/udf/udf.h 189082 2009-02-26 18:58:41Z avg $
  */
 
 #define UDF_HASHTBLSIZE 100
@@ -95,8 +95,10 @@ struct ifid {
 MALLOC_DECLARE(M_UDFFENTRY);
 
 static __inline int
-udf_readdevblks(struct udf_mnt *udfmp, int sector, int size, struct buf **bp)
+udf_readdevblks(struct udf_mnt *udfmp, daddr_t sector, int size, struct buf **bp)
 {
+	if (size < 0 || size + udfmp->bmask < size)
+		return (ERANGE);
 	return (RDSECTOR(udfmp->im_devvp, sector,
 			 (size + udfmp->bmask) & ~udfmp->bmask, bp));
 }

@@ -3,6 +3,8 @@
  */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2001-2003 Maksim Yevmenkin <m_evmenkin@yahoo.com>
  * All rights reserved.
  *
@@ -28,7 +30,6 @@
  * SUCH DAMAGE.
  *
  * $Id: ng_btsocket_rfcomm.h,v 1.10 2003/03/29 22:27:42 max Exp $
- * $FreeBSD: releng/11.3/sys/netgraph/bluetooth/include/ng_btsocket_rfcomm.h 298813 2016-04-29 21:25:05Z pfg $
  */
 
 #ifndef _NETGRAPH_BTSOCKET_RFCOMM_H_
@@ -337,4 +338,3 @@ int  ng_btsocket_rfcomm_sockaddr   (struct socket *, struct sockaddr **);
 #endif /* _KERNEL */
 
 #endif /* _NETGRAPH_BTSOCKET_RFCOMM_H_ */
-

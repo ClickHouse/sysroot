@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/12.2/sys/netinet/sctp_indata.h 364585 2020-08-23 22:54:30Z tuexen $");
-
 #ifndef _NETINET_SCTP_INDATA_H_
 #define _NETINET_SCTP_INDATA_H_
 
@@ -47,7 +44,6 @@ sctp_build_readq_entry(struct sctp_tcb *stcb,
     uint32_t context, uint16_t sid,
     uint32_t mid, uint8_t flags,
     struct mbuf *dm);
-
 
 #define sctp_build_readq_entry_mac(_ctl, in_it, context, net, tsn, ppid, sid, flags, dm, tfsn, mid) do { \
 	if (_ctl) { \
@@ -73,8 +69,6 @@ sctp_build_readq_entry(struct sctp_tcb *stcb,
 		}\
 	} \
 } while (0)
-
-
 
 struct mbuf *
 sctp_build_ctl_nchunk(struct sctp_inpcb *inp,

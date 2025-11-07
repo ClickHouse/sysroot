@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)string.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/11.3/include/string.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _STRING_H_
@@ -64,6 +65,9 @@ void	*memcpy(void * __restrict, const void * __restrict, size_t);
 void	*memmem(const void *, size_t, const void *, size_t) __pure;
 #endif
 void	*memmove(void *, const void *, size_t);
+#if __BSD_VISIBLE
+void	*mempcpy(void * __restrict, const void * __restrict, size_t);
+#endif
 void	*memset(void *, int, size_t);
 #if __POSIX_VISIBLE >= 200809
 char	*stpcpy(char * __restrict, const char * __restrict);
@@ -76,6 +80,7 @@ char	*strcat(char * __restrict, const char * __restrict);
 char	*strchr(const char *, int) __pure;
 #if __BSD_VISIBLE
 char	*strchrnul(const char*, int) __pure;
+int	 strverscmp(const char *, const char *) __pure;
 #endif
 int	 strcmp(const char *, const char *) __pure;
 int	 strcoll(const char *, const char *);
@@ -138,7 +143,7 @@ int	 timingsafe_bcmp(const void *, const void *, size_t);
 int	 timingsafe_memcmp(const void *, const void *, size_t);
 #endif /* __BSD_VISIBLE */
 
-#if __POSIX_VISIBLE >= 200809 || defined(_XLOCALE_H_)
+#if __POSIX_VISIBLE >= 200112 || defined(_XLOCALE_H_)
 #include <xlocale/_string.h>
 #endif
 

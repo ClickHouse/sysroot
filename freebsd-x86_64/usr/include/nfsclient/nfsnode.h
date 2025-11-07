@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -13,7 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsnode.h	8.9 (Berkeley) 5/14/95
- * $FreeBSD: releng/11.3/sys/nfsclient/nfsnode.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NFSCLIENT_NFSNODE_H_
@@ -81,7 +82,7 @@ struct nfs_accesscache {
 	uid_t			uid;		/* credentials having mode */
 	time_t			stamp;		/* mode cache timestamp */
 };
-	
+
 /*
  * The nfsnode is the nfs equivalent to ufs's inode. Any similarity
  * is purely coincidental.
@@ -90,7 +91,7 @@ struct nfs_accesscache {
  * An nfsnode is 'named' by its file handle. (nget/nfs_node.c)
  * If this structure exceeds 256 bytes (it is currently 256 using 4.4BSD-Lite
  * type definitions), file handles of > 32 bytes should probably be split out
- * into a separate MALLOC()'d data structure. (Reduce the size of nfsfh_t by
+ * into a separate malloc()'d data structure. (Reduce the size of nfsfh_t by
  * changing the definition in nfsproto.h of NFS_SMALLFH.)
  * NB: Hopefully the current order of the fields is such that everything will
  *     be well aligned and, therefore, tightly packed.

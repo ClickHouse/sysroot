@@ -29,12 +29,10 @@
  * SUCH DAMAGE.
  *
  *	@(#)icmp_var.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD: releng/12.2/sys/netinet/icmp_var.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NETINET_ICMP_VAR_H_
 #define _NETINET_ICMP_VAR_H_
-
 
 /*
  * Variables related to this implementation

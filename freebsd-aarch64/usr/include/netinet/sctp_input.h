@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/12.2/sys/netinet/sctp_input.h 336511 2018-07-19 20:16:33Z tuexen $");
-
 #ifndef _NETINET_SCTP_INPUT_H_
 #define _NETINET_SCTP_INPUT_H_
 
@@ -55,7 +52,6 @@ sctp_find_stream_reset(struct sctp_tcb *stcb, uint32_t seq,
 void
 sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries,
     uint16_t *list);
-
 
 int sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked);
 

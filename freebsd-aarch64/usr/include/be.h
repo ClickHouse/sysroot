@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2017 Kyle J. Kneitinger <kyle@kneit.in>
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/12.2/lib/libbe/be.h 357667 2020-02-07 21:57:27Z kevans $
  */
 
 #ifndef _LIBBE_H
@@ -81,6 +79,7 @@ int be_prop_list_alloc(nvlist_t **be_list);
 void be_prop_list_free(nvlist_t *be_list);
 
 int be_activate(libbe_handle_t *, const char *, bool);
+int be_deactivate(libbe_handle_t *, const char *, bool);
 
 bool be_is_auto_snapshot_name(libbe_handle_t *, const char *);
 
@@ -111,8 +110,8 @@ typedef enum {
 	BE_MNT_DEEP		= 1 << 1,
 } be_mount_opt_t;
 
-int be_mount(libbe_handle_t *, char *, char *, int, char *);
-int be_unmount(libbe_handle_t *, char *, int);
+int be_mount(libbe_handle_t *, const char *, const char *, int, char *);
+int be_unmount(libbe_handle_t *, const char *, int);
 int be_mounted_at(libbe_handle_t *, const char *path, nvlist_t *);
 
 /* Error related functions: be_error.c */
@@ -124,7 +123,7 @@ void libbe_print_on_error(libbe_handle_t *, bool);
 int be_root_concat(libbe_handle_t *, const char *, char *);
 int be_validate_name(libbe_handle_t * __unused, const char *);
 int be_validate_snap(libbe_handle_t *, const char *);
-int be_exists(libbe_handle_t *, char *);
+int be_exists(libbe_handle_t *, const char *);
 
 int be_export(libbe_handle_t *, const char *, int fd);
 int be_import(libbe_handle_t *, const char *, int fd);

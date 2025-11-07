@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 1998 WIDE Project.
  * All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	$KAME: pim6_var.h,v 1.8 2000/06/06 08:07:43 jinmei Exp $
- * $FreeBSD: releng/11.3/sys/netinet6/pim6_var.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 /*
@@ -50,10 +51,6 @@ struct pim6stat {
 	uint64_t pim6s_rcv_badregisters; /* received invalid registers	*/
 	uint64_t pim6s_snd_registers;	/* sent registers		*/
 };
-
-#if (defined(KERNEL)) || (defined(_KERNEL))
-int pim6_input(struct mbuf **, int*, int);
-#endif /* KERNEL */
 
 /*
  * Identifiers for PIM sysctl nodes

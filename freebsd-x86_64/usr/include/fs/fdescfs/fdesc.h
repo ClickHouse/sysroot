@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -30,8 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)fdesc.h	8.5 (Berkeley) 1/21/94
- *
- * $FreeBSD: releng/11.3/sys/fs/fdescfs/fdesc.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _FS_FDESC_H_
@@ -40,6 +40,8 @@
 /* Private mount flags for fdescfs. */
 #define FMNT_UNMOUNTF	0x01
 #define FMNT_LINRDLNKF	0x02
+#define	FMNT_NODUP	0x04
+#define FMNT_RDLNKF	0x08
 
 struct fdescmount {
 	struct vnode	*f_root;	/* Root node */

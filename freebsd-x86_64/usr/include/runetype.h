@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -30,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)runetype.h	8.1 (Berkeley) 6/2/93
- * $FreeBSD: releng/11.3/include/runetype.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef	_RUNETYPE_H_
@@ -86,7 +87,7 @@ typedef struct {
 __BEGIN_DECLS
 extern const _RuneLocale _DefaultRuneLocale;
 extern const _RuneLocale *_CurrentRuneLocale;
-#if defined(__NO_TLS) || defined(__RUNETYPE_INTERNAL)
+#ifdef __RUNETYPE_INTERNAL
 extern const _RuneLocale *__getCurrentRuneLocale(void);
 #else
 extern _Thread_local const _RuneLocale *_ThreadRuneLocale;
@@ -95,11 +96,9 @@ static __inline const _RuneLocale *__getCurrentRuneLocale(void)
 
 	if (_ThreadRuneLocale) 
 		return _ThreadRuneLocale;
-	if (_CurrentRuneLocale) 
-		return _CurrentRuneLocale;
-	return &_DefaultRuneLocale;
+	return _CurrentRuneLocale;
 }
-#endif /* __NO_TLS || __RUNETYPE_INTERNAL */
+#endif /*__RUNETYPE_INTERNAL */
 #define _CurrentRuneLocale (__getCurrentRuneLocale())
 __END_DECLS
 

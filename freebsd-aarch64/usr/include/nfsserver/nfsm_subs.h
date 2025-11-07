@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsm_subs.h	8.2 (Berkeley) 3/30/95
- * $FreeBSD: releng/12.2/sys/nfsserver/nfsm_subs.h 326023 2017-11-20 19:43:44Z pfg $
  */
 
 #ifndef _NFSSERVER_NFSM_SUBS_H_
@@ -60,8 +59,6 @@
  * fairly clean and deals with the mess caused by the xdr discriminating
  * unions.
  */
-
-
 
 /* ************************************* */
 /* Dissection phase macros */

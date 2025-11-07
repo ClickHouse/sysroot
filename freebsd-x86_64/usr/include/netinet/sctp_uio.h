@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -30,14 +32,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: releng/11.3/sys/netinet/sctp_uio.h 347154 2019-05-05 12:28:39Z tuexen $");
-
 #ifndef _NETINET_SCTP_UIO_H_
 #define _NETINET_SCTP_UIO_H_
 
-
-#if ! defined(_KERNEL)
+#if !defined(_KERNEL)
 #include <stdint.h>
 #endif
 #include <sys/types.h>
@@ -108,7 +106,6 @@ struct sctp_initmsg {
  * The assoc up needs a verfid
  * all sendrcvinfo's need a verfid for SENDING only.
  */
-
 
 #define SCTP_ALIGN_RESV_PAD 92
 #define SCTP_ALIGN_RESV_PAD_SHORT 76
@@ -422,7 +419,6 @@ struct sctp_setadaption {
 	uint32_t ssb_adaption_ind;
 };
 
-
 /*
  * Partial Delivery API event
  */
@@ -438,7 +434,6 @@ struct sctp_pdapi_event {
 
 /* indication values */
 #define SCTP_PARTIAL_DELIVERY_ABORTED	0x0001
-
 
 /*
  * authentication key event
@@ -459,14 +454,12 @@ struct sctp_authkey_event {
 #define SCTP_AUTH_NO_AUTH	0x0002
 #define SCTP_AUTH_FREE_KEY	0x0003
 
-
 struct sctp_sender_dry_event {
 	uint16_t sender_dry_type;
 	uint16_t sender_dry_flags;
 	uint32_t sender_dry_length;
 	sctp_assoc_t sender_dry_assoc_id;
 };
-
 
 /*
  * Stream reset event - subscribe to SCTP_STREAM_RESET_EVENT
@@ -514,7 +507,6 @@ struct sctp_stream_change_event {
 
 #define SCTP_STREAM_CHANGE_DENIED	0x0004
 #define SCTP_STREAM_CHANGE_FAILED	0x0008
-
 
 /* SCTP notification event */
 struct sctp_tlv {
@@ -631,10 +623,15 @@ struct sctp_setpeerprim {
 	uint8_t sspp_padding[4];
 };
 
+union sctp_sockstore {
+	struct sockaddr_in sin;
+	struct sockaddr_in6 sin6;
+	struct sockaddr sa;
+};
+
 struct sctp_getaddresses {
 	sctp_assoc_t sget_assoc_id;
-	/* addr is filled in for N * sockaddr_storage */
-	struct sockaddr addr[1];
+	union sctp_sockstore addr[];
 };
 
 struct sctp_status {
@@ -1126,7 +1123,7 @@ struct sctpstat {
 
 #define SCTP_STAT_INCR(_x) SCTP_STAT_INCR_BY(_x,1)
 #define SCTP_STAT_DECR(_x) SCTP_STAT_DECR_BY(_x,1)
-#if defined(__FreeBSD__) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
+#if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
 #define SCTP_STAT_INCR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x += _d)
 #define SCTP_STAT_DECR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x -= _d)
 #else
@@ -1140,13 +1137,6 @@ struct sctpstat {
 #define SCTP_STAT_DECR_COUNTER32(_x) SCTP_STAT_DECR(_x)
 #define SCTP_STAT_DECR_COUNTER64(_x) SCTP_STAT_DECR(_x)
 #define SCTP_STAT_DECR_GAUGE32(_x) SCTP_STAT_DECR(_x)
-
-union sctp_sockstore {
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
-	struct sockaddr sa;
-};
-
 
 /***********************************/
 /* And something for us old timers */
@@ -1163,7 +1153,6 @@ union sctp_sockstore {
 #endif
 /***********************************/
 
-
 struct xsctp_inpcb {
 	uint32_t last;
 	uint32_t flags;
@@ -1175,14 +1164,11 @@ struct xsctp_inpcb {
 	uint16_t local_port;
 	uint16_t qlen_old;
 	uint16_t maxqlen_old;
-	void *socket;
+	uint16_t __spare16;
+	kvaddr_t socket;
 	uint32_t qlen;
 	uint32_t maxqlen;
-#if defined(__LP64__)
-	uint32_t extra_padding[27];	/* future */
-#else
-	uint32_t extra_padding[28];	/* future */
-#endif
+	uint32_t extra_padding[26];	/* future */
 };
 
 struct xsctp_tcb {
@@ -1270,7 +1256,7 @@ int
 sctp_lower_sosend(struct socket *so,
     struct sockaddr *addr,
     struct uio *uio,
-    struct mbuf *i_pak,
+    struct mbuf *top,
     struct mbuf *control,
     int flags,
     struct sctp_sndrcvinfo *srcv

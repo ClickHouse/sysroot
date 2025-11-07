@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (C) 2000 WIDE Project.
  * All rights reserved.
  *
@@ -27,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	$KAME: scope6_var.h,v 1.4 2000/05/18 15:03:27 jinmei Exp $
- * $FreeBSD: releng/11.3/sys/netinet6/scope6_var.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef _NETINET6_SCOPE6_VAR_H_
@@ -45,9 +46,6 @@ struct scope6_id {
 	uint32_t s6id_list[IPV6_ADDR_SCOPES_COUNT];
 };
 
-VNET_DECLARE(int, deembed_scopeid);
-#define V_deembed_scopeid       VNET(deembed_scopeid)
-
 void	scope6_init(void);
 struct scope6_id *scope6_ifattach(struct ifnet *);
 void	scope6_ifdetach(struct scope6_id *);
@@ -61,10 +59,12 @@ int	sa6_checkzone(struct sockaddr_in6 *);
 int	sa6_checkzone_ifp(struct ifnet *, struct sockaddr_in6 *);
 int	in6_setscope(struct in6_addr *, struct ifnet *, u_int32_t *);
 int	in6_clearscope(struct in6_addr *);
-uint16_t in6_getscope(struct in6_addr *);
+uint16_t in6_getscope(const struct in6_addr *);
 uint32_t in6_getscopezone(const struct ifnet *, int);
 void	in6_splitscope(const struct in6_addr *, struct in6_addr *, uint32_t *);
 struct ifnet* in6_getlinkifnet(uint32_t);
+uint32_t in6_get_unicast_scopeid(const struct in6_addr *, const struct ifnet *);
+void	in6_set_unicast_scopeid(struct in6_addr *, uint32_t);
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_SCOPE6_VAR_H_ */

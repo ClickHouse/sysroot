@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1990 University of Utah.
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -15,7 +17,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,18 +34,12 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- * $FreeBSD: releng/11.3/sys/vm/swap_pager.h 331722 2018-03-29 02:50:57Z eadler $
  */
 
 #ifndef	_VM_SWAP_PAGER_H_
-#define	_VM_SWAP_PAGER_H_ 1
+#define	_VM_SWAP_PAGER_H_
 
-typedef	int32_t	swblk_t;	/*
-				 * swap offset.  This is the type used to
-				 * address the "virtual swap device" and
-				 * therefore the maximum swap space is
-				 * 2^32 pages.
-				 */
+#include <sys/_types.h>
 
 struct buf;
 struct swdevt;
@@ -60,8 +56,8 @@ struct swdevt {
 	dev_t	sw_dev;
 	struct vnode *sw_vp;
 	void	*sw_id;
-	swblk_t	sw_first;
-	swblk_t	sw_end;
+	__daddr_t sw_first;
+	__daddr_t sw_end;
 	struct blist *sw_blist;
 	TAILQ_ENTRY(swdevt)	sw_list;
 	sw_strategy_t		*sw_strategy;
@@ -79,11 +75,15 @@ struct xswdev;
 int swap_dev_info(int name, struct xswdev *xs, char *devname, size_t len);
 void swap_pager_copy(vm_object_t, vm_object_t, vm_pindex_t, int);
 vm_pindex_t swap_pager_find_least(vm_object_t object, vm_pindex_t pindex);
-void swap_pager_freespace(vm_object_t, vm_pindex_t, vm_size_t);
+void swap_pager_freespace(vm_object_t object, vm_pindex_t start,
+    vm_size_t size, vm_size_t *freed);
 void swap_pager_swap_init(void);
-int swap_pager_reserve(vm_object_t, vm_pindex_t, vm_size_t);
+int swap_pager_nswapdev(void);
+int swap_pager_reserve(vm_object_t, vm_pindex_t, vm_pindex_t);
 void swap_pager_status(int *total, int *used);
+u_long swap_pager_swapped_pages(vm_object_t object);
 void swapoff_all(void);
-
+bool swap_pager_init_object(vm_object_t object, void *handle,
+    struct ucred *cred, vm_ooffset_t size, vm_ooffset_t offset);
 #endif				/* _KERNEL */
 #endif				/* _VM_SWAP_PAGER_H_ */

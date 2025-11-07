@@ -1,4 +1,3 @@
-/* $FreeBSD: releng/12.2/sys/fs/msdosfs/bpb.h 318548 2017-05-19 18:13:41Z emaste $ */
 /*	$NetBSD: bpb.h,v 1.7 1997/11/17 15:36:24 ws Exp $	*/
 
 /*-

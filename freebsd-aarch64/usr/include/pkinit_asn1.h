@@ -281,7 +281,7 @@ ASN1EXP void   ASN1CALL free_PA_PK_AS_REQ  (PA_PK_AS_REQ *);
 PKAuthenticator ::= SEQUENCE {
   cusec           [0] INTEGER,
   ctime           [1] KerberosTime,
-  nonce           [2] INTEGER (0..-1),
+  nonce           [2] INTEGER (0..4294967295),
   paChecksum      [3] OCTET STRING OPTIONAL,
   ...,
 }
@@ -451,7 +451,7 @@ ASN1EXP void   ASN1CALL free_PA_PK_AS_REP  (PA_PK_AS_REP *);
 KDCDHKeyInfo ::= SEQUENCE {
   subjectPublicKey   [0]   BIT STRING {
   },
-  nonce              [1] INTEGER (0..-1),
+  nonce              [1] INTEGER (0..4294967295),
   dhKeyExpiration    [2] KerberosTime OPTIONAL,
   ...,
 }
@@ -510,7 +510,7 @@ ASN1EXP void   ASN1CALL free_TD_DH_PARAMETERS  (TD_DH_PARAMETERS *);
 PKAuthenticator-Win2k ::= SEQUENCE {
   kdcName         [0] PrincipalName,
   kdcRealm        [1] Realm,
-  cusec           [2] INTEGER (0..-1),
+  cusec           [2] INTEGER (0..4294967295),
   ctime           [3] KerberosTime,
   nonce           [4] INTEGER (-2147483648..2147483647),
 }

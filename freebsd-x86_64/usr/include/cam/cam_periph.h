@@ -1,6 +1,8 @@
 /*-
  * Data structures and definitions for CAM peripheral ("type") drivers.
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 1997, 1998 Justin T. Gibbs.
  * All rights reserved.
  *
@@ -24,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/sys/cam/cam_periph.h 346758 2019-04-26 17:28:06Z mav $
  */
 
 #ifndef _CAM_CAM_PERIPH_H
@@ -35,6 +35,9 @@
 #include <cam/cam_sim.h>
 
 #ifdef _KERNEL
+#include <sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 
 #include <cam/cam_xpt.h>
@@ -129,6 +132,8 @@ struct cam_periph {
 #define CAM_PERIPH_RUN_TASK		0x40
 #define CAM_PERIPH_FREE			0x80
 #define CAM_PERIPH_ANNOUNCED		0x100
+#define CAM_PERIPH_RECOVERY_WAIT	0x200
+#define CAM_PERIPH_RECOVERY_WAIT_FAILED	0x400
 	uint32_t		 scheduled_priority;
 	uint32_t		 immediate_priority;
 	int			 periph_allocating;
@@ -140,6 +145,7 @@ struct cam_periph {
 	ac_callback_t		*deferred_callback; 
 	ac_code			 deferred_ac;
 	struct task		 periph_run_task;
+	struct root_hold_token	 periph_rootmount;
 };
 
 #define CAM_PERIPH_MAXMAPS	2
@@ -158,13 +164,15 @@ cam_status cam_periph_alloc(periph_ctor_t *periph_ctor,
 			    ac_callback_t *, ac_code, void *arg);
 struct cam_periph *cam_periph_find(struct cam_path *path, char *name);
 int		cam_periph_list(struct cam_path *, struct sbuf *);
-cam_status	cam_periph_acquire(struct cam_periph *periph);
+int		cam_periph_acquire(struct cam_periph *periph);
 void		cam_periph_doacquire(struct cam_periph *periph);
 void		cam_periph_release(struct cam_periph *periph);
 void		cam_periph_release_locked(struct cam_periph *periph);
 void		cam_periph_release_locked_buses(struct cam_periph *periph);
 int		cam_periph_hold(struct cam_periph *periph, int priority);
 void		cam_periph_unhold(struct cam_periph *periph);
+void		cam_periph_hold_boot(struct cam_periph *periph);
+void		cam_periph_release_boot(struct cam_periph *periph);
 void		cam_periph_invalidate(struct cam_periph *periph);
 int		cam_periph_mapmem(union ccb *ccb,
 				  struct cam_periph_map_info *mapinfo,
@@ -196,12 +204,16 @@ void		cam_periph_freeze_after_event(struct cam_periph *periph,
 					      struct timeval* event_time,
 					      u_int duration_ms);
 int		cam_periph_error(union ccb *ccb, cam_flags camflags,
-				 u_int32_t sense_flags, union ccb *save_ccb);
+				 u_int32_t sense_flags);
+int		cam_periph_invalidate_sysctl(SYSCTL_HANDLER_ARGS);
 
 static __inline struct mtx *
 cam_periph_mtx(struct cam_periph *periph)
 {
-	return (xpt_path_mtx(periph->path));
+	if (periph != NULL)
+		return (xpt_path_mtx(periph->path));
+	else
+		return (NULL);
 }
 
 #define cam_periph_owned(periph)					\
@@ -255,6 +267,9 @@ cam_periph_acquire_next(struct cam_periph *pperiph)
 	for ((periph) = cam_periph_acquire_first(driver);		\
 	    (periph) != NULL;						\
 	    (periph) = cam_periph_acquire_next(periph))
+
+#define CAM_PERIPH_PRINT(p, msg, args...)				\
+    printf("%s%d:" msg, (periph)->periph_name, (periph)->unit_number, ##args)
 
 #endif /* _KERNEL */
 #endif /* _CAM_CAM_PERIPH_H */

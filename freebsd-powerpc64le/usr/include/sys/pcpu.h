@@ -28,8 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_PCPU_H_
@@ -187,9 +185,10 @@ struct pcpu {
 	STAILQ_ENTRY(pcpu) pc_allcpu;
 	struct lock_list_entry *pc_spinlocks;
 	long		pc_cp_time[CPUSTATES];	/* statclock ticks */
-	struct device	*pc_device;
+	struct _device	*pc_device;		/* CPU device handle */
 	void		*pc_netisr;		/* netisr SWI cookie */
-	int		pc_unused1;		/* unused field */
+	int8_t		pc_vfs_freevnodes;	/* freevnodes counter */
+	char		pc_unused1[3];		/* unused pad */
 	int		pc_domain;		/* Memory domain. */
 	struct rm_queue	pc_rm_queue;		/* rmlock list of trackers */
 	uintptr_t	pc_dynamic;		/* Dynamic per-cpu data area */

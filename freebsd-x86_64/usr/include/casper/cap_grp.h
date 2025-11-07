@@ -25,12 +25,19 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD: releng/11.3/lib/libcasper/services/cap_grp/cap_grp.h 296047 2016-02-25 18:23:40Z oshogbo $
  */
 
 #ifndef	_CAP_GRP_H_
 #define	_CAP_GRP_H_
+
+#ifdef HAVE_CASPER
+#define WITH_CASPER
+#endif
+
+#include <sys/cdefs.h>
+
+#ifdef WITH_CASPER
+__BEGIN_DECLS
 
 struct group *cap_getgrent(cap_channel_t *chan);
 struct group *cap_getgrnam(cap_channel_t *chan, const char *name);
@@ -52,6 +59,36 @@ int cap_grp_limit_cmds(cap_channel_t *chan, const char * const *cmds,
 int cap_grp_limit_fields(cap_channel_t *chan, const char * const *fields,
     size_t nfields);
 int cap_grp_limit_groups(cap_channel_t *chan, const char * const *names,
-    size_t nnames, gid_t *gids, size_t ngids);
+    size_t nnames, const gid_t *gids, size_t ngids);
+
+__END_DECLS
+
+#else
+#define	cap_getgrent(chan)		getgrent()
+#define	cap_getgrnam(chan, name)	getgrnam(name)
+#define	cap_getgrgid(chan, gid)		getgrgid(gid)
+
+#define	cap_setgroupent(chan, stayopen) etgroupent(stayopen)
+#define endgrent(chan)			endgrent()
+static inline int
+cap_setgrent(cap_channel_t *chan __unused)
+{
+
+	setgrent();
+	return(0);
+}
+
+#define	cap_getgrent_r(chan, grp, buffer, bufsize, result)			\
+	getgrent_r(grp, buffer, bufsize, result)
+#define	cap_getgrnam_r(chan, name, grp, buffer, bufsize, result)		\
+	getgrnam_r(name, grp, buffer, bufsize, result)
+#define	cap_getgrgid_r(chan, gid, grp, buffer, bufsize, result)			\
+	getgrgid_r(gid, grp, buffer, bufsize, result)
+
+#define	cap_grp_limit_cmds(chan, cmds, ncmds)			(0)
+#define	cap_grp_limit_fields(chan, fields, nfields)		(0)
+#define	cap_grp_limit_groups(chan, names, nnames, gids, ngids)	(0)
+
+#endif
 
 #endif	/* !_CAP_GRP_H_ */

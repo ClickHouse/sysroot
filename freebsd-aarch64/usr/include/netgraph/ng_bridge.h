@@ -36,8 +36,6 @@
  * OF SUCH DAMAGE.
  *
  * Author: Archie Cobbs <archie@freebsd.org>
- *
- * $FreeBSD: releng/12.2/sys/netgraph/ng_bridge.h 357206 2020-01-28 17:39:03Z bz $
  */
 
 #ifndef _NETGRAPH_NG_BRIDGE_H_
@@ -49,8 +47,8 @@
  * Please note: There is no API support!
  * You canno create new messages using the old API but messages conforming the
  * old ABI are understood.
+ * Define NGM_BRIDGE_TABLE_ABI to enable this in 13.x
  */
-#define	NGM_BRIDGE_TABLE_ABI
 
 /* Node type name and magic cookie */
 #define NG_BRIDGE_NODE_TYPE		"bridge"
@@ -64,6 +62,8 @@
 /* Hook names */
 #define NG_BRIDGE_HOOK_LINK_PREFIX	"link"	 /* append decimal integer */
 #define NG_BRIDGE_HOOK_LINK_FMT		"link%d" /* for use with printf(3) */
+#define NG_BRIDGE_HOOK_UPLINK_PREFIX	"uplink" /* append decimal integer */
+#define NG_BRIDGE_HOOK_UPLINK_FMT	"uplink%d" /* for use with printf(3) */
 
 /* Node configuration structure */
 struct ng_bridge_config {
@@ -128,13 +128,6 @@ struct ng_bridge_link_stats {
 
 struct ng_bridge_link;
 typedef struct ng_bridge_link *link_p;
-/* Structure describing a single host */
-struct ng_bridge_host {
-	u_char		addr[6];	/* ethernet address */
-	link_p		link;		/* link where addr can be found */
-	u_int16_t	age;		/* seconds ago entry was created */
-	u_int16_t	staleness;	/* seconds ago host last heard from */
-};
 
 #ifdef NGM_BRIDGE_TABLE_ABI
 struct ng_bridge_host_tbl {
@@ -188,6 +181,17 @@ struct ng_bridge_host_tbl_ary {
 };
 #endif /* NGM_BRIDGE_TABLE_ABI */
 
+struct ng_bridge_move_host {
+	u_char		addr[ETHER_ADDR_LEN];	/* ethernet address */
+	char		hook[NG_HOOKSIZ];	/* link where addr can be found */
+};
+/* Keep this in sync with the above structure definition */
+#define NG_BRIDGE_MOVE_HOST_TYPE_INFO(entype)	{		\
+	  { "addr",		(entype)		},	\
+	  { "hook",		&ng_parse_hookbuf_type	},	\
+	  { NULL }						\
+}
+
 /* Netgraph control messages */
 enum {
 	NGM_BRIDGE_SET_CONFIG = 1,	/* set node configuration */
@@ -198,7 +202,7 @@ enum {
 	NGM_BRIDGE_GETCLR_STATS,	/* atomically get & clear link stats */
 	NGM_BRIDGE_GET_TABLE,		/* get link table */
 	NGM_BRIDGE_SET_PERSISTENT,	/* set persistent mode */
+	NGM_BRIDGE_MOVE_HOST,		/* move a host to a link */
 };
 
 #endif /* _NETGRAPH_NG_BRIDGE_H_ */
-
