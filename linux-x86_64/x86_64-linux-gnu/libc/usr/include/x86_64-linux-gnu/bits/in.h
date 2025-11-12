@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /* Linux version.  */
 
@@ -102,6 +102,7 @@
 #define IP_CHECKSUM     23
 #define IP_BIND_ADDRESS_NO_PORT 24
 #define IP_RECVFRAGSIZE 25
+#define IP_RECVERR_RFC4884 26
 
 /* IP_MTU_DISCOVER arguments.  */
 #define IP_PMTUDISC_DONT   0	/* Never send DF frames.  */
@@ -127,6 +128,8 @@
 #define IP_MSFILTER			41
 #define IP_MULTICAST_ALL		49
 #define IP_UNICAST_IF			50
+#define IP_LOCAL_PORT_RANGE		51
+#define IP_PROTOCOL			52
 
 /* To select the IP level.  */
 #define SOL_IP	0
@@ -143,14 +146,6 @@ struct ip_opts
   {
     struct in_addr ip_dst;	/* First hop; zero without source route.  */
     char ip_opts[40];		/* Actually variable in size.  */
-  };
-
-/* Like `struct ip_mreq' but including interface specification by index.  */
-struct ip_mreqn
-  {
-    struct in_addr imr_multiaddr;	/* IP multicast address of group */
-    struct in_addr imr_address;		/* local IP address of interface */
-    int	imr_ifindex;			/* Interface index */
   };
 
 /* Structure used for IP_PKTINFO.  */
@@ -191,6 +186,9 @@ struct in_pktinfo
 #define IPV6_V6ONLY		26
 #define IPV6_JOIN_ANYCAST	27
 #define IPV6_LEAVE_ANYCAST	28
+#define IPV6_MULTICAST_ALL	29
+#define IPV6_ROUTER_ALERT_ISOLATE 30
+#define IPV6_RECVERR_RFC4884	31
 #define IPV6_IPSEC_POLICY	34
 #define IPV6_XFRM_POLICY	35
 #define IPV6_HDRINCL		36
@@ -228,6 +226,7 @@ struct in_pktinfo
 #define IPV6_TRANSPARENT	75
 #define IPV6_UNICAST_IF		76
 #define IPV6_RECVFRAGSIZE	77
+#define IPV6_FREEBIND		78
 
 /* Obsolete synonyms for the above.  */
 #if !__USE_KERNEL_IPV6_DEFS

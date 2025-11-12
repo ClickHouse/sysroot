@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_SHM_H
 #define _SYS_SHM_H	1
@@ -46,7 +46,17 @@ __BEGIN_DECLS
    facility.  The definition is found in XPG4.2.  */
 
 /* Shared memory control operation.  */
+#ifndef __USE_TIME_BITS64
 extern int shmctl (int __shmid, int __cmd, struct shmid_ds *__buf) __THROW;
+#else
+# ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (shmctl,
+                           (int __shmid, int __cmd, struct shmid_ds *__buf),
+                           __shmctl64);
+# else
+#  define shmctl __shmctl64
+# endif
+#endif
 
 /* Get shared memory segment.  */
 extern int shmget (key_t __key, size_t __size, int __shmflg) __THROW;

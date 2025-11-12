@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef __NETINET_IP_H
 #define __NETINET_IP_H 1
@@ -185,6 +185,16 @@ struct ip_timestamp
 #define	IPTOS_DSCP_AF42		0x90
 #define	IPTOS_DSCP_AF43		0x98
 #define	IPTOS_DSCP_EF		0xb8
+
+/*
+ * Voice-Admit DSCP code point from RFC-5865, Section 4.
+ */
+#define	IPTOS_DSCP_VA		0xb0
+
+/*
+ * Lower-Effort Per-Hop Behavior DSCP code point from RFC-8622, Section 12.
+ */
+#define	IPTOS_DSCP_LE		0x04
 
 /*
  * In RFC 2474, Section 4.2.2.1, the Class Selector Codepoints subsume

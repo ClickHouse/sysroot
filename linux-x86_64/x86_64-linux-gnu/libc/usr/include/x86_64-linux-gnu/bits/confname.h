@@ -1,5 +1,5 @@
 /* `sysconf', `pathconf', and `confstr' NAME values.  Generic version.
-   Copyright (C) 1993-2018 Free Software Foundation, Inc.
+   Copyright (C) 1993-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _UNISTD_H
 # error "Never use <bits/confname.h> directly; include <unistd.h> instead."
@@ -525,8 +525,14 @@ enum
 
     _SC_THREAD_ROBUST_PRIO_INHERIT,
 #define _SC_THREAD_ROBUST_PRIO_INHERIT	_SC_THREAD_ROBUST_PRIO_INHERIT
-    _SC_THREAD_ROBUST_PRIO_PROTECT
+    _SC_THREAD_ROBUST_PRIO_PROTECT,
 #define _SC_THREAD_ROBUST_PRIO_PROTECT	_SC_THREAD_ROBUST_PRIO_PROTECT
+
+    _SC_MINSIGSTKSZ,
+#define	_SC_MINSIGSTKSZ			_SC_MINSIGSTKSZ
+
+    _SC_SIGSTKSZ
+#define	_SC_SIGSTKSZ			_SC_SIGSTKSZ
   };
 
 /* Values for the NAME argument to `confstr'.  */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_STATVFS_H
 # error "Never include <bits/statvfs.h> directly; use <sys/statvfs.h> instead."
@@ -51,7 +51,8 @@ struct statvfs
 #endif
     unsigned long int f_flag;
     unsigned long int f_namemax;
-    int __f_spare[6];
+    unsigned int f_type;
+    int __f_spare[5];
   };
 
 #ifdef __USE_LARGEFILE64
@@ -71,7 +72,8 @@ struct statvfs64
 #endif
     unsigned long int f_flag;
     unsigned long int f_namemax;
-    int __f_spare[6];
+    unsigned int f_type;
+    int __f_spare[5];
   };
 #endif
 
@@ -103,7 +105,9 @@ enum
 # define ST_NOATIME	ST_NOATIME
   ST_NODIRATIME = 2048,		/* Do not update directory access times.  */
 # define ST_NODIRATIME	ST_NODIRATIME
-  ST_RELATIME = 4096		/* Update atime relative to mtime/ctime.  */
+  ST_RELATIME = 4096,		/* Update atime relative to mtime/ctime.  */
 # define ST_RELATIME	ST_RELATIME
+  ST_NOSYMFOLLOW = 8192		/* Do not follow symlinks.  */
+# define ST_NOSYMFOLLOW	ST_NOSYMFOLLOW
 #endif	/* Use GNU.  */
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_FEATURES_H
 #define	_FEATURES_H	1
@@ -24,6 +24,7 @@
    __STRICT_ANSI__	ISO Standard C.
    _ISOC99_SOURCE	Extensions to ISO C89 from ISO C99.
    _ISOC11_SOURCE	Extensions to ISO C99 from ISO C11.
+   _ISOC2X_SOURCE	Extensions to ISO C99 from ISO C2X.
    __STDC_WANT_LIB_EXT2__
 			Extensions to ISO C99 from TR 27431-2:2010.
    __STDC_WANT_IEC_60559_BFP_EXT__
@@ -32,6 +33,8 @@
 			Extensions to ISO C11 from TS 18661-4:2015.
    __STDC_WANT_IEC_60559_TYPES_EXT__
 			Extensions to ISO C11 from TS 18661-3:2015.
+   __STDC_WANT_IEC_60559_EXT__
+			ISO C2X interfaces defined only in Annex F.
 
    _POSIX_SOURCE	IEEE Std 1003.1.
    _POSIX_C_SOURCE	If ==1, like _POSIX_SOURCE; if >=2 add IEEE Std 1003.2;
@@ -47,12 +50,15 @@
    _LARGEFILE64_SOURCE	Additional functionality from LFS for large files.
    _FILE_OFFSET_BITS=N	Select default filesystem interface.
    _ATFILE_SOURCE	Additional *at interfaces.
+   _DYNAMIC_STACK_SIZE_SOURCE Select correct (but non compile-time constant)
+			MINSIGSTKSZ, SIGSTKSZ and PTHREAD_STACK_MIN.
    _GNU_SOURCE		All of the above, plus GNU extensions.
    _DEFAULT_SOURCE	The default set of features (taking precedence over
 			__STRICT_ANSI__).
 
    _FORTIFY_SOURCE	Add security hardening to many library functions.
-			Set to 1 or 2; 2 performs stricter checks than 1.
+			Set to 1, 2 or 3; 3 performs stricter checks than 2, which
+			performs stricter checks than 1.
 
    _REENTRANT, _THREAD_SAFE
 			Obsolete; equivalent to _POSIX_C_SOURCE=199506L.
@@ -93,6 +99,8 @@
    __USE_FILE_OFFSET64	Define 64bit interface as default.
    __USE_MISC		Define things from 4.3BSD or System V Unix.
    __USE_ATFILE		Define *at interfaces and AT_* constants for them.
+   __USE_DYNAMIC_STACK_SIZE Define correct (but non compile-time constant)
+			MINSIGSTKSZ, SIGSTKSZ and PTHREAD_STACK_MIN.
    __USE_GNU		Define GNU extensions.
    __USE_FORTIFY_LEVEL	Additional security measures used, according to level.
 
@@ -136,10 +144,14 @@
 #undef	__USE_FILE_OFFSET64
 #undef	__USE_MISC
 #undef	__USE_ATFILE
+#undef	__USE_DYNAMIC_STACK_SIZE
 #undef	__USE_GNU
 #undef	__USE_FORTIFY_LEVEL
 #undef	__KERNEL_STRICT_NAMES
+#undef	__GLIBC_USE_ISOC2X
 #undef	__GLIBC_USE_DEPRECATED_GETS
+#undef	__GLIBC_USE_DEPRECATED_SCANF
+#undef	__GLIBC_USE_C2X_STRTOL
 
 /* Suppress kernel-name space pollution unless user expressedly asks
    for it.  */
@@ -194,6 +206,8 @@
 # define _ISOC99_SOURCE	1
 # undef  _ISOC11_SOURCE
 # define _ISOC11_SOURCE	1
+# undef  _ISOC2X_SOURCE
+# define _ISOC2X_SOURCE	1
 # undef  _POSIX_SOURCE
 # define _POSIX_SOURCE	1
 # undef  _POSIX_C_SOURCE
@@ -208,33 +222,46 @@
 # define _DEFAULT_SOURCE	1
 # undef  _ATFILE_SOURCE
 # define _ATFILE_SOURCE	1
+# undef  _DYNAMIC_STACK_SIZE_SOURCE
+# define _DYNAMIC_STACK_SIZE_SOURCE 1
 #endif
 
 /* If nothing (other than _GNU_SOURCE and _DEFAULT_SOURCE) is defined,
    define _DEFAULT_SOURCE.  */
 #if (defined _DEFAULT_SOURCE					\
      || (!defined __STRICT_ANSI__				\
-	 && !defined _ISOC99_SOURCE				\
+	 && !defined _ISOC99_SOURCE && !defined _ISOC11_SOURCE	\
+	 && !defined _ISOC2X_SOURCE				\
 	 && !defined _POSIX_SOURCE && !defined _POSIX_C_SOURCE	\
 	 && !defined _XOPEN_SOURCE))
 # undef  _DEFAULT_SOURCE
 # define _DEFAULT_SOURCE	1
 #endif
 
+/* This is to enable the ISO C2X extension.  */
+#if (defined _ISOC2X_SOURCE \
+     || (defined __STDC_VERSION__ && __STDC_VERSION__ > 201710L))
+# define __GLIBC_USE_ISOC2X	1
+#else
+# define __GLIBC_USE_ISOC2X	0
+#endif
+
 /* This is to enable the ISO C11 extension.  */
-#if (defined _ISOC11_SOURCE \
+#if (defined _ISOC11_SOURCE || defined _ISOC2X_SOURCE \
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L))
 # define __USE_ISOC11	1
 #endif
 
 /* This is to enable the ISO C99 extension.  */
-#if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE \
+#if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE			\
+     || defined _ISOC2X_SOURCE						\
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
 # define __USE_ISOC99	1
 #endif
 
 /* This is to enable the ISO C90 Amendment 1:1995 extension.  */
-#if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE \
+#if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE			\
+     || defined _ISOC2X_SOURCE						\
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199409L))
 # define __USE_ISOC95	1
 #endif
@@ -364,6 +391,8 @@
 # define __USE_FILE_OFFSET64	1
 #endif
 
+#include <features-time64.h>
+
 #if defined _DEFAULT_SOURCE
 # define __USE_MISC	1
 #endif
@@ -372,18 +401,35 @@
 # define __USE_ATFILE	1
 #endif
 
+#ifdef	_DYNAMIC_STACK_SIZE_SOURCE
+# define __USE_DYNAMIC_STACK_SIZE	1
+#endif
+
 #ifdef	_GNU_SOURCE
 # define __USE_GNU	1
 #endif
 
 #if defined _FORTIFY_SOURCE && _FORTIFY_SOURCE > 0 \
-    && __GNUC_PREREQ (4, 1) && defined __OPTIMIZE__ && __OPTIMIZE__ > 0
-# if _FORTIFY_SOURCE > 1
+    && defined __OPTIMIZE__ && __OPTIMIZE__ > 0
+# if !__GNUC_PREREQ (4, 1)
+#  warning _FORTIFY_SOURCE requires GCC 4.1 or later
+# elif _FORTIFY_SOURCE > 2 && (__glibc_clang_prereq (9, 0)		      \
+			       || __GNUC_PREREQ (12, 0))
+
+#  if _FORTIFY_SOURCE > 3
+#   warning _FORTIFY_SOURCE > 3 is treated like 3 on this platform
+#  endif
+#  define __USE_FORTIFY_LEVEL 3
+# elif _FORTIFY_SOURCE > 1
+#  if _FORTIFY_SOURCE > 2
+#   warning _FORTIFY_SOURCE > 2 is treated like 2 on this platform
+#  endif
 #  define __USE_FORTIFY_LEVEL 2
 # else
 #  define __USE_FORTIFY_LEVEL 1
 # endif
-#else
+#endif
+#ifndef __USE_FORTIFY_LEVEL
 # define __USE_FORTIFY_LEVEL 0
 #endif
 
@@ -395,6 +441,38 @@
 # define __GLIBC_USE_DEPRECATED_GETS 0
 #else
 # define __GLIBC_USE_DEPRECATED_GETS 1
+#endif
+
+/* GNU formerly extended the scanf functions with modified format
+   specifiers %as, %aS, and %a[...] that allocate a buffer for the
+   input using malloc.  This extension conflicts with ISO C99, which
+   defines %a as a standalone format specifier that reads a floating-
+   point number; moreover, POSIX.1-2008 provides the same feature
+   using the modifier letter 'm' instead (%ms, %mS, %m[...]).
+
+   We now follow C99 unless GNU extensions are active and the compiler
+   is specifically in C89 or C++98 mode (strict or not).  For
+   instance, with GCC, -std=gnu11 will have C99-compliant scanf with
+   or without -D_GNU_SOURCE, but -std=c89 -D_GNU_SOURCE will have the
+   old extension.  */
+#if (defined __USE_GNU							\
+     && (defined __cplusplus						\
+	 ? (__cplusplus < 201103L && !defined __GXX_EXPERIMENTAL_CXX0X__) \
+	 : (!defined __STDC_VERSION__ || __STDC_VERSION__ < 199901L)))
+# define __GLIBC_USE_DEPRECATED_SCANF 1
+#else
+# define __GLIBC_USE_DEPRECATED_SCANF 0
+#endif
+
+/* ISO C2X added support for a 0b or 0B prefix on binary constants as
+   inputs to strtol-family functions (base 0 or 2).  This macro is
+   used to condition redirection in headers to allow that redirection
+   to be disabled when building those functions, despite _GNU_SOURCE
+   being defined.  */
+#if __GLIBC_USE (ISOC2X)
+# define __GLIBC_USE_C2X_STRTOL 1
+#else
+# define __GLIBC_USE_C2X_STRTOL 0
 #endif
 
 /* Get definitions of __STDC_* predefined macros, if the compiler has
@@ -413,7 +491,7 @@
 /* Major and minor version number of the GNU C library package.  Use
    these macros to test for features in specific releases.  */
 #define	__GLIBC__	2
-#define	__GLIBC_MINOR__	27
+#define	__GLIBC_MINOR__	39
 
 #define __GLIBC_PREREQ(maj, min) \
 	((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((maj) << 16) + (min))

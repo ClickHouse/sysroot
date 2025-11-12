@@ -1,5 +1,5 @@
 /* `fd_set' type and related macros, and `select'/`pselect' declarations.
-   Copyright (C) 1996-2018 Free Software Foundation, Inc.
+   Copyright (C) 1996-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /*	POSIX 1003.1g: 6.2 Select from File Descriptor Sets <sys/select.h>  */
 
@@ -98,10 +98,23 @@ __BEGIN_DECLS
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+#ifndef __USE_TIME_BITS64
 extern int select (int __nfds, fd_set *__restrict __readfds,
 		   fd_set *__restrict __writefds,
 		   fd_set *__restrict __exceptfds,
 		   struct timeval *__restrict __timeout);
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT (select,
+                       (int __nfds, fd_set *__restrict __readfds,
+                        fd_set *__restrict __writefds,
+                        fd_set *__restrict __exceptfds,
+                        struct timeval *__restrict __timeout),
+                       __select64);
+# else
+#  define select __select64
+# endif
+#endif
 
 #ifdef __USE_XOPEN2K
 /* Same as above only that the TIMEOUT value is given with higher
@@ -110,11 +123,25 @@ extern int select (int __nfds, fd_set *__restrict __readfds,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
+# ifndef __USE_TIME_BITS64
 extern int pselect (int __nfds, fd_set *__restrict __readfds,
 		    fd_set *__restrict __writefds,
 		    fd_set *__restrict __exceptfds,
 		    const struct timespec *__restrict __timeout,
 		    const __sigset_t *__restrict __sigmask);
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (pselect,
+                       (int __nfds, fd_set *__restrict __readfds,
+                        fd_set *__restrict __writefds,
+                        fd_set *__restrict __exceptfds,
+                        const struct timespec *__restrict __timeout,
+                        const __sigset_t *__restrict __sigmask),
+                       __pselect64);
+#  else
+#   define pselect __pselect64
+#  endif
+# endif
 #endif
 
 
