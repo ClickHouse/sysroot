@@ -86,3 +86,6 @@
 #define AT_L2_CACHEGEOMETRY	45
 #define AT_L3_CACHESIZE		46
 #define AT_L3_CACHEGEOMETRY	47
+
+#define AT_MINSIGSTKSZ		51 /* Stack needed for signal delivery
+				      (AArch64).  */

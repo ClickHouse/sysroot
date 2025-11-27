@@ -1,5 +1,5 @@
 /* Macros to control TS 18661-3 glibc features on x86.
-   Copyright (C) 2017-2018 Free Software Foundation, Inc.
+   Copyright (C) 2017-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _BITS_FLOATN_H
 #define _BITS_FLOATN_H
@@ -29,7 +29,7 @@
 #if (defined __x86_64__							\
      ? __GNUC_PREREQ (4, 3)						\
      : (defined __GNU__ ? __GNUC_PREREQ (4, 5) : __GNUC_PREREQ (4, 4))) \
-     &&  !defined(__CUDACC__) && !defined(__ICC)
+     &&  !defined(__CUDACC__)
 # define __HAVE_FLOAT128 1
 #else
 # define __HAVE_FLOAT128 0

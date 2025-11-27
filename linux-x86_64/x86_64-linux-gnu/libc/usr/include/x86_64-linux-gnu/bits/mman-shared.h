@@ -1,5 +1,5 @@
 /* Memory-mapping-related declarations/definitions, not architecture-specific.
-   Copyright (C) 2017-2018 Free Software Foundation, Inc.
+   Copyright (C) 2017-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,13 +14,17 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_MMAN_H
 # error "Never use <bits/mman-shared.h> directly; include <sys/mman.h> instead."
 #endif
 
 #ifdef __USE_GNU
+/* Flags for mremap.  */
+# define MREMAP_MAYMOVE	1
+# define MREMAP_FIXED	2
+
 /* Flags for memfd_create.  */
 # ifndef MFD_CLOEXEC
 #  define MFD_CLOEXEC 1U

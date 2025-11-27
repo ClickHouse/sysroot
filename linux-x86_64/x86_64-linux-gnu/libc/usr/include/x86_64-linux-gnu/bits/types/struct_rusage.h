@@ -1,5 +1,5 @@
 /* Define struct rusage.
-   Copyright (C) 1994-2018 Free Software Foundation, Inc.
+   Copyright (C) 1994-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef __rusage_defined
 #define __rusage_defined 1
@@ -22,7 +22,9 @@
 #include <bits/types.h>
 #include <bits/types/struct_timeval.h>
 
-/* Structure which says how much of each resource has been used.  */
+/* Structure which says how much of each resource has been used.  If
+   the system does not keep track of a particular value, the struct
+   field is always zero.  */
 
 /* The purpose of all the unions is to have the kernel-compatible layout
    while keeping the API type as 'long int', and among machines where
@@ -42,7 +44,6 @@ struct rusage
       };
     /* Amount of sharing of text segment memory
        with other processes (kilobyte-seconds).  */
-    /* Maximum resident set size (in kilobytes).  */
     __extension__ union
       {
 	long int ru_ixrss;

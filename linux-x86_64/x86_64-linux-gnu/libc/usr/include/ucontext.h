@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /* System V ABI compliant user-level context switching support.  */
 
@@ -21,6 +21,9 @@
 #define _UCONTEXT_H	1
 
 #include <features.h>
+
+/* Get definition of __INDIRECT_RETURN.  */
+#include <bits/indirect-return.h>
 
 /* Get machine dependent definition of data structures.  */
 #include <sys/ucontext.h>
@@ -36,7 +39,8 @@ extern int setcontext (const ucontext_t *__ucp) __THROWNL;
 /* Save current context in context variable pointed to by OUCP and set
    context from variable pointed to by UCP.  */
 extern int swapcontext (ucontext_t *__restrict __oucp,
-			const ucontext_t *__restrict __ucp) __THROWNL;
+			const ucontext_t *__restrict __ucp)
+  __THROWNL __INDIRECT_RETURN;
 
 /* Manipulate user context UCP to continue with calling functions FUNC
    and the ARGC-1 parameters following ARGC when the context is used

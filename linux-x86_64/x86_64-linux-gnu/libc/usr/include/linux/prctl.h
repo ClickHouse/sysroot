@@ -170,7 +170,7 @@ struct prctl_mm_map {
  * asking selinux for a specific new context (e.g. with runcon) will result
  * in execve returning -EPERM.
  *
- * See Documentation/prctl/no_new_privs.txt for more details.
+ * See Documentation/userspace-api/no_new_privs.rst for more details.
  */
 #define PR_SET_NO_NEW_PRIVS	38
 #define PR_GET_NO_NEW_PRIVS	39
@@ -181,7 +181,7 @@ struct prctl_mm_map {
 #define PR_GET_THP_DISABLE	42
 
 /*
- * Tell the kernel to start/stop helping userspace manage bounds tables.
+ * No longer implemented, but left here to ensure the numbers stay reserved:
  */
 #define PR_MPX_ENABLE_MANAGEMENT  43
 #define PR_MPX_DISABLE_MANAGEMENT 44
@@ -219,15 +219,19 @@ struct prctl_mm_map {
 # define PR_SPEC_ENABLE			(1UL << 1)
 # define PR_SPEC_DISABLE		(1UL << 2)
 # define PR_SPEC_FORCE_DISABLE		(1UL << 3)
+# define PR_SPEC_DISABLE_NOEXEC		(1UL << 4)
 
-/*
- * Control the LSM specific peer information
- *
- * The Ubuntu kernel provides an early preview of LSM Stacking. Use these
- * PRCTLs at your own risk. Their values are not guaranteed to be stable in the
- * case of colliding with an upstream PRCTL.
- */
-#define	PR_GET_DISPLAY_LSM	1000000
-#define	PR_SET_DISPLAY_LSM	1000001
+/* Reset arm64 pointer authentication keys */
+#define PR_PAC_RESET_KEYS		54
+# define PR_PAC_APIAKEY			(1UL << 0)
+# define PR_PAC_APIBKEY			(1UL << 1)
+# define PR_PAC_APDAKEY			(1UL << 2)
+# define PR_PAC_APDBKEY			(1UL << 3)
+# define PR_PAC_APGAKEY			(1UL << 4)
+
+/* Tagged user address controls for arm64 */
+#define PR_SET_TAGGED_ADDR_CTRL		55
+#define PR_GET_TAGGED_ADDR_CTRL		56
+# define PR_TAGGED_ADDR_ENABLE		(1UL << 0)
 
 #endif /* _LINUX_PRCTL_H */

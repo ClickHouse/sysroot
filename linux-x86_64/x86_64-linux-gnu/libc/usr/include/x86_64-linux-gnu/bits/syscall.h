@@ -1,11 +1,11 @@
 /* Generated at libc build time from syscall list.  */
-/* The system call list corresponds to kernel 4.14.  */
+/* The system call list corresponds to kernel 5.5.  */
 
 #ifndef _SYSCALL_H
 # error "Never use <bits/syscall.h> directly; include <sys/syscall.h> instead."
 #endif
 
-#define __GLIBC_LINUX_VERSION_CODE 265728
+#define __GLIBC_LINUX_VERSION_CODE 328960
 
 #ifdef __NR_FAST_atomic_update
 # define SYS_FAST_atomic_update __NR_FAST_atomic_update
@@ -115,6 +115,10 @@
 # define SYS_break __NR_break
 #endif
 
+#ifdef __NR_breakpoint
+# define SYS_breakpoint __NR_breakpoint
+#endif
+
 #ifdef __NR_brk
 # define SYS_brk __NR_brk
 #endif
@@ -159,20 +163,40 @@
 # define SYS_clock_adjtime __NR_clock_adjtime
 #endif
 
+#ifdef __NR_clock_adjtime64
+# define SYS_clock_adjtime64 __NR_clock_adjtime64
+#endif
+
 #ifdef __NR_clock_getres
 # define SYS_clock_getres __NR_clock_getres
+#endif
+
+#ifdef __NR_clock_getres_time64
+# define SYS_clock_getres_time64 __NR_clock_getres_time64
 #endif
 
 #ifdef __NR_clock_gettime
 # define SYS_clock_gettime __NR_clock_gettime
 #endif
 
+#ifdef __NR_clock_gettime64
+# define SYS_clock_gettime64 __NR_clock_gettime64
+#endif
+
 #ifdef __NR_clock_nanosleep
 # define SYS_clock_nanosleep __NR_clock_nanosleep
 #endif
 
+#ifdef __NR_clock_nanosleep_time64
+# define SYS_clock_nanosleep_time64 __NR_clock_nanosleep_time64
+#endif
+
 #ifdef __NR_clock_settime
 # define SYS_clock_settime __NR_clock_settime
+#endif
+
+#ifdef __NR_clock_settime64
+# define SYS_clock_settime64 __NR_clock_settime64
 #endif
 
 #ifdef __NR_clone
@@ -181,6 +205,10 @@
 
 #ifdef __NR_clone2
 # define SYS_clone2 __NR_clone2
+#endif
+
+#ifdef __NR_clone3
+# define SYS_clone3 __NR_clone3
 #endif
 
 #ifdef __NR_close
@@ -367,6 +395,10 @@
 # define SYS_fork __NR_fork
 #endif
 
+#ifdef __NR_fp_udfiex_crtl
+# define SYS_fp_udfiex_crtl __NR_fp_udfiex_crtl
+#endif
+
 #ifdef __NR_free_hugepages
 # define SYS_free_hugepages __NR_free_hugepages
 #endif
@@ -375,8 +407,24 @@
 # define SYS_fremovexattr __NR_fremovexattr
 #endif
 
+#ifdef __NR_fsconfig
+# define SYS_fsconfig __NR_fsconfig
+#endif
+
 #ifdef __NR_fsetxattr
 # define SYS_fsetxattr __NR_fsetxattr
+#endif
+
+#ifdef __NR_fsmount
+# define SYS_fsmount __NR_fsmount
+#endif
+
+#ifdef __NR_fsopen
+# define SYS_fsopen __NR_fsopen
+#endif
+
+#ifdef __NR_fspick
+# define SYS_fspick __NR_fspick
 #endif
 
 #ifdef __NR_fstat
@@ -419,6 +467,10 @@
 # define SYS_futex __NR_futex
 #endif
 
+#ifdef __NR_futex_time64
+# define SYS_futex_time64 __NR_futex_time64
+#endif
+
 #ifdef __NR_futimesat
 # define SYS_futimesat __NR_futimesat
 #endif
@@ -437,6 +489,10 @@
 
 #ifdef __NR_get_thread_area
 # define SYS_get_thread_area __NR_get_thread_area
+#endif
+
+#ifdef __NR_get_tls
+# define SYS_get_tls __NR_get_tls
 #endif
 
 #ifdef __NR_getcpu
@@ -651,12 +707,32 @@
 # define SYS_io_getevents __NR_io_getevents
 #endif
 
+#ifdef __NR_io_pgetevents
+# define SYS_io_pgetevents __NR_io_pgetevents
+#endif
+
+#ifdef __NR_io_pgetevents_time64
+# define SYS_io_pgetevents_time64 __NR_io_pgetevents_time64
+#endif
+
 #ifdef __NR_io_setup
 # define SYS_io_setup __NR_io_setup
 #endif
 
 #ifdef __NR_io_submit
 # define SYS_io_submit __NR_io_submit
+#endif
+
+#ifdef __NR_io_uring_enter
+# define SYS_io_uring_enter __NR_io_uring_enter
+#endif
+
+#ifdef __NR_io_uring_register
+# define SYS_io_uring_register __NR_io_uring_register
+#endif
+
+#ifdef __NR_io_uring_setup
+# define SYS_io_uring_setup __NR_io_uring_setup
 #endif
 
 #ifdef __NR_ioctl
@@ -843,6 +919,10 @@
 # define SYS_mount __NR_mount
 #endif
 
+#ifdef __NR_move_mount
+# define SYS_move_mount __NR_move_mount
+#endif
+
 #ifdef __NR_move_pages
 # define SYS_move_pages __NR_move_pages
 #endif
@@ -871,8 +951,16 @@
 # define SYS_mq_timedreceive __NR_mq_timedreceive
 #endif
 
+#ifdef __NR_mq_timedreceive_time64
+# define SYS_mq_timedreceive_time64 __NR_mq_timedreceive_time64
+#endif
+
 #ifdef __NR_mq_timedsend
 # define SYS_mq_timedsend __NR_mq_timedsend
+#endif
+
+#ifdef __NR_mq_timedsend_time64
+# define SYS_mq_timedsend_time64 __NR_mq_timedsend_time64
 #endif
 
 #ifdef __NR_mq_unlink
@@ -947,6 +1035,10 @@
 # define SYS_old_adjtimex __NR_old_adjtimex
 #endif
 
+#ifdef __NR_old_getpagesize
+# define SYS_old_getpagesize __NR_old_getpagesize
+#endif
+
 #ifdef __NR_oldfstat
 # define SYS_oldfstat __NR_oldfstat
 #endif
@@ -977,6 +1069,10 @@
 
 #ifdef __NR_open_by_handle_at
 # define SYS_open_by_handle_at __NR_open_by_handle_at
+#endif
+
+#ifdef __NR_open_tree
+# define SYS_open_tree __NR_open_tree
 #endif
 
 #ifdef __NR_openat
@@ -1455,6 +1551,14 @@
 # define SYS_personality __NR_personality
 #endif
 
+#ifdef __NR_pidfd_open
+# define SYS_pidfd_open __NR_pidfd_open
+#endif
+
+#ifdef __NR_pidfd_send_signal
+# define SYS_pidfd_send_signal __NR_pidfd_send_signal
+#endif
+
 #ifdef __NR_pipe
 # define SYS_pipe __NR_pipe
 #endif
@@ -1485,6 +1589,10 @@
 
 #ifdef __NR_ppoll
 # define SYS_ppoll __NR_ppoll
+#endif
+
+#ifdef __NR_ppoll_time64
+# define SYS_ppoll_time64 __NR_ppoll_time64
 #endif
 
 #ifdef __NR_prctl
@@ -1525,6 +1633,10 @@
 
 #ifdef __NR_pselect6
 # define SYS_pselect6 __NR_pselect6
+#endif
+
+#ifdef __NR_pselect6_time64
+# define SYS_pselect6_time64 __NR_pselect6_time64
 #endif
 
 #ifdef __NR_ptrace
@@ -1595,6 +1707,10 @@
 # define SYS_recvmmsg __NR_recvmmsg
 #endif
 
+#ifdef __NR_recvmmsg_time64
+# define SYS_recvmmsg_time64 __NR_recvmmsg_time64
+#endif
+
 #ifdef __NR_recvmsg
 # define SYS_recvmsg __NR_recvmsg
 #endif
@@ -1627,8 +1743,16 @@
 # define SYS_restart_syscall __NR_restart_syscall
 #endif
 
+#ifdef __NR_riscv_flush_icache
+# define SYS_riscv_flush_icache __NR_riscv_flush_icache
+#endif
+
 #ifdef __NR_rmdir
 # define SYS_rmdir __NR_rmdir
+#endif
+
+#ifdef __NR_rseq
+# define SYS_rseq __NR_rseq
 #endif
 
 #ifdef __NR_rt_sigaction
@@ -1659,6 +1783,10 @@
 # define SYS_rt_sigtimedwait __NR_rt_sigtimedwait
 #endif
 
+#ifdef __NR_rt_sigtimedwait_time64
+# define SYS_rt_sigtimedwait_time64 __NR_rt_sigtimedwait_time64
+#endif
+
 #ifdef __NR_rt_tgsigqueueinfo
 # define SYS_rt_tgsigqueueinfo __NR_rt_tgsigqueueinfo
 #endif
@@ -1681,6 +1809,10 @@
 
 #ifdef __NR_s390_runtime_instr
 # define SYS_s390_runtime_instr __NR_s390_runtime_instr
+#endif
+
+#ifdef __NR_s390_sthyi
+# define SYS_s390_sthyi __NR_s390_sthyi
 #endif
 
 #ifdef __NR_sched_get_affinity
@@ -1713,6 +1845,10 @@
 
 #ifdef __NR_sched_rr_get_interval
 # define SYS_sched_rr_get_interval __NR_sched_rr_get_interval
+#endif
+
+#ifdef __NR_sched_rr_get_interval_time64
+# define SYS_sched_rr_get_interval_time64 __NR_sched_rr_get_interval_time64
 #endif
 
 #ifdef __NR_sched_set_affinity
@@ -1767,6 +1903,10 @@
 # define SYS_semtimedop __NR_semtimedop
 #endif
 
+#ifdef __NR_semtimedop_time64
+# define SYS_semtimedop_time64 __NR_semtimedop_time64
+#endif
+
 #ifdef __NR_send
 # define SYS_send __NR_send
 #endif
@@ -1805,6 +1945,10 @@
 
 #ifdef __NR_set_tid_address
 # define SYS_set_tid_address __NR_set_tid_address
+#endif
+
+#ifdef __NR_set_tls
+# define SYS_set_tls __NR_set_tls
 #endif
 
 #ifdef __NR_setdomainname
@@ -2155,8 +2299,16 @@
 # define SYS_timer_gettime __NR_timer_gettime
 #endif
 
+#ifdef __NR_timer_gettime64
+# define SYS_timer_gettime64 __NR_timer_gettime64
+#endif
+
 #ifdef __NR_timer_settime
 # define SYS_timer_settime __NR_timer_settime
+#endif
+
+#ifdef __NR_timer_settime64
+# define SYS_timer_settime64 __NR_timer_settime64
 #endif
 
 #ifdef __NR_timerfd
@@ -2171,8 +2323,16 @@
 # define SYS_timerfd_gettime __NR_timerfd_gettime
 #endif
 
+#ifdef __NR_timerfd_gettime64
+# define SYS_timerfd_gettime64 __NR_timerfd_gettime64
+#endif
+
 #ifdef __NR_timerfd_settime
 # define SYS_timerfd_settime __NR_timerfd_settime
+#endif
+
+#ifdef __NR_timerfd_settime64
+# define SYS_timerfd_settime64 __NR_timerfd_settime64
 #endif
 
 #ifdef __NR_times
@@ -2193,6 +2353,10 @@
 
 #ifdef __NR_tuxcall
 # define SYS_tuxcall __NR_tuxcall
+#endif
+
+#ifdef __NR_udftrap
+# define SYS_udftrap __NR_udftrap
 #endif
 
 #ifdef __NR_ugetrlimit
@@ -2239,6 +2403,14 @@
 # define SYS_userfaultfd __NR_userfaultfd
 #endif
 
+#ifdef __NR_usr26
+# define SYS_usr26 __NR_usr26
+#endif
+
+#ifdef __NR_usr32
+# define SYS_usr32 __NR_usr32
+#endif
+
 #ifdef __NR_ustat
 # define SYS_ustat __NR_ustat
 #endif
@@ -2249,6 +2421,10 @@
 
 #ifdef __NR_utimensat
 # define SYS_utimensat __NR_utimensat
+#endif
+
+#ifdef __NR_utimensat_time64
+# define SYS_utimensat_time64 __NR_utimensat_time64
 #endif
 
 #ifdef __NR_utimes

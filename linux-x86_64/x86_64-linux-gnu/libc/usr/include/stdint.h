@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 /*
  *	ISO C99: 7.18 Integer types <stdint.h>
@@ -40,26 +40,16 @@
 /* Small types.  */
 
 /* Signed.  */
-typedef signed char		int_least8_t;
-typedef short int		int_least16_t;
-typedef int			int_least32_t;
-#if __WORDSIZE == 64
-typedef long int		int_least64_t;
-#else
-__extension__
-typedef long long int		int_least64_t;
-#endif
+typedef __int_least8_t int_least8_t;
+typedef __int_least16_t int_least16_t;
+typedef __int_least32_t int_least32_t;
+typedef __int_least64_t int_least64_t;
 
 /* Unsigned.  */
-typedef unsigned char		uint_least8_t;
-typedef unsigned short int	uint_least16_t;
-typedef unsigned int		uint_least32_t;
-#if __WORDSIZE == 64
-typedef unsigned long int	uint_least64_t;
-#else
-__extension__
-typedef unsigned long long int	uint_least64_t;
-#endif
+typedef __uint_least8_t uint_least8_t;
+typedef __uint_least16_t uint_least16_t;
+typedef __uint_least32_t uint_least32_t;
+typedef __uint_least64_t uint_least64_t;
 
 
 /* Fast types.  */
@@ -283,7 +273,7 @@ typedef __uintmax_t		uintmax_t;
 #  define UINTMAX_C(c)	c ## ULL
 # endif
 
-#if __GLIBC_USE (IEC_60559_BFP_EXT)
+#if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
 
 # define INT8_WIDTH 8
 # define UINT8_WIDTH 8
