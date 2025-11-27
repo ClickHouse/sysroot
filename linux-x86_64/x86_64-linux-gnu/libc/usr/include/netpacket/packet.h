@@ -1,5 +1,5 @@
 /* Definitions for use with Linux AF_PACKET sockets.
-   Copyright (C) 1998-2020 Free Software Foundation, Inc.
+   Copyright (C) 1998-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <https://www.gnu.org/licenses/>.  */
+   <http://www.gnu.org/licenses/>.  */
 
 #ifndef __NETPACKET_PACKET_H
 #define __NETPACKET_PACKET_H	1
@@ -63,7 +63,6 @@ struct sockaddr_ll
 #define	PACKET_QDISC_BYPASS		20
 #define	PACKET_ROLLOVER_STATS		21
 #define	PACKET_FANOUT_DATA		22
-#define	PACKET_IGNORE_OUTGOING		23
 
 struct packet_mreq
   {
