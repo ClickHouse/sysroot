@@ -1,5 +1,5 @@
 /* Define POSIX options for Linux.
-   Copyright (C) 1996-2018 Free Software Foundation, Inc.
+   Copyright (C) 1996-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; see the file COPYING.LIB.  If
-   not, see <http://www.gnu.org/licenses/>.  */
+   not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_BITS_POSIX_OPT_H
 #define	_BITS_POSIX_OPT_H	1
@@ -25,7 +25,10 @@
 /* Processes have a saved set-user-ID and a saved set-group-ID.  */
 #define	_POSIX_SAVED_IDS	1
 
-/* Priority scheduling is supported.  */
+/* Priority scheduling is not supported with the correct semantics,
+   but GNU/Linux applications expect that the corresponding interfaces
+   are available, even though the semantics do not meet the POSIX
+   requirements.  See glibc bug 14829.  */
 #define	_POSIX_PRIORITY_SCHEDULING	200809L
 
 /* Synchronizing file data is supported.  */

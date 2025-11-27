@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Free Software Foundation, Inc.
+/* Copyright (C) 2001-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _SYS_UCONTEXT_H
 #define _SYS_UCONTEXT_H	1
@@ -147,6 +147,7 @@ typedef struct ucontext_t
     mcontext_t uc_mcontext;
     sigset_t uc_sigmask;
     struct _libc_fpstate __fpregs_mem;
+    __extension__ unsigned long long int __ssp[4];
   } ucontext_t;
 
 #else /* !__x86_64__ */
@@ -251,6 +252,7 @@ typedef struct ucontext_t
     mcontext_t uc_mcontext;
     sigset_t uc_sigmask;
     struct _libc_fpstate __fpregs_mem;
+    unsigned long int __ssp[4];
   } ucontext_t;
 
 #endif /* !__x86_64__ */

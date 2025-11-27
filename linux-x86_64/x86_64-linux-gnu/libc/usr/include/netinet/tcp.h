@@ -73,6 +73,17 @@
 #define TCP_FASTOPEN_CONNECT	 30 /* Attempt FastOpen with connect.  */
 #define TCP_ULP			 31 /* Attach a ULP to a TCP connection.  */
 #define TCP_MD5SIG_EXT		 32 /* TCP MD5 Signature with extensions.  */
+#define TCP_FASTOPEN_KEY	 33 /* Set the key for Fast Open (cookie).  */
+#define TCP_FASTOPEN_NO_COOKIE	 34 /* Enable TFO without a TFO cookie.  */
+#define TCP_ZEROCOPY_RECEIVE	 35
+#define TCP_INQ			 36 /* Notify bytes available to read
+				       as a cmsg on read.  */
+#define TCP_CM_INQ		 TCP_INQ
+#define TCP_TX_DELAY		 37 /* Delay outgoing packets by XX usec.  */
+
+#define TCP_REPAIR_ON		 1
+#define TCP_REPAIR_OFF		 0
+#define TCP_REPAIR_OFF_NO_WP	 -1
 
 #ifdef __USE_MISC
 # include <sys/types.h>
@@ -323,6 +334,14 @@ struct tcp_repair_window
   uint32_t max_window;
   uint32_t rcv_wnd;
   uint32_t rcv_wup;
+};
+
+/* For use with TCP_ZEROCOPY_RECEIVE.  */
+struct tcp_zerocopy_receive
+{
+  uint64_t address; /* In: address of mapping.  */
+  uint32_t length; /* In/out: number of bytes to map/mapped.  */
+  uint32_t recv_skip_hint; /* Out: amount of bytes to skip.  */
 };
 
 #endif /* Misc.  */

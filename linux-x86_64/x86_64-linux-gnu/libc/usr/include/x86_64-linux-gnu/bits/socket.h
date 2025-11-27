@@ -1,5 +1,5 @@
 /* System-specific socket constants and types.  Linux version.
-   Copyright (C) 1991-2018 Free Software Foundation, Inc.
+   Copyright (C) 1991-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef __BITS_SOCKET_H
 #define __BITS_SOCKET_H
@@ -85,7 +85,8 @@ typedef __socklen_t socklen_t;
 #define PF_KCM		41	/* Kernel Connection Multiplexor.  */
 #define PF_QIPCRTR	42	/* Qualcomm IPC Router.  */
 #define PF_SMC		43	/* SMC sockets.  */
-#define PF_MAX		44	/* For now..  */
+#define PF_XDP		44	/* XDP sockets.  */
+#define PF_MAX		45	/* For now..  */
 
 /* Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
@@ -135,6 +136,7 @@ typedef __socklen_t socklen_t;
 #define AF_KCM		PF_KCM
 #define AF_QIPCRTR	PF_QIPCRTR
 #define AF_SMC		PF_SMC
+#define AF_XDP		PF_XDP
 #define AF_MAX		PF_MAX
 
 /* Socket level values.  Others are defined in the appropriate headers.
@@ -164,9 +166,10 @@ typedef __socklen_t socklen_t;
 #define SOL_NFC		280
 #define SOL_KCM		281
 #define SOL_TLS		282
+#define SOL_XDP		283
 
 /* Maximum queue length specifiable by listen.  */
-#define SOMAXCONN	128
+#define SOMAXCONN	4096
 
 /* Get the definition of the macro to define the common sockaddr members.  */
 #include <bits/sockaddr.h>
@@ -346,98 +349,12 @@ struct ucred
 };
 #endif
 
-/* Ugly workaround for unclean kernel headers.  */
-#ifndef __USE_MISC
-# ifndef FIOGETOWN
-#  define __SYS_SOCKET_H_undef_FIOGETOWN
-# endif
-# ifndef FIOSETOWN
-#  define __SYS_SOCKET_H_undef_FIOSETOWN
-# endif
-# ifndef SIOCATMARK
-#  define __SYS_SOCKET_H_undef_SIOCATMARK
-# endif
-# ifndef SIOCGPGRP
-#  define __SYS_SOCKET_H_undef_SIOCGPGRP
-# endif
-# ifndef SIOCGSTAMP
-#  define __SYS_SOCKET_H_undef_SIOCGSTAMP
-# endif
-# ifndef SIOCGSTAMPNS
-#  define __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-# endif
-# ifndef SIOCSPGRP
-#  define __SYS_SOCKET_H_undef_SIOCSPGRP
-# endif
-#endif
-#ifndef IOCSIZE_MASK
-# define __SYS_SOCKET_H_undef_IOCSIZE_MASK
-#endif
-#ifndef IOCSIZE_SHIFT
-# define __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-#endif
-#ifndef IOC_IN
-# define __SYS_SOCKET_H_undef_IOC_IN
-#endif
-#ifndef IOC_INOUT
-# define __SYS_SOCKET_H_undef_IOC_INOUT
-#endif
-#ifndef IOC_OUT
-# define __SYS_SOCKET_H_undef_IOC_OUT
-#endif
-
-/* Get socket manipulation related informations from kernel headers.  */
-#include <asm/socket.h>
-
-#ifndef __USE_MISC
-# ifdef __SYS_SOCKET_H_undef_FIOGETOWN
-#  undef __SYS_SOCKET_H_undef_FIOGETOWN
-#  undef FIOGETOWN
-# endif
-# ifdef __SYS_SOCKET_H_undef_FIOSETOWN
-#  undef __SYS_SOCKET_H_undef_FIOSETOWN
-#  undef FIOSETOWN
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCATMARK
-#  undef __SYS_SOCKET_H_undef_SIOCATMARK
-#  undef SIOCATMARK
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGPGRP
-#  undef __SYS_SOCKET_H_undef_SIOCGPGRP
-#  undef SIOCGPGRP
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#  undef __SYS_SOCKET_H_undef_SIOCGSTAMP
-#  undef SIOCGSTAMP
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#  undef __SYS_SOCKET_H_undef_SIOCGSTAMPNS
-#  undef SIOCGSTAMPNS
-# endif
-# ifdef __SYS_SOCKET_H_undef_SIOCSPGRP
-#  undef __SYS_SOCKET_H_undef_SIOCSPGRP
-#  undef SIOCSPGRP
-# endif
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-# undef __SYS_SOCKET_H_undef_IOCSIZE_MASK
-# undef IOCSIZE_MASK
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-# undef __SYS_SOCKET_H_undef_IOCSIZE_SHIFT
-# undef IOCSIZE_SHIFT
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_IN
-# undef __SYS_SOCKET_H_undef_IOC_IN
-# undef IOC_IN
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_INOUT
-# undef __SYS_SOCKET_H_undef_IOC_INOUT
-# undef IOC_INOUT
-#endif
-#ifdef __SYS_SOCKET_H_undef_IOC_OUT
-# undef __SYS_SOCKET_H_undef_IOC_OUT
-# undef IOC_OUT
+#ifdef __USE_MISC
+# include <bits/types/time_t.h>
+# include <asm/socket.h>
+#else
+# define SO_DEBUG 1
+# include <bits/socket-constants.h>
 #endif
 
 /* Structure used to manipulate the SO_LINGER option.  */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef	_BITS_TIMEX_H
 #define	_BITS_TIMEX_H	1
@@ -104,7 +104,7 @@ struct timex
 #define STA_CLK		0x8000	/* clock source (0 = A, 1 = B) (ro) */
 
 /* Read-only bits */
-#define STA_RONLY (STA_PPSSIGNAL | STA_PPSJITTER | STA_PPSWANDER | \
-    STA_PPSERROR | STA_CLOCKERR | STA_NANO | STA_MODE | STA_CLK)
+#define STA_RONLY (STA_PPSSIGNAL | STA_PPSJITTER | STA_PPSWANDER \
+    | STA_PPSERROR | STA_CLOCKERR | STA_NANO | STA_MODE | STA_CLK)
 
 #endif /* bits/timex.h */

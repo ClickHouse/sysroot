@@ -1,6 +1,6 @@
 /* Definitions of constants and data structure for POSIX 1003.1b-1993
    scheduling interface.
-   Copyright (C) 1996-2018 Free Software Foundation, Inc.
+   Copyright (C) 1996-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 #ifndef _BITS_SCHED_H
 #define _BITS_SCHED_H 1
@@ -44,6 +44,8 @@
 # define CLONE_FS      0x00000200 /* Set if fs info shared between processes.  */
 # define CLONE_FILES   0x00000400 /* Set if open files shared between processes.  */
 # define CLONE_SIGHAND 0x00000800 /* Set if signal handlers shared.  */
+# define CLONE_PIDFD   0x00001000 /* Set if a pidfd should be placed
+				     in parent.  */
 # define CLONE_PTRACE  0x00002000 /* Set if tracing continues on the child.  */
 # define CLONE_VFORK   0x00004000 /* Set if the parent wants the child to
 				     wake it up on mm_release.  */
@@ -71,11 +73,7 @@
 # define CLONE_IO	0x80000000	/* Clone I/O context.  */
 #endif
 
-/* Data structure to describe a process' schedulability.  */
-struct sched_param
-{
-  int sched_priority;
-};
+#include <bits/types/struct_sched_param.h>
 
 __BEGIN_DECLS
 
@@ -89,6 +87,9 @@ extern int unshare (int __flags) __THROW;
 
 /* Get index of currently used CPU.  */
 extern int sched_getcpu (void) __THROW;
+
+/* Get currently used CPU and NUMA node.  */
+extern int getcpu (unsigned int *, unsigned int *) __THROW;
 
 /* Switch process to namespace of type NSTYPE indicated by FD.  */
 extern int setns (int __fd, int __nstype) __THROW;
