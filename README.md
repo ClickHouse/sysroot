@@ -30,7 +30,7 @@ This gives us the following advantages:
 
 This repository contains some blobs like `libc.so`.
 The source:
-- for `x86_64` they are from Ubuntu 20.04 image;
+- for `x86_64` they are from Ubuntu 20.04 image. Include files `linux-x86_64/x86_64-linux-gnu/libc/usr/include` come from `usr/include/` from Ubuntu 18.04 image.
 - for `aarch64` they are from [developer.arm.com](https://developer.arm.com/-/media/Files/downloads/gnu-a/8.3-2019.03/binrel/gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu.tar.xz?revision=2e88a73f-d233-4f96-b1f4-d8b36e9bb0b9&la=en)
 
 - for `s390x` it is extracted from Docker image:
@@ -63,5 +63,4 @@ FreeBSD:
 - Run ./refresh-freebsd-sysroot.sh
 
 TODO:
-- build `compiler-rt` from sources and remove `libgcc.a` from here;
 - simplify directory structure even more.

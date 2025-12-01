@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /* AF_VSOCK sock_diag(7) interface for querying open sockets */
 
-#ifndef _UAPI__VM_SOCKETS_DIAG_H__
-#define _UAPI__VM_SOCKETS_DIAG_H__
+#ifndef __VM_SOCKETS_DIAG_H__
+#define __VM_SOCKETS_DIAG_H__
 
 #include <linux/types.h>
 
@@ -31,4 +31,4 @@ struct vsock_diag_msg {
 	__u32	vdiag_cookie[2];
 };
 
-#endif /* _UAPI__VM_SOCKETS_DIAG_H__ */
+#endif /* __VM_SOCKETS_DIAG_H__ */
