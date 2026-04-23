@@ -31,16 +31,32 @@
 #       - Fix: copy `Scrt1.o` from Debian trixie's libc6-dev-loong64-cross
 #         package into `usr/lib/loongarch64-linux-gnu/`.
 #
+#   * x86_64-musl
+#       - ClickHouse's musl build is statically linked (`-static -lc`). Under
+#         `-pie`, that combination is incoherent: clang's driver picks
+#         `crtbeginT.o` (the non-PIC "typical" static-exe CRT) and `lld`
+#         then rejects its absolute `R_X86_64_32` relocations against
+#         `__TMC_END__` etc. Switching to `-static-pie` makes the driver
+#         pick the PIC variants (`rcrt1.o`, `crtbeginS.o`, `crtendS.o`),
+#         but those files are not in this sysroot.
+#       - Fix: copy `rcrt1.o` (musl's relocatable CRT entry), `crtbeginS.o`
+#         and `crtendS.o` from Alpine's musl-dev / libgcc / gcc packages
+#         into `lib/`. musl's existing `libc.a` / `crt1.o` / `crti.o` /
+#         `crtn.o` are already PIC-clean, so no other changes are needed.
+#         The corresponding build-system change is to switch the musl
+#         build from `-static` to `-static-pie` in
+#         `cmake/linux/default_libs.cmake` in the main repo.
+#
 # This script is intentionally not a "full sysroot refresh". Upgrading
-# the glibc version compiled against is a separate, larger change.
+# the glibc/musl version compiled against is a separate, larger change.
 #
 # Usage:
 #   ./refresh-linux-sysroot.sh <arch>      # refresh one arch
-#   ./refresh-linux-sysroot.sh all         # refresh all three
+#   ./refresh-linux-sysroot.sh all         # refresh all four
 #
-# Supported <arch>: riscv64, ppc64le, loongarch64
+# Supported <arch>: riscv64, ppc64le, loongarch64, x86_64-musl
 #
-# Requires: docker (only for ppc64le / loongarch64).
+# Requires: docker (for all arches except riscv64).
 
 set -euo pipefail
 
@@ -149,12 +165,79 @@ refresh_loongarch64() {
   cp --preserve=mode,timestamps -v "$src" "$dir/Scrt1.o"
 }
 
+# Pull the PIC CRT startup objects for x86_64-linux-musl out of Alpine's
+# `musl-dev` + `libgcc` packages. Unlike the Debian-based arches above we
+# can't use `apt-get download` here because Debian does not ship a
+# musl-dev-x86-64-cross package; Alpine is the canonical source.
+extract_alpine_musl() {
+  if [[ -z "$STAGE_ROOT" ]]; then
+    STAGE_ROOT="$(mktemp -d)"
+  fi
+  local dest="$STAGE_ROOT/alpine-musl"
+  if [[ -d "$dest/usr" ]]; then
+    EXTRACTED_DIR="$dest"
+    return 0
+  fi
+  mkdir -p "$dest"
+  local uid gid
+  uid="$(id -u)"
+  gid="$(id -g)"
+  # musl-dev ships rcrt1.o / crt1.o / crti.o / crtn.o / libc.a.
+  # The PIC crtstuff (crtbeginS.o, crtendS.o) lives in the `gcc` package,
+  # not `libgcc` — libgcc only has the shared runtime.
+  docker run --rm -v "$dest":/out alpine:latest sh -c "
+    set -e
+    cd /out
+    apk fetch --no-cache --quiet musl-dev gcc 2>/dev/null
+    for f in *.apk; do tar -xzf \"\$f\" 2>/dev/null || true; done
+    chown -R ${uid}:${gid} /out
+  " >/dev/null
+  EXTRACTED_DIR="$dest"
+}
+
+refresh_x86_64_musl() {
+  local sysroot="$SCRIPT_DIR/linux-x86_64-musl"
+  echo ">> x86_64-musl: $sysroot"
+
+  extract_alpine_musl
+  local dir="$sysroot/lib"
+  if [[ ! -d "$dir" ]]; then
+    echo "Error: missing target dir $dir" >&2
+    return 1
+  fi
+
+  # musl's relocatable CRT entry object (driver picks this for -static-pie).
+  local rcrt1="$EXTRACTED_DIR/usr/lib/rcrt1.o"
+  if [[ ! -e "$rcrt1" ]]; then
+    echo "Error: rcrt1.o not found in Alpine musl-dev at $rcrt1" >&2
+    return 1
+  fi
+  cp --preserve=mode,timestamps -v "$rcrt1" "$dir/rcrt1.o"
+
+  # PIC variants of libgcc's crtstuff. They live under a versioned
+  # gcc-toolchain directory inside the libgcc package; glob for the first
+  # one we find so we don't hard-code the gcc version.
+  local gcclib
+  gcclib=$(ls -d "$EXTRACTED_DIR"/usr/lib/gcc/x86_64-alpine-linux-musl/*/ 2>/dev/null | head -1 || true)
+  if [[ -z "$gcclib" ]]; then
+    echo "Error: no libgcc tree under $EXTRACTED_DIR/usr/lib/gcc/" >&2
+    return 1
+  fi
+  for f in crtbeginS.o crtendS.o; do
+    if [[ ! -e "$gcclib/$f" ]]; then
+      echo "Error: $f not found under $gcclib" >&2
+      return 1
+    fi
+    cp --preserve=mode,timestamps -v "$gcclib/$f" "$dir/$f"
+  done
+}
+
 ARCH="${1:-}"
 if [[ -z "$ARCH" ]]; then
   cat <<EOF
 Usage: $0 <arch>
 
-Supported <arch>: riscv64, ppc64le, loongarch64, all
+Supported <arch>: riscv64, ppc64le, loongarch64, x86_64-musl, all
 EOF
   exit 1
 fi
@@ -163,10 +246,12 @@ case "$ARCH" in
   riscv64)     refresh_riscv64 ;;
   ppc64le)     refresh_ppc64le ;;
   loongarch64) refresh_loongarch64 ;;
+  x86_64-musl) refresh_x86_64_musl ;;
   all)
     refresh_riscv64
     refresh_ppc64le
     refresh_loongarch64
+    refresh_x86_64_musl
     ;;
   *)
     echo "Error: unsupported arch '$ARCH'." >&2
