@@ -1,0 +1,41 @@
+#***************************************************************************
+#                                  _   _ ____  _
+#  Project                     ___| | | |  _ \| |
+#                             / __| | | | |_) | |
+#                            | (__| |_| |  _ <| |___
+#                             \___|\___/|_| \_\_____|
+#
+# Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution. The terms
+# are also available at https://curl.se/docs/copyright.html.
+#
+# You may opt to use, copy, modify, merge, publish, distribute and/or sell
+# copies of the Software, and permit persons to whom the Software is
+# furnished to do so, under the terms of the COPYING file.
+#
+# This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+# KIND, either express or implied.
+#
+# SPDX-License-Identifier: curl
+#
+###########################################################################
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/amd64
+includedir=/usr/include
+supported_protocols="DICT FILE FTP FTPS GOPHER GOPHERS HTTP HTTPS IMAP IMAPS IPFS IPNS LDAP LDAPS MQTT POP3 POP3S RTSP SMB SMBS SMTP SMTPS TELNET TFTP WS WSS"
+supported_features="alt-svc AsynchDNS brotli HSTS HTTP2 HTTPS-proxy IPv6 Largefile libz NTLM PSL SSL threadsafe TLS-SRP UnixSockets zstd"
+
+Name: libcurl
+URL: https://curl.se/
+Description: Library to transfer files with HTTP, FTP, etc.
+Version: 8.18.0
+Requires: 
+Requires.private: zlib,libbrotlidec,libbrotlicommon,libzstd,openssl,libpsl,libnghttp2
+Libs: -L${libdir} -lcurl 
+Libs.private: -L/usr -L/usr/lib/amd64 -L/usr/lib/amd64 -lnghttp2 -lldap -lpsl -lssl -lcrypto -lssl -lcrypto -lzstd -lbrotlidec -lz -lsocket -lnsl
+Cflags: -I${includedir} 
+Cflags.private: -DCURL_STATICLIB

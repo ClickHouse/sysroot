@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/amd64
+includedir=/usr/include
+
+Name: libpsl
+Description: Public Suffix List C library.
+Version: 0.21.5
+URL: https://github.com/rockdaboot/libpsl
+Libs: -L${libdir} -lpsl
+Cflags: -I${includedir}
