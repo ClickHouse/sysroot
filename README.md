@@ -62,5 +62,9 @@ FreeBSD:
 
 - Run ./refresh-freebsd-sysroot.sh
 
+illumos:
+
+- Run ./refresh-illumos-sysroot.sh on an illumos host.
+
 TODO:
 - simplify directory structure even more.

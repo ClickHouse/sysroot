@@ -1,0 +1,1 @@
+/* Everything that is specific to Cygwin is detected by the configure script */

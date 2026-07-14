@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=${prefix}
+includedir=/usr/include/gmp
+libdir=/usr/lib/amd64
+
+Name: GNU MP C++
+Description: GNU Multiple Precision Arithmetic Library (C++ bindings)
+URL: https://gmplib.org
+Version: 6.3.0
+Requires: gmp
+Cflags: -I${includedir}
+Libs: -L${libdir} -lgmpxx

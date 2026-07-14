@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/amd64
+includedir=/usr/include
+
+Name: SQLite
+Description: SQL database engine
+Version: 3.50.4
+Libs: -L${libdir} -lsqlite3
+Libs.private: -lm -lz   
+Cflags: -I${includedir}

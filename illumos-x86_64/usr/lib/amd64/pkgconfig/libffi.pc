@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/amd64
+toolexeclibdir=${libdir}
+includedir=/usr/include
+
+Name: libffi
+Description: Library supporting Foreign Function Interfaces
+Version: 3.4.5
+Libs: -L${toolexeclibdir} -lffi
+Cflags: -I${includedir}
