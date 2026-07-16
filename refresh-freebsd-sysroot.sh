@@ -9,9 +9,9 @@ if [[ -z "$URL" ]]; then
 Usage: ./refresh-freebsd-sysroot.sh <URL>
 
 URL examples:
-  https://download.freebsd.org/releases/arm64/13.4-RELEASE/base.txz
-  https://download.freebsd.org/releases/amd64/13.4-RELEASE/base.txz
-  https://download.freebsd.org/releases/powerpc64/13.4-RELEASE/base.txz
+  https://download.freebsd.org/releases/amd64/13.5-RELEASE/base.txz
+  https://download.freebsd.org/releases/arm64/13.5-RELEASE/base.txz
+  https://download.freebsd.org/releases/powerpc/powerpc64le/13.5-RELEASE/base.txz
 
 The sysroot directory is automatically determined from the URL architecture.
 EOF
@@ -44,6 +44,7 @@ mkdir -p "$SYSROOT/usr/include" "$SYSROOT/lib"
 cp -va "$NEW_SYSROOT/usr/include/." "$SYSROOT/usr/include/"
 
 for p in crt1.o crtbegin.o crtend.o crti.o crtn.o \
+         Scrt1.o crtbeginS.o crtendS.o \
          libc.a libm.a librt.a; do
   cp -va "$NEW_SYSROOT/usr/lib/$p" "$SYSROOT/lib/"
 done

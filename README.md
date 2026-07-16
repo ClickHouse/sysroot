@@ -62,5 +62,14 @@ FreeBSD:
 
 - Run ./refresh-freebsd-sysroot.sh
 
+PIE-readiness on Linux targets:
+
+- Run `./refresh-linux-sysroot.sh <arch>` (or `./refresh-linux-sysroot.sh all`)
+  where `<arch>` is `riscv64`, `ppc64le`, or `loongarch64`. This adds the
+  minimal set of files missing from each sysroot so ClickHouse can be
+  linked as a Position-Independent Executable (`-pie`): a `librt.so` link
+  for riscv64, and `Scrt1.o` for ppc64le / loongarch64. See the header
+  comment of the script for details.
+
 TODO:
 - simplify directory structure even more.
