@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    Copyright The GNU Toolchain Authors.
    This file is part of the GNU C Library.
 
@@ -34,6 +34,10 @@
 __BEGIN_DECLS
 
 #define	_STDLIB_H	1
+
+#if __GLIBC_USE (ISOC23)
+# define __STDC_VERSION_STDLIB_H__ 202311L
+#endif
 
 #if (defined __USE_XOPEN || defined __USE_XOPEN2K8) && !defined _SYS_WAIT_H
 /* XPG requires a few symbols from <sys/wait.h> being defined.  */
@@ -208,8 +212,73 @@ extern unsigned long long int strtoull (const char *__restrict __nptr,
      __THROW __nonnull ((1));
 #endif /* ISO C99 or use MISC.  */
 
+/* Versions of the above functions that handle '0b' and '0B' prefixes
+   in base 0 or 2.  */
+#if __GLIBC_USE (C23_STRTOL)
+# ifdef __REDIRECT
+extern long int __REDIRECT_NTH (strtol, (const char *__restrict __nptr,
+					 char **__restrict __endptr,
+					 int __base), __isoc23_strtol)
+     __nonnull ((1));
+extern unsigned long int __REDIRECT_NTH (strtoul,
+					 (const char *__restrict __nptr,
+					  char **__restrict __endptr,
+					  int __base), __isoc23_strtoul)
+     __nonnull ((1));
+#  ifdef __USE_MISC
+__extension__
+extern long long int __REDIRECT_NTH (strtoq, (const char *__restrict __nptr,
+					      char **__restrict __endptr,
+					      int __base), __isoc23_strtoll)
+     __nonnull ((1));
+__extension__
+extern unsigned long long int __REDIRECT_NTH (strtouq,
+					      (const char *__restrict __nptr,
+					       char **__restrict __endptr,
+					       int __base), __isoc23_strtoull)
+     __nonnull ((1));
+#  endif
+__extension__
+extern long long int __REDIRECT_NTH (strtoll, (const char *__restrict __nptr,
+					       char **__restrict __endptr,
+					       int __base), __isoc23_strtoll)
+     __nonnull ((1));
+__extension__
+extern unsigned long long int __REDIRECT_NTH (strtoull,
+					      (const char *__restrict __nptr,
+					       char **__restrict __endptr,
+					       int __base), __isoc23_strtoull)
+     __nonnull ((1));
+# else
+extern long int __isoc23_strtol (const char *__restrict __nptr,
+				 char **__restrict __endptr, int __base)
+     __THROW __nonnull ((1));
+extern unsigned long int __isoc23_strtoul (const char *__restrict __nptr,
+					   char **__restrict __endptr,
+					   int __base)
+     __THROW __nonnull ((1));
+__extension__
+extern long long int __isoc23_strtoll (const char *__restrict __nptr,
+				       char **__restrict __endptr, int __base)
+     __THROW __nonnull ((1));
+__extension__
+extern unsigned long long int __isoc23_strtoull (const char *__restrict __nptr,
+						 char **__restrict __endptr,
+						 int __base)
+     __THROW __nonnull ((1));
+#  define strtol __isoc23_strtol
+#  define strtoul __isoc23_strtoul
+#  ifdef __USE_MISC
+#   define strtoq __isoc23_strtoll
+#   define strtouq __isoc23_strtoull
+#  endif
+#  define strtoll __isoc23_strtoll
+#  define strtoull __isoc23_strtoull
+# endif
+#endif
+
 /* Convert a floating-point number to a string.  */
-#if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
+#if __GLIBC_USE (IEC_60559_BFP_EXT_C23)
 extern int strfromd (char *__dest, size_t __size, const char *__format,
 		     double __f)
      __THROW __nonnull ((3));
@@ -292,6 +361,60 @@ extern unsigned long long int strtoull_l (const char *__restrict __nptr,
 					  char **__restrict __endptr,
 					  int __base, locale_t __loc)
      __THROW __nonnull ((1, 4));
+
+/* Versions of the above functions that handle '0b' and '0B' prefixes
+   in base 0 or 2.  */
+# if __GLIBC_USE (C23_STRTOL)
+#  ifdef __REDIRECT
+extern long int __REDIRECT_NTH (strtol_l, (const char *__restrict __nptr,
+					   char **__restrict __endptr,
+					   int __base, locale_t __loc),
+				__isoc23_strtol_l)
+     __nonnull ((1, 4));
+extern unsigned long int __REDIRECT_NTH (strtoul_l,
+					 (const char *__restrict __nptr,
+					  char **__restrict __endptr,
+					  int __base, locale_t __loc),
+					 __isoc23_strtoul_l)
+     __nonnull ((1, 4));
+__extension__
+extern long long int __REDIRECT_NTH (strtoll_l, (const char *__restrict __nptr,
+						 char **__restrict __endptr,
+						 int __base,
+						 locale_t __loc),
+				     __isoc23_strtoll_l)
+     __nonnull ((1, 4));
+__extension__
+extern unsigned long long int __REDIRECT_NTH (strtoull_l,
+					      (const char *__restrict __nptr,
+					       char **__restrict __endptr,
+					       int __base, locale_t __loc),
+					      __isoc23_strtoull_l)
+     __nonnull ((1, 4));
+#  else
+extern long int __isoc23_strtol_l (const char *__restrict __nptr,
+				   char **__restrict __endptr, int __base,
+				   locale_t __loc) __THROW __nonnull ((1, 4));
+extern unsigned long int __isoc23_strtoul_l (const char *__restrict __nptr,
+					     char **__restrict __endptr,
+					     int __base, locale_t __loc)
+     __THROW __nonnull ((1, 4));
+__extension__
+extern long long int __isoc23_strtoll_l (const char *__restrict __nptr,
+					 char **__restrict __endptr,
+					 int __base, locale_t __loc)
+     __THROW __nonnull ((1, 4));
+__extension__
+extern unsigned long long int __isoc23_strtoull_l (const char *__restrict __nptr,
+						   char **__restrict __endptr,
+						   int __base, locale_t __loc)
+     __THROW __nonnull ((1, 4));
+#   define strtol_l __isoc23_strtol_l
+#   define strtoul_l __isoc23_strtoul_l
+#   define strtoll_l __isoc23_strtoll_l
+#   define strtoull_l __isoc23_strtoull_l
+#  endif
+# endif
 
 extern double strtod_l (const char *__restrict __nptr,
 			char **__restrict __endptr, locale_t __loc)
@@ -567,6 +690,24 @@ extern void *realloc (void *__ptr, size_t __size)
 /* Free a block allocated by `malloc', `realloc' or `calloc'.  */
 extern void free (void *__ptr) __THROW;
 
+#if __GLIBC_USE(ISOC23)
+/* Free a block allocated by `malloc', `realloc' or `calloc' but not
+   `aligned_alloc', `memalign', `posix_memalign', `valloc' or
+   `pvalloc'. SIZE must be equal to the original requested size
+   provided to `malloc', `realloc' or `calloc'. For `calloc' SIZE is
+   NMEMB elements * SIZE bytes. It is forbidden to call `free_sized'
+   for allocations which the caller did not directly allocate but
+   must still deallocate, such as `strdup' or `strndup'. Instead
+   continue using `free` for these cases.  */
+extern void free_sized (void *__ptr, size_t __size) __THROW;
+
+/* Free a block allocated by `aligned_alloc', `memalign' or
+   `posix_memalign'. ALIGNMENT and SIZE must be the same as the values
+   provided to `aligned_alloc', `memalign' or `posix_memalign'.  */
+extern void free_aligned_sized (void *__ptr, size_t __alignment, size_t __size)
+     __THROW;
+#endif
+
 #ifdef __USE_MISC
 /* Re-allocate the previously allocated block in PTR, making the new
    block large enough for NMEMB elements of SIZE bytes each.  */
@@ -608,7 +749,7 @@ extern void *aligned_alloc (size_t __alignment, size_t __size)
 #endif
 
 /* Abort execution and generate a core-dump.  */
-extern void abort (void) __THROW __attribute__ ((__noreturn__));
+extern void abort (void) __THROW __attribute__ ((__noreturn__)) __COLD;
 
 
 /* Register a function to be called when `exit' is called.  */
@@ -846,6 +987,12 @@ extern void *bsearch (const void *__key, const void *__base,
 # include <bits/stdlib-bsearch.h>
 #endif
 
+#if __GLIBC_USE (ISOC23) && defined __glibc_const_generic && !defined _LIBC
+# define bsearch(KEY, BASE, NMEMB, SIZE, COMPAR)			\
+  __glibc_const_generic (BASE, const void *,				\
+			 bsearch (KEY, BASE, NMEMB, SIZE, COMPAR))
+#endif
+
 /* Sort NMEMB elements of BASE, of SIZE bytes each,
    using COMPAR to perform the comparisons.  */
 extern void qsort (void *__base, size_t __nmemb, size_t __size,
@@ -866,6 +1013,12 @@ __extension__ extern long long int llabs (long long int __x)
      __THROW __attribute__ ((__const__)) __wur;
 #endif
 
+#if __GLIBC_USE (ISOC2Y)
+extern unsigned int uabs (int __x) __THROW __attribute__ ((__const__)) __wur;
+extern unsigned long int ulabs (long int __x) __THROW __attribute__ ((__const__)) __wur;
+__extension__ extern unsigned long long int ullabs (long long int __x)
+     __THROW __attribute__ ((__const__)) __wur;
+#endif
 
 /* Return the `div_t', `ldiv_t' or `lldiv_t' representation
    of the value of NUMER over DENOM. */
@@ -1031,6 +1184,19 @@ extern int getloadavg (double __loadavg[], int __nelem)
 /* Return the index into the active-logins file (utmp) for
    the controlling terminal.  */
 extern int ttyslot (void) __THROW;
+#endif
+
+#if __GLIBC_USE (ISOC23)
+# ifndef __cplusplus
+#  include <bits/types/once_flag.h>
+
+/* Call function __FUNC exactly once, even if invoked from several threads.
+   All calls must be made with the same __FLAGS object.  */
+extern void call_once (once_flag *__flag, void (*__func)(void));
+# endif /* !__cplusplus */
+
+/* Return the alignment of P.  */
+extern size_t memalignment (const void *__p);
 #endif
 
 #include <bits/stdlib-float.h>

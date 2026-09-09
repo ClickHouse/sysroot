@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -139,12 +139,40 @@ typedef __pid_t pid_t;
 # define SEEK_END	2	/* Seek from end of file.  */
 #endif	/* XPG */
 
+/* The constants AT_REMOVEDIR and AT_EACCESS have the same value.  AT_EACCESS
+   is meaningful only to faccessat, while AT_REMOVEDIR is meaningful only to
+   unlinkat.  The two functions do completely different things and therefore,
+   the flags can be allowed to overlap.  For example, passing AT_REMOVEDIR to
+   faccessat would be undefined behavior and thus treating it equivalent to
+   AT_EACCESS is valid undefined behavior.  */
+#ifdef __USE_ATFILE
+# define AT_FDCWD		-100	/* Special value used to indicate
+					   the *at functions should use the
+					   current working directory. */
+# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
+# define AT_REMOVEDIR		0x200	/* Remove directory instead of
+					   unlinking file.  */
+# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
+# ifdef __USE_GNU
+#  define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
+					   traversal.  */
+#  define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname.  */
+#  define AT_STATX_SYNC_TYPE	0x6000
+#  define AT_STATX_SYNC_AS_STAT	0x0000
+#  define AT_STATX_FORCE_SYNC	0x2000
+#  define AT_STATX_DONT_SYNC	0x4000
+#  define AT_RECURSIVE		0x8000	/* Apply to the entire subtree.  */
+# endif
+# define AT_EACCESS		0x200	/* Test access permitted for
+					   effective IDs, not real IDs.  */
+#endif
+
 /* Do the file control operation described by CMD on FD.
    The remaining arguments are interpreted depending on CMD.
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-#ifndef __USE_TIME_BITS64
+#ifndef __USE_TIME64_REDIRECTS
 # ifndef __USE_FILE_OFFSET64
 extern int fcntl (int __fd, int __cmd, ...);
 # else
@@ -157,7 +185,7 @@ extern int __REDIRECT (fcntl, (int __fd, int __cmd, ...), fcntl64);
 # ifdef __USE_LARGEFILE64
 extern int fcntl64 (int __fd, int __cmd, ...);
 # endif
-#else /* __USE_TIME_BITS64 */
+#else /* __USE_TIME64_REDIRECTS */
 # ifdef __REDIRECT
 extern int __REDIRECT_NTH (fcntl, (int __fd, int __request, ...),
 			   __fcntl_time64);
@@ -253,16 +281,17 @@ extern int creat64 (const char *__file, mode_t __mode) __nonnull ((1));
 # define F_TEST  3	/* Test a region for other processes locks.  */
 
 # ifndef __USE_FILE_OFFSET64
-extern int lockf (int __fd, int __cmd, off_t __len);
+extern int lockf (int __fd, int __cmd, off_t __len) __wur;
 # else
 #  ifdef __REDIRECT
-extern int __REDIRECT (lockf, (int __fd, int __cmd, __off64_t __len), lockf64);
+extern int __REDIRECT (lockf, (int __fd, int __cmd, __off64_t __len),
+                       lockf64) __wur;
 #  else
 #   define lockf lockf64
 #  endif
 # endif
 # ifdef __USE_LARGEFILE64
-extern int lockf64 (int __fd, int __cmd, off64_t __len);
+extern int lockf64 (int __fd, int __cmd, off64_t __len) __wur;
 # endif
 #endif
 
@@ -309,8 +338,7 @@ extern int posix_fallocate64 (int __fd, off64_t __offset, off64_t __len);
 
 
 /* Define some inlines helping to catch common problems.  */
-#if __USE_FORTIFY_LEVEL > 0 && defined __fortify_function \
-    && defined __va_arg_pack_len
+#if __USE_FORTIFY_LEVEL > 0 && defined __fortify_function
 # include <bits/fcntl2.h>
 #endif
 

@@ -1,5 +1,5 @@
 /* Define POSIX options for Linux.
-   Copyright (C) 1996-2022 Free Software Foundation, Inc.
+   Copyright (C) 1996-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@
 
 /* `c_cc' member of 'struct termios' structure can be disabled by
    using the value _POSIX_VDISABLE.  */
-#define	_POSIX_VDISABLE	'\0'
+#define	_POSIX_VDISABLE	0
 
 /* Filenames are not silently truncated.  */
 #define	_POSIX_NO_TRUNC	1
@@ -84,7 +84,7 @@
 /* We support user-defined stacks.  */
 #define _POSIX_THREAD_ATTR_STACKADDR	200809L
 
-/* We support priority inheritence.  */
+/* We support priority inheritance.  */
 #define _POSIX_THREAD_PRIO_INHERIT	200809L
 
 /* We support priority protection, though only for non-robust
@@ -92,7 +92,7 @@
 #define _POSIX_THREAD_PRIO_PROTECT	200809L
 
 #ifdef __USE_XOPEN2K8
-/* We support priority inheritence for robust mutexes.  */
+/* We support priority inheritance for robust mutexes.  */
 # define _POSIX_THREAD_ROBUST_PRIO_INHERIT	200809L
 
 /* We do not support priority protection for robust mutexes.  */

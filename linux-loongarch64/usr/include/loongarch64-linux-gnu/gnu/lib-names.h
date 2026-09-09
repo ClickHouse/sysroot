@@ -6,8 +6,11 @@
 
 #include <bits/wordsize.h>
 
-#if defined __loongarch_lp64
-# include <gnu/lib-names-lp64.h>
+#if __WORDSIZE == 64 && defined __loongarch_soft_float
+# include <gnu/lib-names-lp64s.h>
+#endif
+#if __WORDSIZE == 64 && defined __loongarch_double_float
+# include <gnu/lib-names-lp64d.h>
 #endif
 
 #endif	/* gnu/lib-names.h */

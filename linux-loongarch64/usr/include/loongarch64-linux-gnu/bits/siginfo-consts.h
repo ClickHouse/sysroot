@@ -1,5 +1,5 @@
 /* siginfo constants.  Linux version.
-   Copyright (C) 1997-2022 Free Software Foundation, Inc.
+   Copyright (C) 1997-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -134,8 +134,10 @@ enum
 #  define SEGV_ADIPERR	SEGV_ADIPERR
   SEGV_MTEAERR,			/* Asynchronous ARM MTE error.  */
 #  define SEGV_MTEAERR	SEGV_MTEAERR
-  SEGV_MTESERR			/* Synchronous ARM MTE exception.  */
+  SEGV_MTESERR,			/* Synchronous ARM MTE exception.  */
 #  define SEGV_MTESERR	SEGV_MTESERR
+  SEGV_CPERR			/* Control protection fault.  */
+#  define SEGV_CPERR	SEGV_CPERR
 };
 
 /* `si_code' values for SIGBUS signal.  */
@@ -143,7 +145,7 @@ enum
 {
   BUS_ADRALN = 1,		/* Invalid address alignment.  */
 #  define BUS_ADRALN	BUS_ADRALN
-  BUS_ADRERR,			/* Non-existant physical address.  */
+  BUS_ADRERR,			/* Non-existent physical address.  */
 #  define BUS_ADRERR	BUS_ADRERR
   BUS_OBJERR,			/* Object specific hardware error.  */
 #  define BUS_OBJERR	BUS_OBJERR
@@ -166,8 +168,10 @@ enum
 #  define TRAP_BRANCH	TRAP_BRANCH
   TRAP_HWBKPT,			/* Hardware breakpoint/watchpoint.  */
 #  define TRAP_HWBKPT	TRAP_HWBKPT
-  TRAP_UNK			/* Undiagnosed trap.  */
+  TRAP_UNK,			/* Undiagnosed trap.  */
 #  define TRAP_UNK	TRAP_UNK
+  TRAP_PERF			/* Perf event with sigtrap=1.  */
+#  define TRAP_PERF	TRAP_PERF
 };
 # endif
 
@@ -206,6 +210,18 @@ enum
 #  define POLL_HUP	POLL_HUP
 };
 # endif
+
+/* The Linux-specific SIGSYS values are all considered GNU extensions.  */
+#ifdef __USE_GNU
+/* `si_code' values for SIGSYS signal.  */
+enum
+{
+  SYS_SECCOMP = 1,		/* Seccomp triggered.  */
+#  define SYS_SECCOMP	SYS_SECCOMP
+  SYS_USER_DISPATCH			/* Syscall user dispatch triggered.  */
+#  define SYS_USER_DISPATCH	SYS_USER_DISPATCH
+};
+#endif
 
 /* Architectures might also add architecture-specific constants.
    These are all considered GNU extensions.  */

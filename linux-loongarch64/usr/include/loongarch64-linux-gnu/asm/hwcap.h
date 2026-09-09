@@ -16,5 +16,9 @@
 #define HWCAP_LOONGARCH_LBT_X86		(1 << 10)
 #define HWCAP_LOONGARCH_LBT_ARM		(1 << 11)
 #define HWCAP_LOONGARCH_LBT_MIPS	(1 << 12)
+#define HWCAP_LOONGARCH_PTW		(1 << 13)
+#define HWCAP_LOONGARCH_LSPW		(1 << 14)
+#define HWCAP_LOONGARCH_SCQ		(1 << 15)
+#define HWCAP_LOONGARCH_LAM_BH		(1 << 16)
 
 #endif /* _ASM_HWCAP_H */

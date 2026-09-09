@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -25,6 +25,10 @@
 #include <features.h>
 
 __BEGIN_DECLS
+
+#if __GLIBC_USE (ISOC23)
+# define __STDC_VERSION_SETJMP_H__ 202311L
+#endif
 
 #include <bits/setjmp.h>		/* Get `__jmp_buf'.  */
 #include <bits/types/struct___jmp_buf_tag.h>

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997-2020 Free Software Foundation, Inc.
+/* Copyright (C) 1997-2025 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -52,7 +52,8 @@ __BEGIN_DECLS
 #undef I
 #define I _Complex_I
 
-#if defined __USE_ISOC11 && __GNUC_PREREQ (4, 7)
+#if defined __USE_ISOC11 \
+    && (__GNUC_PREREQ (4, 7) || __glibc_clang_prereq (12, 0))
 /* Macros to expand into expression of specified complex type.  */
 # define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
 # define CMPLXF(x, y) __builtin_complex ((float) (x), (float) (y))
@@ -95,11 +96,15 @@ __BEGIN_DECLS
 
 #define __MATHCALL(function, args)	\
   __MATHDECL (_Mdouble_complex_,function, args)
-#define __MATHDECL(type, function, args) \
+#define __MATHDECL_IMPL(type, function, args) \
   __MATHDECL_1(type, function, args); \
   __MATHDECL_1(type, __CONCAT(__,function), args)
-#define __MATHDECL_1(type, function, args) \
+#define __MATHDECL(type, function, args) \
+  __MATHDECL_IMPL(type, function, args)
+#define __MATHDECL_1_IMPL(type, function, args) \
   extern type __MATH_PRECNAME(function) args __THROW
+#define __MATHDECL_1(type, function, args) \
+  __MATHDECL_1_IMPL(type, function, args)
 
 #define _Mdouble_ 		double
 #define __MATH_PRECNAME(name)	name
@@ -122,11 +127,31 @@ __BEGIN_DECLS
 #  undef __MATHDECL_1
 #  define __MATHDECL_1(type, function, args) \
   extern type __REDIRECT_NTH(__MATH_PRECNAME(function), args, function)
+# elif __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#  undef __MATHDECL_1
+#  undef __MATHDECL
+#  define __REDIR_TO(function) \
+  __ ## function ## ieee128
+#  define __MATHDECL_1(type, function, alias, args) \
+  extern type __REDIRECT_NTH(__MATH_PRECNAME(function), args, alias)
+#define __MATHDECL(type, function, args) \
+  __MATHDECL_1(type, function, __REDIR_TO(function), args); \
+  __MATHDECL_1(type, __CONCAT(__,function), __REDIR_TO(function), args)
 # endif
 
 # define _Mdouble_ 		long double
 # define __MATH_PRECNAME(name)	name##l
 # include <bits/cmathcalls.h>
+# if defined __LDBL_COMPAT \
+     || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
+#  undef __REDIR_TO
+#  undef __MATHDECL_1
+#  undef __MATHDECL
+#define __MATHDECL(type, function, args) \
+  __MATHDECL_IMPL(type, function, args)
+#  define __MATHDECL_1(type, function, args) \
+  __MATHDECL_1_IMPL(type, function, args)
+# endif
 #endif
 #undef	_Mdouble_
 #undef	__MATH_PRECNAME
@@ -215,6 +240,7 @@ __BEGIN_DECLS
 # undef _Mdouble_complex_
 #endif
 
+#undef	__MATHDECL_1_IMPL
 #undef	__MATHDECL_1
 #undef	__MATHDECL
 #undef	__MATHCALL
