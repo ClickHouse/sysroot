@@ -2400,7 +2400,9 @@ extern int dtrace_mach_aframes(void);
 
 #if defined(__i386) || defined(__amd64)
 extern int dtrace_instr_size_isa(uint8_t *, model_t, int *);
+#ifdef __i386
 extern void dtrace_invop_callsite(void);
+#endif
 #endif
 extern void dtrace_invop_add(int (*)(uintptr_t, struct trapframe *, uintptr_t));
 extern void dtrace_invop_remove(int (*)(uintptr_t, struct trapframe *,
@@ -2419,16 +2421,32 @@ extern void dtrace_helpers_destroy(proc_t *);
 #define	DTRACE_CPUFLAG_ISSET(flag) \
 	(cpu_core[curcpu].cpuc_dtrace_flags & (flag))
 
-#define	DTRACE_CPUFLAG_SET(flag) \
-	(cpu_core[curcpu].cpuc_dtrace_flags |= (flag))
+#define	DTRACE_CPUFLAG_SET(flag) do {				\
+	__compiler_membar();					\
+	cpu_core[curcpu].cpuc_dtrace_flags |= (flag);		\
+	__compiler_membar();					\
+} while (0)
 
-#define	DTRACE_CPUFLAG_CLEAR(flag) \
-	(cpu_core[curcpu].cpuc_dtrace_flags &= ~(flag))
+#define	DTRACE_CPUFLAG_CLEAR(flag) do {				\
+	__compiler_membar();					\
+	cpu_core[curcpu].cpuc_dtrace_flags &= ~(flag);		\
+	__compiler_membar();					\
+} while (0)
 
 #endif /* _KERNEL */
 
-#if defined(__i386) || defined(__amd64) || defined (__riscv)
 extern int dtrace_instr_size(uint8_t *instr);
+
+#if defined(__i386) || defined(__amd64)
+extern int dtrace_dis_get_byte(void *p);
+#endif
+
+#if defined(__riscv)
+extern int dtrace_match_opcode(uint32_t insn, int match, int mask);
+extern int dtrace_instr_sdsp(uint32_t **instr);
+extern int dtrace_instr_ret(uint32_t **instr);
+extern int dtrace_instr_c_sdsp(uint32_t **instr);
+extern int dtrace_instr_c_ret(uint32_t **instr);
 #endif
 
 #endif	/* _ASM */
@@ -2469,6 +2487,10 @@ extern int dtrace_instr_size(uint8_t *instr);
 
 #define	INSN_SIZE	4
 
+#define	BRK_INSTR	0xd4200000
+#define	BRK_IMM16_SHIFT	5
+#define	BRK_IMM16_VAL	(0x40d << BRK_IMM16_SHIFT)
+
 #define	B_MASK		0xff000000
 #define	B_DATA_MASK	0x00ffffff
 #define	B_INSTR		0x14000000
@@ -2504,6 +2526,8 @@ extern int dtrace_instr_size(uint8_t *instr);
 #define	OFFSET_SHIFT	15
 #define	OFFSET_SIZE	7
 #define	OFFSET_MASK	((1 << OFFSET_SIZE) - 1)
+
+#define	DTRACE_PATCHVAL		(BRK_INSTR | BRK_IMM16_VAL)
 
 #define	DTRACE_INVOP_STP	1
 #define	DTRACE_INVOP_RET	2

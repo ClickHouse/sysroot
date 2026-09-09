@@ -36,8 +36,6 @@ enum sysdecode_abi {
 	SYSDECODE_ABI_FREEBSD32,
 	SYSDECODE_ABI_LINUX,
 	SYSDECODE_ABI_LINUX32,
-	SYSDECODE_ABI_CLOUDABI64,
-	SYSDECODE_ABI_CLOUDABI32
 };
 
 int	sysdecode_abi_to_freebsd_errno(enum sysdecode_abi _abi, int _error);
@@ -63,6 +61,7 @@ const char *sysdecode_getfsstat_mode(int _mode);
 const char *sysdecode_getrusage_who(int _who);
 const char *sysdecode_idtype(int _idtype);
 const char *sysdecode_ioctlname(unsigned long _val);
+bool	sysdecode_inotifyflags(FILE *_fp, int _flags, int *_rem);
 const char *sysdecode_ipproto(int _protocol);
 void	sysdecode_kevent_fflags(FILE *_fp, short _filter, int _fflags,
 	    int _base);
@@ -85,6 +84,7 @@ const char *sysdecode_nfssvc_flags(int _flags);
 bool	sysdecode_open_flags(FILE *_fp, int _flags, int *_rem);
 const char *sysdecode_pathconf_name(int _name);
 bool	sysdecode_pipe2_flags(FILE *_fp, int _flags, int *_rem);
+bool	sysdecode_pollfd_events(FILE *fp, int flags, int *rem);
 const char *sysdecode_prio_which(int _which);
 const char *sysdecode_procctl_cmd(int _cmd);
 const char *sysdecode_ptrace_request(int _request);

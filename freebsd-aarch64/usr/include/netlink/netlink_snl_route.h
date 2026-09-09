@@ -100,7 +100,7 @@ snl_attr_get_ip(struct snl_state *ss, struct nlattr *nla,
 static inline struct sockaddr *
 parse_rta_via(struct snl_state *ss, struct rtattr *rta, int *perror)
 {
-	struct rtvia *via = NL_RTA_DATA(rta);
+	struct rtvia *via = (struct rtvia *)NL_RTA_DATA(rta);
 
 	switch (via->rtvia_family) {
 	case AF_INET:
@@ -125,6 +125,18 @@ snl_attr_get_ipvia(struct snl_state *ss, struct nlattr *nla,
 		return (true);
 	}
 	return (false);
+}
+
+static inline bool
+snl_add_msg_attr_ip4(struct snl_writer *nw, int attrtype, const struct in_addr *addr)
+{
+	return (snl_add_msg_attr(nw, attrtype, 4, addr));
+}
+
+static inline bool
+snl_add_msg_attr_ip6(struct snl_writer *nw, int attrtype, const struct in6_addr *addr)
+{
+	return (snl_add_msg_attr(nw, attrtype, 16, addr));
 }
 
 static inline bool
@@ -162,5 +174,28 @@ snl_add_msg_attr_ipvia(struct snl_writer *nw, int attrtype, const struct sockadd
 
 	return (false);
 }
+
+static inline bool
+snl_attr_get_in_addr(struct snl_state *ss __unused, struct nlattr *nla,
+    const void *arg __unused, void *target)
+{
+	if (NLA_DATA_LEN(nla) != sizeof(struct in_addr))
+		return (false);
+
+	memcpy(target, NLA_DATA_CONST(nla), sizeof(struct in_addr));
+	return (true);
+}
+
+static inline bool
+snl_attr_get_in6_addr(struct snl_state *ss __unused, struct nlattr *nla,
+    const void *arg __unused, void *target)
+{
+	if (NLA_DATA_LEN(nla) != sizeof(struct in6_addr))
+		return (false);
+
+	memcpy(target, NLA_DATA_CONST(nla), sizeof(struct in6_addr));
+	return (true);
+}
+
 
 #endif

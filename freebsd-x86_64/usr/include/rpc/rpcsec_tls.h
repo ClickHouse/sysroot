@@ -35,6 +35,10 @@
 #define	RPCTLS_SYSC_SRVSETPATH	4
 #define	RPCTLS_SYSC_SRVSOCKET	5
 #define	RPCTLS_SYSC_SRVSHUTDOWN	6
+#define	RPCTLS_SYSC_SRVSTARTUP	7
+
+/* Max nprocs for SRV startup */
+#define	RPCTLS_SRV_MAXNPROCS	16
 
 /* System call used by the rpctlscd, rpctlssd daemons. */
 int	rpctls_syscall(int, const char *);
@@ -61,11 +65,11 @@ enum clnt_stat	rpctls_connect(CLIENT *newclient, char *certname,
 enum clnt_stat	rpctls_cl_handlerecord(uint64_t sec, uint64_t usec,
 		    uint64_t ssl, uint32_t *reterr);
 enum clnt_stat	rpctls_srv_handlerecord(uint64_t sec, uint64_t usec,
-		    uint64_t ssl, uint32_t *reterr);
+		    uint64_t ssl, int procpos, uint32_t *reterr);
 enum clnt_stat	rpctls_cl_disconnect(uint64_t sec, uint64_t usec,
 		    uint64_t ssl, uint32_t *reterr);
 enum clnt_stat	rpctls_srv_disconnect(uint64_t sec, uint64_t usec,
-		    uint64_t ssl, uint32_t *reterr);
+		    uint64_t ssl, int procpos, uint32_t *reterr);
 
 /* Initialization function for rpcsec_tls. */
 int		rpctls_init(void);
@@ -82,9 +86,13 @@ bool		rpctls_getinfo(u_int *maxlen, bool rpctlscd_run,
 
 /* Macros for VIMAGE. */
 /* Just define the KRPC_VNETxxx() macros as VNETxxx() macros. */
+#define	KRPC_VNET_NAME(n)		VNET_NAME(n)
+#define	KRPC_VNET_DECLARE(t, n)		VNET_DECLARE(t, n)
 #define	KRPC_VNET_DEFINE(t, n)		VNET_DEFINE(t, n)
 #define	KRPC_VNET_DEFINE_STATIC(t, n)	VNET_DEFINE_STATIC(t, n)
 #define	KRPC_VNET(n)			VNET(n)
+
+#define	CTLFLAG_KRPC_VNET		CTLFLAG_VNET
 
 #define	KRPC_CURVNET_SET(n)		CURVNET_SET(n)
 #define	KRPC_CURVNET_SET_QUIET(n)	CURVNET_SET_QUIET(n)

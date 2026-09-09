@@ -40,6 +40,7 @@
 #define _SYS_PARAM_H_
 
 #include <sys/_null.h>
+#include <sys/_param.h>
 
 #define	BSD	199506		/* System version (year & month). */
 #define BSD4_3	1
@@ -53,13 +54,29 @@
  *
  *	documentation/content/en/books/porters-handbook/versions/_index.adoc
  *
- * scheme is:  <major><two digit minor>Rxx
+ * Encoding:	<major><two digit minor>Rxx
  *		'R' is in the range 0 to 4 if this is a release branch or
  *		X.0-CURRENT before releng/X.0 is created, otherwise 'R' is
  *		in the range 5 to 9.
+ * Short hand: MMmmXXX
+ *
+ * __FreeBSD_version is bumped every time there's a change in the base system
+ * that's noteworthy. A noteworthy change is any change which changes the
+ * kernel's KBI in -CURRENT, one that changes some detail about the system that
+ * external software (or the ports system) would want to know about, one that
+ * adds a system call, one that adds or deletes a shipped library, a security
+ * fix, or similar change not specifically noted here. Bumps should be limited
+ * to one per day / a couple per week except for security fixes.
+ *
+ * The approved way to obtain this from a shell script is:
+ *	awk '/^\#define[[:space:]]*__FreeBSD_version/ {print $3}'
+ * Other methods to parse this file may work, but are not guaranteed against
+ * future changes. The above script works back to FreeBSD 3.x when this macro
+ * was introduced. This number is propagated to other places needing it that
+ * cannot include sys/param.h and should only be updated here.
  */
 #undef __FreeBSD_version
-#define __FreeBSD_version 1304000	/* Master, propagated to newvers */
+#define __FreeBSD_version 1405000
 
 /*
  * __FreeBSD_kernel__ indicates that this system uses the kernel of FreeBSD,
@@ -91,7 +108,8 @@
 #define	P_OSREL_CK_INODE		1300005
 #define	P_OSREL_POWERPC_NEW_AUX_ARGS	1300070
 #define	P_OSREL_TIDPID			1400079
-#define	P_OSREL_TIDPID_13		1302501
+#define	P_OSREL_ARM64_SPSR		1400084
+#define	P_OSREL_TLSBASE			1500044
 
 #define	P_OSREL_MAJOR(x)		((x) / 100000)
 #endif
@@ -185,9 +203,7 @@
 
 #define MCLBYTES	(1 << MCLSHIFT)	/* size of an mbuf cluster */
 
-#if PAGE_SIZE < 2048
-#define	MJUMPAGESIZE	MCLBYTES
-#elif PAGE_SIZE <= 8192
+#if PAGE_SIZE <= 8192
 #define	MJUMPAGESIZE	PAGE_SIZE
 #else
 #define	MJUMPAGESIZE	(8 * 1024)
@@ -228,14 +244,13 @@
 	((off_t)(db) << DEV_BSHIFT)
 #endif
 
-#define	PRIMASK	0x0ff
-#define	PCATCH	0x100		/* OR'd with pri for tsleep to check signals */
-#define	PDROP	0x200	/* OR'd with pri to stop re-entry of interlock mutex */
+#define	PRIMASK		0x0ff
+#define	PCATCH		0x100	/* OR'd with pri for tsleep to check signals */
+#define	PDROP		0x200	/* OR'd with pri to stop re-entry of interlock mutex */
+#define	PNOLOCK		0x400	/* OR'd with pri to allow sleeping w/o a lock */
+#define	PRILASTFLAG	0x400	/* Last flag defined above */
 
 #define	NZERO	0		/* default "nice" */
-
-#define	NBBY	8		/* number of bits in a byte */
-#define	NBPW	sizeof(int)	/* number of bytes per word (integer) */
 
 #define	CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
 
@@ -300,16 +315,7 @@
 #define	isclr(a,i)							\
 	((((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
 
-/* Macros for counting and rounding. */
-#ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
-#endif
-#define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
-#define	rounddown(x, y)	(((x)/(y))*(y))
-#define	rounddown2(x, y) __align_down(x, y) /* if y is power of two */
-#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))  /* to any y */
-#define	roundup2(x, y)	__align_up(x, y) /* if y is powers of two */
-#define powerof2(x)	((((x)-1)&(x))==0)
+/* Macros for counting and rounding provided by <sys/_param.h>. */
 
 /* Macros for min/max. */
 #define	MIN(a,b) (((a)<(b))?(a):(b))

@@ -40,6 +40,8 @@
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 
+#include <vm/uma.h>
+
 #include <cam/cam_xpt.h>
 
 struct devstat;
@@ -120,9 +122,9 @@ struct cam_periph {
 	struct cam_path		*path;	/* Compiled path to device */
 	void			*softc;
 	struct cam_sim		*sim;
-	u_int32_t		 unit_number;
+	uint32_t		 unit_number;
 	cam_periph_type		 type;
-	u_int32_t		 flags;
+	uint32_t		 flags;
 #define CAM_PERIPH_RUNNING		0x01
 #define CAM_PERIPH_LOCKED		0x02
 #define CAM_PERIPH_LOCK_WANTED		0x04
@@ -138,13 +140,14 @@ struct cam_periph {
 	uint32_t		 immediate_priority;
 	int			 periph_allocating;
 	int			 periph_allocated;
-	u_int32_t		 refcount;
+	uint32_t		 refcount;
 	SLIST_HEAD(, ccb_hdr)	 ccb_list;	/* For "immediate" requests */
 	SLIST_ENTRY(cam_periph)  periph_links;
 	TAILQ_ENTRY(cam_periph)  unit_links;
 	ac_callback_t		*deferred_callback; 
 	ac_code			 deferred_ac;
 	struct task		 periph_run_task;
+	uma_zone_t		 ccb_zone;
 	struct root_hold_token	 periph_rootmount;
 };
 
@@ -177,26 +180,26 @@ void		cam_periph_invalidate(struct cam_periph *periph);
 int		cam_periph_mapmem(union ccb *ccb,
 				  struct cam_periph_map_info *mapinfo,
 				  u_int maxmap);
-void		cam_periph_unmapmem(union ccb *ccb,
+int		cam_periph_unmapmem(union ccb *ccb,
 				    struct cam_periph_map_info *mapinfo);
 union ccb	*cam_periph_getccb(struct cam_periph *periph,
-				   u_int32_t priority);
+				   uint32_t priority);
 int		cam_periph_runccb(union ccb *ccb,
 				  int (*error_routine)(union ccb *ccb,
 						       cam_flags camflags,
-						       u_int32_t sense_flags),
-				  cam_flags camflags, u_int32_t sense_flags,
+						       uint32_t sense_flags),
+				  cam_flags camflags, uint32_t sense_flags,
 				  struct devstat *ds);
 int		cam_periph_ioctl(struct cam_periph *periph, u_long cmd, 
 				 caddr_t addr,
 				 int (*error_routine)(union ccb *ccb,
 						      cam_flags camflags,
-						      u_int32_t sense_flags));
+						      uint32_t sense_flags));
 void		cam_freeze_devq(struct cam_path *path);
-u_int32_t	cam_release_devq(struct cam_path *path, u_int32_t relsim_flags,
-				 u_int32_t opening_reduction, u_int32_t arg,
+uint32_t	cam_release_devq(struct cam_path *path, uint32_t relsim_flags,
+				 uint32_t opening_reduction, uint32_t arg,
 				 int getcount_only);
-void		cam_periph_async(struct cam_periph *periph, u_int32_t code,
+void		cam_periph_async(struct cam_periph *periph, uint32_t code,
 		 		 struct cam_path *path, void *arg);
 void		cam_periph_bus_settle(struct cam_periph *periph,
 				      u_int bus_settle_ms);
@@ -204,7 +207,7 @@ void		cam_periph_freeze_after_event(struct cam_periph *periph,
 					      struct timeval* event_time,
 					      u_int duration_ms);
 int		cam_periph_error(union ccb *ccb, cam_flags camflags,
-				 u_int32_t sense_flags);
+				 uint32_t sense_flags);
 int		cam_periph_invalidate_sysctl(SYSCTL_HANDLER_ARGS);
 
 static __inline struct mtx *

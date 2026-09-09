@@ -145,6 +145,16 @@ typedef	__pid_t		pid_t;
 #endif
 
 /*
+ * !!! DANGER !!!
+ *
+ * There are very few bits left for O_* flags.  Every bit we consume for
+ * local features is one bit we can't use for future source compatibility
+ * with other operating systems.
+ *
+ * All additions should be coordinated with srcmgr@.
+ */
+
+/*
  * XXX missing O_RSYNC.
  */
 
@@ -280,6 +290,8 @@ typedef	__pid_t		pid_t;
 
 /* file descriptor flags (F_GETFD, F_SETFD) */
 #define	FD_CLOEXEC	1		/* close-on-exec flag */
+#define	FD_RESOLVE_BENEATH 2		/* all lookups relative to fd have
+					   O_RESOLVE_BENEATH semantics */
 
 /* record locking flags (F_GETLK, F_SETLK, F_SETLKW) */
 #define	F_RDLCK		1		/* shared or read lock */
@@ -323,6 +335,14 @@ struct __oflock {
 	short	l_type;		/* lock type: read/write, etc. */
 	short	l_whence;	/* type of l_start */
 };
+
+/*
+ * Space control offset/length description
+ */
+struct spacectl_range {
+	off_t	r_offset;	/* starting offset */
+	off_t	r_len;	/* length */
+};
 #endif
 
 #if __BSD_VISIBLE
@@ -352,6 +372,16 @@ struct __oflock {
  * similar syscalls.
  */
 #define	FD_NONE			-200
+
+/*
+ * Commands for fspacectl(2)
+ */
+#define SPACECTL_DEALLOC	1	/* deallocate space */
+
+/*
+ * fspacectl(2) flags
+ */
+#define SPACECTL_F_SUPPORTED	0
 #endif
 
 #ifndef _KERNEL
@@ -361,6 +391,8 @@ int	creat(const char *, mode_t);
 int	fcntl(int, int, ...);
 #if __BSD_VISIBLE
 int	flock(int, int);
+int	fspacectl(int, int, const struct spacectl_range *, int,
+	    struct spacectl_range *);
 #endif
 #if __POSIX_VISIBLE >= 200809
 int	openat(int, const char *, int, ...);

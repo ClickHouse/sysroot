@@ -104,7 +104,6 @@ typedef struct ng_btsocket_sco_pcb *	ng_btsocket_sco_pcb_p;
 
 #ifdef _KERNEL
 
-void ng_btsocket_sco_init       (void);
 void ng_btsocket_sco_abort      (struct socket *);
 void ng_btsocket_sco_close      (struct socket *);
 int  ng_btsocket_sco_accept     (struct socket *, struct sockaddr **);
@@ -113,7 +112,7 @@ int  ng_btsocket_sco_bind       (struct socket *, struct sockaddr *,
                                    struct thread *);
 int  ng_btsocket_sco_connect    (struct socket *, struct sockaddr *,
                                    struct thread *);
-int  ng_btsocket_sco_control    (struct socket *, u_long, caddr_t,
+int  ng_btsocket_sco_control    (struct socket *, u_long, void *,
                                    struct ifnet *, struct thread *);
 int  ng_btsocket_sco_ctloutput  (struct socket *, struct sockopt *);
 void ng_btsocket_sco_detach     (struct socket *);

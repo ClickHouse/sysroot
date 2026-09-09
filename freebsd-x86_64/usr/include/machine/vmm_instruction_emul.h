@@ -31,26 +31,38 @@
 
 #include <sys/mman.h>
 
-/*
- * Allow for different arguments to identify vCPUs in userspace vs the
- * kernel.  Eventually we should add struct vcpu in userland and
- * always use the kernel arguments removing these macros.
- */
-#ifdef _KERNEL
-#define	VCPU_DECL	struct vcpu *vcpu
-#define	VCPU_ARGS	vcpu
-#else
-#define	VCPU_DECL	void *vm, int vcpuid
-#define	VCPU_ARGS	vm, vcpuid
-#endif
+/* struct vie_op.op_type */
+enum {
+	VIE_OP_TYPE_NONE = 0,
+	VIE_OP_TYPE_MOV,
+	VIE_OP_TYPE_MOVSX,
+	VIE_OP_TYPE_MOVZX,
+	VIE_OP_TYPE_AND,
+	VIE_OP_TYPE_OR,
+	VIE_OP_TYPE_SUB,
+	VIE_OP_TYPE_TWO_BYTE,
+	VIE_OP_TYPE_PUSH,
+	VIE_OP_TYPE_CMP,
+	VIE_OP_TYPE_POP,
+	VIE_OP_TYPE_MOVS,
+	VIE_OP_TYPE_GROUP1,
+	VIE_OP_TYPE_STOS,
+	VIE_OP_TYPE_BITTEST,
+	VIE_OP_TYPE_TWOB_GRP15,
+	VIE_OP_TYPE_ADD,
+	VIE_OP_TYPE_TEST,
+	VIE_OP_TYPE_BEXTR,
+	VIE_OP_TYPE_OUTS,
+	VIE_OP_TYPE_LAST
+};
 
 /*
  * Callback functions to read and write memory regions.
  */
-typedef int (*mem_region_read_t)(VCPU_DECL, uint64_t gpa,
+typedef int (*mem_region_read_t)(struct vcpu *vcpu, uint64_t gpa,
 				 uint64_t *rval, int rsize, void *arg);
 
-typedef int (*mem_region_write_t)(VCPU_DECL, uint64_t gpa,
+typedef int (*mem_region_write_t)(struct vcpu *vcpu, uint64_t gpa,
 				  uint64_t wval, int wsize, void *arg);
 
 /*
@@ -64,11 +76,11 @@ typedef int (*mem_region_write_t)(VCPU_DECL, uint64_t gpa,
  * 'struct vmctx *' when called from user context.
  * s
  */
-int vmm_emulate_instruction(VCPU_DECL, uint64_t gpa, struct vie *vie,
+int vmm_emulate_instruction(struct vcpu *vcpu, uint64_t gpa, struct vie *vie,
     struct vm_guest_paging *paging, mem_region_read_t mrr,
     mem_region_write_t mrw, void *mrarg);
 
-int vie_update_register(VCPU_DECL, enum vm_reg_name reg,
+int vie_update_register(struct vcpu *vcpu, enum vm_reg_name reg,
     uint64_t val, int size);
 
 /*

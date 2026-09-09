@@ -29,6 +29,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __i386__
+#include <i386/md_var.h>
+#else /* !__i386__ */
+
 #ifndef _MACHINE_MD_VAR_H_
 #define	_MACHINE_MD_VAR_H_
 
@@ -46,6 +50,7 @@ extern vm_paddr_t intel_graphics_stolen_base;
 extern vm_paddr_t intel_graphics_stolen_size;
 
 extern int la57;
+extern int prefer_uva_la48;
 
 extern vm_paddr_t kernphys;
 extern vm_paddr_t KERNend;
@@ -58,6 +63,7 @@ struct	sysentvec;
 
 void	amd64_conf_fast_syscall(void);
 void	amd64_db_resume_dbreg(void);
+vm_paddr_t amd64_loadaddr(void);
 void	amd64_lower_shared_page(struct sysentvec *);
 void	amd64_bsp_pcpu_init1(struct pcpu *pc);
 void	amd64_bsp_pcpu_init2(uint64_t rsp0);
@@ -93,4 +99,10 @@ void	get_fpcontext(struct thread *td, struct __mcontext *mcp,
 int	set_fpcontext(struct thread *td, struct __mcontext *mcp,
 	    char *xfpustate, size_t xfpustate_len);
 
+void	wrmsr_early_safe_start(void);
+void	wrmsr_early_safe_end(void);
+int	wrmsr_early_safe(u_int msr, uint64_t data);
+
 #endif /* !_MACHINE_MD_VAR_H_ */
+
+#endif /* __i386__ */

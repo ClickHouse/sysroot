@@ -38,7 +38,7 @@
 #define	CPU_SETSIZE	MAXCPU
 #endif
 
-#define	CPU_MAXSIZE	256
+#define	CPU_MAXSIZE	1024
 
 #ifndef	CPU_SETSIZE
 #define	CPU_SETSIZE	CPU_MAXSIZE

@@ -132,7 +132,10 @@ struct debugnet_conn_params {
 	 *
 	 * The handler should ACK receieved packets with debugnet_ack_output.
 	 */
-	void		(*dc_rx_handler)(struct debugnet_pcb *, struct mbuf **);
+	int			(*dc_rx_handler)(struct mbuf *);
+
+	/* Cleanup signal for bidirectional protocols. */
+	void		(*dc_finish_handler)(void);
 };
 
 /*
@@ -206,6 +209,16 @@ void debugnet_network_poll(struct debugnet_pcb *);
 const unsigned char *debugnet_get_gw_mac(const struct debugnet_pcb *);
 
 /*
+ * Get the connected server address.
+ */
+const in_addr_t *debugnet_get_server_addr(const struct debugnet_pcb *);
+
+/*
+ * Get the connected server port.
+ */
+const uint16_t debugnet_get_server_port(const struct debugnet_pcb *);
+
+/*
  * Callbacks from core mbuf code.
  */
 void debugnet_any_ifnet_update(struct ifnet *);
@@ -261,7 +274,7 @@ extern int debugnet_arp_nretries;
 #define	DEBUGNET_NOTIFY_MTU(ifp)	debugnet_any_ifnet_update(ifp)
 
 #define	DEBUGNET_SET(ifp, driver)				\
-	(ifp)->if_debugnet_methods = &driver##_debugnet_methods
+	if_setdebugnet_methods((ifp), &driver##_debugnet_methods)
 
 #else /* !DEBUGNET || !INET */
 

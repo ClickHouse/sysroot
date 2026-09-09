@@ -37,12 +37,15 @@
 #ifndef	FS_NULL_H
 #define	FS_NULL_H
 
-#define	NULLM_CACHE	0x0001
+#define	NULLM_CACHE		0x0001
+#define	NULLM_NOUNPBYPASS	0x0002
 
 struct null_mount {
 	struct mount	*nullm_vfs;
 	struct vnode	*nullm_lowerrootvp;	/* Ref to lower root vnode */
 	uint64_t	nullm_flags;
+	struct mount_upper_node upper_node;
+	struct mount_upper_node notify_node;
 };
 
 #ifdef _KERNEL
@@ -78,6 +81,16 @@ struct vnode *null_checkvp(struct vnode *vp, char *fil, int lno);
 #endif
 
 extern struct vop_vector null_vnodeops;
+extern struct vop_vector null_vnodeops_no_unp_bypass;
+
+static inline bool
+null_is_nullfs_vnode(struct vnode *vp)
+{
+	const struct vop_vector *op;
+
+	op = vp->v_op;
+	return (op == &null_vnodeops || op == &null_vnodeops_no_unp_bypass);
+}
 
 #ifdef MALLOC_DECLARE
 MALLOC_DECLARE(M_NULLFSNODE);

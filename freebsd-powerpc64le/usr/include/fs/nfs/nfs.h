@@ -342,6 +342,7 @@ struct nfsreferral {
 #define	LCL_RECLAIMONEFS	0x00080000
 #define	LCL_NFSV42		0x00100000
 #define	LCL_TLSCB		0x00200000
+#define	LCL_MACHCRED		0x00400000
 
 #define	LCL_GSS		LCL_KERBV	/* Or of all mechs */
 
@@ -551,6 +552,34 @@ typedef struct {
 } while (0)
 
 /*
+ * Here is the definition of the operation bits array and macros that
+ * manipulate it.
+ * THE MACROS MUST BE MANUALLY MODIFIED IF NFSOPBIT_MAXWORDS CHANGES!!
+ * It is (NFSV42_NOPS + 31) / 32.
+ */
+#define	NFSOPBIT_MAXWORDS	3
+
+typedef struct {
+	uint32_t bits[NFSOPBIT_MAXWORDS];
+} nfsopbit_t;
+
+#define	NFSZERO_OPBIT(b) do {						\
+	(b)->bits[0] = 0;						\
+	(b)->bits[1] = 0;						\
+	(b)->bits[2] = 0;						\
+} while (0)
+
+#define	NFSSET_OPBIT(t, f) do {						\
+	(t)->bits[0] = (f)->bits[0];			 		\
+	(t)->bits[1] = (f)->bits[1];					\
+	(t)->bits[2] = (f)->bits[2];					\
+} while (0)
+
+#define	NFSISSET_OPBIT(b, p)	((b)->bits[(p) / 32] & (1 << ((p) % 32)))
+#define	NFSSETBIT_OPBIT(b, p)	((b)->bits[(p) / 32] |= (1 << ((p) % 32)))
+#define	NFSCLRBIT_OPBIT(b, p)	((b)->bits[(p) / 32] &= ~(1 << ((p) % 32)))
+
+/*
  * Store uid, gid creds that were used when the stateid was acquired.
  * The RPC layer allows NFS_MAXGRPS + 1 groups to go out on the wire,
  * so that's how many gets stored here.
@@ -607,6 +636,7 @@ struct nfssockreq {
 	u_int32_t	nr_vers;
 	struct __rpc_client *nr_client;
 	AUTH		*nr_auth;
+	char		nr_srvprinc[1];
 };
 
 /*
@@ -685,6 +715,7 @@ struct nfsrv_descript {
 	int			nd_bextpg;	/* Current ext_pgs page */
 	int			nd_bextpgsiz;	/* Bytes left in page */
 	int			nd_maxextsiz;	/* Max ext_pgs mbuf size */
+	nfsopbit_t		nd_allowops;	/* Allowed ops ND_MACHCRED */
 };
 
 #define	nd_princlen	nd_gssnamelen
@@ -734,6 +765,7 @@ struct nfsrv_descript {
 #define	ND_EXTLSCERT		0x10000000000
 #define	ND_EXTLSCERTUSER	0x20000000000
 #define	ND_ERELOOKUP		0x40000000000
+#define	ND_MACHCRED		0x80000000000
 
 /*
  * ND_GSS should be the "or" of all GSS type authentications.

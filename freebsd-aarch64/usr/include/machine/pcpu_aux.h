@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __arm__
+#include <arm/pcpu_aux.h>
+#else /* !__arm__ */
+
 #ifndef _MACHINE_PCPU_AUX_H_
 #define	_MACHINE_PCPU_AUX_H_
 
@@ -48,3 +52,5 @@ _Static_assert(PAGE_SIZE % sizeof(struct pcpu) == 0, "fix pcpu size");
 extern struct pcpu pcpu0;
 
 #endif	/* _MACHINE_PCPU_AUX_H_ */
+
+#endif /* !__arm__ */

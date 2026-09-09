@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2018-2024,2025 Thomas E. Dickey                                *
  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
@@ -33,22 +33,51 @@
  *     and: Thomas E. Dickey                        1996-on                 *
  ****************************************************************************/
 
-/* $Id: curses.h.in,v 1.266 2020/02/08 10:51:53 tom Exp $ */
+/* $Id: curses.h.in,v 1.299 2025/08/08 23:19:21 tom Exp $ */
 
 #ifndef __NCURSES_H
 #define __NCURSES_H
+
+/*
+ The symbols beginning NCURSES_ or USE_ are configuration choices.
+ A few of the former can be overridden by applications at compile-time.
+ Most of the others correspond to configure-script options (or checks
+ by the configure-script for features of the system on which it is built).
+
+ These symbols can be overridden by applications at compile-time:
+ NCURSES_NOMACROS suppresses macro definitions in favor of functions
+ NCURSES_WATTR_MACROS suppresses wattr_* macro definitions
+ NCURSES_WIDECHAR is an alternative for declaring wide-character functions.
+
+ These symbols are used only when building ncurses:
+ NCURSES_ATTR_T
+ NCURSES_FIELD_INTERNALS
+ NCURSES_INTERNALS
+
+ These symbols are set by the configure script:
+ NCURSES_ENABLE_STDBOOL_H
+ NCURSES_EXPANDED
+ NCURSES_EXT_COLORS
+ NCURSES_EXT_FUNCS
+ NCURSES_EXT_PUTWIN
+ NCURSES_NO_PADDING
+ NCURSES_OSPEED_COMPAT
+ NCURSES_PATHSEP
+ NCURSES_REENTRANT
+ NCURSES_SIGWINCH
+ */
 
 #define CURSES 1
 #define CURSES_H 1
 
 /* These are defined only in curses.h, and are used for conditional compiles */
 #define NCURSES_VERSION_MAJOR 6
-#define NCURSES_VERSION_MINOR 2
-#define NCURSES_VERSION_PATCH 20200215
+#define NCURSES_VERSION_MINOR 6
+#define NCURSES_VERSION_PATCH 20251230
 
 /* This is defined in more than one ncurses header, for identification */
 #undef  NCURSES_VERSION
-#define NCURSES_VERSION "6.2"
+#define NCURSES_VERSION "6.6"
 
 /*
  * Identify the mouse encoding version.
@@ -60,8 +89,20 @@
  */
 #include <ncurses_dll.h>
 
+/*
+ * Extra headers.
+ */
 #if 1
 #include <stdint.h>
+#endif
+
+#ifdef __cplusplus
+#else
+#if 0
+#include <stdnoreturn.h>
+#undef GCC_NORETURN
+#define GCC_NORETURN _Noreturn
+#endif
 #endif
 
 /*
@@ -84,10 +125,10 @@
  * doing so makes it incompatible with other implementations of X/Open Curses.
  */
 #undef  NCURSES_CONST
-#define NCURSES_CONST const
+#define NCURSES_CONST const	/* for old compilers */
 
 #undef NCURSES_INLINE
-#define NCURSES_INLINE inline
+#define NCURSES_INLINE inline	/* for old compilers */
 
 /*
  * The standard type used for color values, and for color-pairs.  The latter
@@ -129,6 +170,19 @@
 #ifndef NCURSES_REENTRANT
 #define NCURSES_REENTRANT 0
 #endif
+
+/*
+ * KEY_RESIZE is an extended feature that relies upon the SIGWINCH handler
+ * in ncurses.
+ */
+#if 1	/* NCURSES_EXT_FUNCS */
+#ifndef NCURSES_SIGWINCH
+#define NCURSES_SIGWINCH 1
+#endif
+#else
+#undef NCURSES_SIGWINCH
+#define NCURSES_SIGWINCH 0
+#endif /* NCURSES_EXT_FUNCS */
 
 /*
  * In certain environments, we must work around linker problems for data
@@ -178,12 +232,12 @@
 #undef	NCURSES_CH_T
 #define NCURSES_CH_T cchar_t
 
-#if 1 && defined(_LP64)
+#if 1 /* cf_cv_enable_lp64 */ && defined(_LP64)
 typedef unsigned chtype;
 typedef unsigned mmask_t;
 #else
-typedef uint32_t chtype;
-typedef uint32_t mmask_t;
+typedef uint32_t chtype;	/* cf_cv_typeof_chtype  */
+typedef uint32_t mmask_t;	/* cf_cv_typeof_mmask_t */
 #endif
 
 /*
@@ -242,7 +296,7 @@ typedef unsigned char NCURSES_BOOL;
 #include <stdbool.h>
 /* use whatever the C compiler decides bool really is */
 #define NCURSES_BOOL bool
-#else
+#elif !defined(__cplusplus) && !1 /* USE_BUILTIN_BOOL */
 /* there is no predefined bool - use our own */
 #undef bool
 #define bool NCURSES_BOOL
@@ -257,7 +311,7 @@ extern "C" {
 #define NCURSES_CAST(type,value) (type)(value)
 #endif
 
-#define NCURSES_OK_ADDR(p) (0 != NCURSES_CAST(const void *, (p)))
+#define NCURSES_OK_ADDR(p) (NULL != NCURSES_CAST(const void *, (p)))
 
 /*
  * X/Open attributes.  In the ncurses implementation, they are identical to the
@@ -281,7 +335,7 @@ extern "C" {
 #define WA_TOP		A_TOP
 #define WA_VERTICAL	A_VERTICAL
 
-#if 1
+#if 1	/* NCURSES_EXT_FUNCS */
 #define WA_ITALIC	A_ITALIC	/* ncurses extension */
 #endif
 
@@ -297,7 +351,7 @@ extern "C" {
 
 /* line graphics */
 
-#if 0 || NCURSES_REENTRANT
+#if 0 /* BROKEN_LINKER */ || NCURSES_REENTRANT
 NCURSES_WRAPPED_VAR(chtype*, acs_map);
 #define acs_map NCURSES_PUBLIC_VAR(acs_map())
 #else
@@ -391,29 +445,36 @@ extern NCURSES_EXPORT_VAR(chtype) acs_map[];
  */
 #define _NEWINDEX	-1
 
+#ifdef NCURSES_INTERNALS
+#undef SCREEN
+#define SCREEN struct screen
+SCREEN;
+#else
 typedef struct screen  SCREEN;
+#endif
+
 typedef struct _win_st WINDOW;
 
 typedef	chtype	attr_t;		/* ...must be at least as wide as chtype */
 
 #if NCURSES_WIDECHAR
 
-#if 0
+#if 0 /* NCURSES_LIBUTF8 */
 #ifdef mblen			/* libutf8.h defines it w/o undefining first */
 #undef mblen
 #endif
 #include <libutf8.h>
 #endif
 
-#if 1
+#if 1 /* NEED_WCHAR_H */
 #include <wchar.h>		/* ...to get mbstate_t, etc. */
 #endif
 
-#if 0
+#if 0 /* NCURSES_WCHAR_T */
 typedef unsigned short wchar_t1;
 #endif
 
-#if 0
+#if 0 /* NCURSES_WINT_T */
 typedef unsigned int wint_t1;
 #endif
 
@@ -423,16 +484,19 @@ typedef unsigned int wint_t1;
  * (spacing and nonspacing) do not fill the array, a null L'\0' follows.
  * Otherwise, a null is assumed to follow when extracting via getcchar().
  */
-#define CCHARW_MAX	5
+#define CCHARW_MAX 5	/* NCURSES_CCHARW_MAX */
 typedef struct
 {
     attr_t	attr;
     wchar_t	chars[CCHARW_MAX];
-#if 1
+#if 1	/* NCURSES_EXT_COLORS */
 #undef NCURSES_EXT_COLORS
-#define NCURSES_EXT_COLORS 20200215
+#define NCURSES_EXT_COLORS 20251230	/* NCURSES_PATCH */
     int		ext_color;	/* color pair, must be more than 16-bits */
+#if 0	/* NCURSES_RGB_COLORS */
+    int		rgb_color;	/* extra data for direct-color (rgb) */
 #endif
+#endif /* NCURSES_EXT_COLORS */
 }
 cchar_t;
 
@@ -488,63 +552,14 @@ struct _win_st
 
 	NCURSES_SIZE_T _yoffset; /* real begy is _begy + _yoffset */
 
-#if NCURSES_WIDECHAR
+#if NCURSES_WIDECHAR /* NCURSES_WIDECHAR */
 	cchar_t  _bkgrnd;	/* current background char/attribute pair */
-#if 1
+#if 1	/* NCURSES_EXT_COLORS */
 	int	_color;		/* current color-pair for non-space character */
 #endif
 #endif
 };
 #endif /* NCURSES_OPAQUE */
-
-/*
- * This is an extension to support events...
- */
-#if 1
-#ifdef NCURSES_WGETCH_EVENTS
-#if !defined(__BEOS__) || defined(__HAIKU__)
-   /* Fix _nc_timed_wait() on BEOS... */
-#  define NCURSES_EVENT_VERSION	1
-#endif	/* !defined(__BEOS__) */
-
-/*
- * Bits to set in _nc_event.data.flags
- */
-#  define _NC_EVENT_TIMEOUT_MSEC	1
-#  define _NC_EVENT_FILE		2
-#  define _NC_EVENT_FILE_READABLE	2
-#  if 0					/* Not supported yet... */
-#    define _NC_EVENT_FILE_WRITABLE	4
-#    define _NC_EVENT_FILE_EXCEPTION	8
-#  endif
-
-typedef struct
-{
-    int type;
-    union
-    {
-	long timeout_msec;	/* _NC_EVENT_TIMEOUT_MSEC */
-	struct
-	{
-	    unsigned int flags;
-	    int fd;
-	    unsigned int result;
-	} fev;				/* _NC_EVENT_FILE */
-    } data;
-} _nc_event;
-
-typedef struct
-{
-    int count;
-    int result_flags;	/* _NC_EVENT_TIMEOUT_MSEC or _NC_EVENT_FILE_READABLE */
-    _nc_event *events[1];
-} _nc_eventlist;
-
-extern NCURSES_EXPORT(int) wgetch_events (WINDOW *, _nc_eventlist *);	/* experimental */
-extern NCURSES_EXPORT(int) wgetnstr_events (WINDOW *,char *,int,_nc_eventlist *);/* experimental */
-
-#endif /* NCURSES_WGETCH_EVENTS */
-#endif /* NCURSES_EXT_FUNCS */
 
 /*
  * GCC (and some other compilers) define '__attribute__'; we're using this
@@ -559,14 +574,10 @@ extern NCURSES_EXPORT(int) wgetnstr_events (WINDOW *,char *,int,_nc_eventlist *)
 
 /*
  * We cannot define these in ncurses_cfg.h, since they require parameters to be
- * passed (that is non-portable).  If you happen to be using gcc with warnings
- * enabled, define
- *	GCC_PRINTF
- *	GCC_SCANF
- * to improve checking of calls to printw(), etc.
+ * passed (that is non-portable).
  */
 #ifndef GCC_PRINTFLIKE
-#if defined(GCC_PRINTF) && !defined(printf)
+#ifndef printf
 #define GCC_PRINTFLIKE(fmt,var) __attribute__((format(printf,fmt,var)))
 #else
 #define GCC_PRINTFLIKE(fmt,var) /*nothing*/
@@ -574,7 +585,7 @@ extern NCURSES_EXPORT(int) wgetnstr_events (WINDOW *,char *,int,_nc_eventlist *)
 #endif
 
 #ifndef GCC_SCANFLIKE
-#if defined(GCC_SCANF) && !defined(scanf)
+#ifndef scanf
 #define GCC_SCANFLIKE(fmt,var)  __attribute__((format(scanf,fmt,var)))
 #else
 #define GCC_SCANFLIKE(fmt,var)  /*nothing*/
@@ -590,7 +601,7 @@ extern NCURSES_EXPORT(int) wgetnstr_events (WINDOW *,char *,int,_nc_eventlist *)
 #endif
 
 #undef  GCC_DEPRECATED
-#if (__GNUC__ - 0 > 3 || (__GNUC__ - 0 == 3 && __GNUC_MINOR__ - 0 >= 2))
+#if (__GNUC__ - 0 > 3 || (__GNUC__ - 0 == 3 && __GNUC_MINOR__ - 0 >= 2)) && !defined(NCURSES_INTERNALS)
 #define GCC_DEPRECATED(msg) __attribute__((deprecated))
 #else
 #define GCC_DEPRECATED(msg) /* nothing */
@@ -822,10 +833,14 @@ extern NCURSES_EXPORT(void) use_tioctl (bool);				/* implemented */
 extern NCURSES_EXPORT(int) vidattr (chtype);				/* implemented */
 extern NCURSES_EXPORT(int) vidputs (chtype, NCURSES_OUTC);		/* implemented */
 extern NCURSES_EXPORT(int) vline (chtype, int);				/* generated */
-extern NCURSES_EXPORT(int) vwprintw (WINDOW *, const char *,va_list) GCC_DEPRECATED(use vw_printw);	/* implemented */
-extern NCURSES_EXPORT(int) vw_printw (WINDOW *, const char *,va_list);	/* implemented */
-extern NCURSES_EXPORT(int) vwscanw (WINDOW *, const char *,va_list) GCC_DEPRECATED(use vw_scanw);	/* implemented */
-extern NCURSES_EXPORT(int) vw_scanw (WINDOW *, const char *,va_list);	/* implemented */
+extern NCURSES_EXPORT(int) vwprintw (WINDOW *, const char *, va_list) GCC_DEPRECATED(use vw_printw)	/* implemented */
+		GCC_PRINTFLIKE(2,0);
+extern NCURSES_EXPORT(int) vw_printw (WINDOW *, const char *, va_list)	/* implemented */
+		GCC_PRINTFLIKE(2,0);
+extern NCURSES_EXPORT(int) vwscanw (WINDOW *, const char *, va_list) GCC_DEPRECATED(use vw_scanw)	/* implemented */
+		GCC_SCANFLIKE(2,0);
+extern NCURSES_EXPORT(int) vw_scanw (WINDOW *, const char *, va_list)	/* implemented */
+		GCC_SCANFLIKE(2,0);
 extern NCURSES_EXPORT(int) waddch (WINDOW *, const chtype);		/* implemented */
 extern NCURSES_EXPORT(int) waddchnstr (WINDOW *,const chtype *,int);	/* implemented */
 extern NCURSES_EXPORT(int) waddchstr (WINDOW *,const chtype *);		/* generated */
@@ -895,10 +910,11 @@ extern NCURSES_EXPORT(int) putp (const char *);				/* implemented */
 extern NCURSES_EXPORT(char *) tparm (const char *, ...);		/* special */
 #else
 extern NCURSES_EXPORT(char *) tparm (const char *, NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG,NCURSES_TPARM_ARG);	/* special */
-extern NCURSES_EXPORT(char *) tparm_varargs (const char *, ...);	/* special */
 #endif
 
 extern NCURSES_EXPORT(char *) tiparm (const char *, ...);		/* special */
+extern NCURSES_EXPORT(char *) tiparm_s (int, int, const char *, ...);	/* special */
+extern NCURSES_EXPORT(int) tiscan_s (int *, int *, const char *);	/* special */
 
 /*
  * These functions are not in X/Open, but we use them in macro definitions:
@@ -923,16 +939,14 @@ extern NCURSES_EXPORT(int) getpary (const WINDOW *);			/* generated */
 /*
  * These functions are extensions - not in X/Open Curses.
  */
-#if 1
+#if 1	/* NCURSES_EXT_FUNCS */
 #undef  NCURSES_EXT_FUNCS
-#define NCURSES_EXT_FUNCS 20200215
+#define NCURSES_EXT_FUNCS 20251230	/* NCURSES_PATCH */
 typedef int (*NCURSES_WINDOW_CB)(WINDOW *, void *);
 typedef int (*NCURSES_SCREEN_CB)(SCREEN *, void *);
-extern NCURSES_EXPORT(bool) is_term_resized (int, int);
-extern NCURSES_EXPORT(char *) keybound (int, int);
-extern NCURSES_EXPORT(const char *) curses_version (void);
 extern NCURSES_EXPORT(int) alloc_pair (int, int);
 extern NCURSES_EXPORT(int) assume_default_colors (int, int);
+extern NCURSES_EXPORT(const char *) curses_version (void);
 extern NCURSES_EXPORT(int) define_key (const char *, int);
 extern NCURSES_EXPORT(int) extended_color_content(int, int *, int *, int *);
 extern NCURSES_EXPORT(int) extended_pair_content(int, int *, int *);
@@ -942,20 +956,31 @@ extern NCURSES_EXPORT(int) free_pair (int);
 extern NCURSES_EXPORT(int) get_escdelay (void);
 extern NCURSES_EXPORT(int) init_extended_color(int, int, int, int);
 extern NCURSES_EXPORT(int) init_extended_pair(int, int, int);
+extern NCURSES_EXPORT(int) is_cbreak(void);
+extern NCURSES_EXPORT(int) is_echo(void);
+extern NCURSES_EXPORT(int) is_nl(void);
+extern NCURSES_EXPORT(int) is_raw(void);
+extern NCURSES_EXPORT(bool) is_term_resized (int, int);
 extern NCURSES_EXPORT(int) key_defined (const char *);
+extern NCURSES_EXPORT(char *) keybound (int, int);
 extern NCURSES_EXPORT(int) keyok (int, bool);
+extern NCURSES_EXPORT(void) nofilter(void);
 extern NCURSES_EXPORT(void) reset_color_pairs (void);
 extern NCURSES_EXPORT(int) resize_term (int, int);
 extern NCURSES_EXPORT(int) resizeterm (int, int);
 extern NCURSES_EXPORT(int) set_escdelay (int);
 extern NCURSES_EXPORT(int) set_tabsize (int);
 extern NCURSES_EXPORT(int) use_default_colors (void);
-extern NCURSES_EXPORT(int) use_extended_names (bool);
 extern NCURSES_EXPORT(int) use_legacy_coding (int);
 extern NCURSES_EXPORT(int) use_screen (SCREEN *, NCURSES_SCREEN_CB, void *);
 extern NCURSES_EXPORT(int) use_window (WINDOW *, NCURSES_WINDOW_CB, void *);
 extern NCURSES_EXPORT(int) wresize (WINDOW *, int, int);
-extern NCURSES_EXPORT(void) nofilter(void);
+
+#if 1	/* NCURSES_XNAMES */
+#undef  NCURSES_XNAMES
+#define NCURSES_XNAMES 1	/* NCURSES_XNAMES */
+extern NCURSES_EXPORT(int) use_extended_names (bool);
+#endif
 
 /*
  * These extensions provide access to information stored in the WINDOW even
@@ -977,17 +1002,17 @@ extern NCURSES_EXPORT(bool) is_syncok (const WINDOW *);		/* generated */
 extern NCURSES_EXPORT(int) wgetdelay (const WINDOW *);		/* generated */
 extern NCURSES_EXPORT(int) wgetscrreg (const WINDOW *, int *, int *); /* generated */
 
-#else
+#else /* !NCURSES_EXT_FUNCS */
 #define curses_version() NCURSES_VERSION
-#endif
+#endif /* NCURSES_EXT_FUNCS */
 
 /*
  * Extra extension-functions, which pass a SCREEN pointer rather than using
  * a global variable SP.
  */
-#if 1
+#if 1	/* NCURSES_SP_FUNCS */
 #undef  NCURSES_SP_FUNCS
-#define NCURSES_SP_FUNCS 20200215
+#define NCURSES_SP_FUNCS 20251230	/* NCURSES_PATCH */
 #define NCURSES_SP_NAME(name) name##_sp
 
 /* Define the sp-funcs helper function */
@@ -1069,21 +1094,25 @@ extern NCURSES_EXPORT(void) NCURSES_SP_NAME(use_env) (SCREEN*, bool); /* impleme
 extern NCURSES_EXPORT(void) NCURSES_SP_NAME(use_tioctl) (SCREEN*, bool); /* implemented:SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vidattr) (SCREEN*, chtype);	/* implemented:SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vidputs) (SCREEN*, chtype, NCURSES_SP_OUTC); /* implemented:SP_FUNC */
-#if 1
-extern NCURSES_EXPORT(char *) NCURSES_SP_NAME(keybound) (SCREEN*, int, int);	/* implemented:EXT_SP_FUNC */
+#if 1	/* NCURSES_EXT_FUNCS */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(alloc_pair) (SCREEN*, int, int); /* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(assume_default_colors) (SCREEN*, int, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(define_key) (SCREEN*, const char *, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(extended_color_content) (SCREEN*, int, int *, int *, int *);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(extended_pair_content) (SCREEN*, int, int *, int *);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(extended_slk_color) (SCREEN*, int);	/* implemented:EXT_SP_FUNC */
-extern NCURSES_EXPORT(int) NCURSES_SP_NAME(get_escdelay) (SCREEN*);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(find_pair) (SCREEN*, int, int); /* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(free_pair) (SCREEN*, int); /* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(get_escdelay) (SCREEN*);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(init_extended_color) (SCREEN*, int, int, int, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(init_extended_pair) (SCREEN*, int, int, int);	/* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(is_cbreak) (SCREEN*);	/* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(is_echo) (SCREEN*);	/* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(is_nl) (SCREEN*);	/* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(is_raw) (SCREEN*);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(bool) NCURSES_SP_NAME(is_term_resized) (SCREEN*, int, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(key_defined) (SCREEN*, const char *);	/* implemented:EXT_SP_FUNC */
+extern NCURSES_EXPORT(char *) NCURSES_SP_NAME(keybound) (SCREEN*, int, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(keyok) (SCREEN*, int, bool);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(void) NCURSES_SP_NAME(nofilter) (SCREEN*); /* implemented */	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(void) NCURSES_SP_NAME(reset_color_pairs) (SCREEN*); /* implemented:EXT_SP_FUNC */
@@ -1093,13 +1122,13 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(set_escdelay) (SCREEN*, int);	/* impl
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(set_tabsize) (SCREEN*, int);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_default_colors) (SCREEN*);	/* implemented:EXT_SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/* implemented:EXT_SP_FUNC */
-#endif
-#else
+#endif /* NCURSES_EXT_FUNCS */
+#else /* !NCURSES_SP_FUNCS */
 #undef  NCURSES_SP_FUNCS
 #define NCURSES_SP_FUNCS 0
 #define NCURSES_SP_NAME(name) name
 #define NCURSES_SP_OUTC NCURSES_OUTC
-#endif
+#endif /* NCURSES_SP_FUNCS */
 
 /* attributes */
 
@@ -1117,8 +1146,12 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 #define A_DIM		NCURSES_BITS(1U,12)
 #define A_BOLD		NCURSES_BITS(1U,13)
 #define A_ALTCHARSET	NCURSES_BITS(1U,14)
+
+/* SVr4 curses marks these as "subject to change" */
 #define A_INVIS		NCURSES_BITS(1U,15)
 #define A_PROTECT	NCURSES_BITS(1U,16)
+
+/* X/Open features not found in SVr4 curses */
 #define A_HORIZONTAL	NCURSES_BITS(1U,17)
 #define A_LEFT		NCURSES_BITS(1U,18)
 #define A_LOW		NCURSES_BITS(1U,19)
@@ -1126,9 +1159,14 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 #define A_TOP		NCURSES_BITS(1U,21)
 #define A_VERTICAL	NCURSES_BITS(1U,22)
 
-#if 1
+#if 1	/* NCURSES_EXT_FUNCS */
 #define A_ITALIC	NCURSES_BITS(1U,23)	/* ncurses extension */
-#endif
+#if 0	/* NCURSES_RGB_COLORS */
+#define A_FOREGROUND	NCURSES_BITS(1U,17)	/* ncurses extension */
+#define A_BACKGROUND	NCURSES_BITS(1U,18)	/* ncurses extension */
+#define A_DIRECT	(A_FOREGROUND|A_BACKGROUND)
+#endif /* NCURSES_RGB_COLORS */
+#endif /* NCURSES_EXT_FUNCS */
 
 /*
  * Most of the pseudo functions are macros that either provide compatibility
@@ -1202,7 +1240,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 
 #if !NCURSES_OPAQUE
 #if NCURSES_WATTR_MACROS
-#if NCURSES_WIDECHAR && 1
+#if NCURSES_WIDECHAR && 1 /* NCURSES_EXT_COLORS */
 #define wattrset(win,at) \
 	(NCURSES_OK_ADDR(win) \
 	  ? ((win)->_color = NCURSES_CAST(int, PAIR_NUMBER(at)), \
@@ -1354,7 +1392,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 
 #if !NCURSES_OPAQUE
 #if NCURSES_WATTR_MACROS
-#if NCURSES_WIDECHAR && 1
+#if NCURSES_WIDECHAR && 1 /* NCURSES_EXT_COLORS */
 #define wattr_set(win,a,p,opts) \
 	(NCURSES_OK_ADDR(win) \
 	 ? ((void)((win)->_attrs = ((a) & ~A_COLOR), \
@@ -1374,7 +1412,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 		   : OK), \
 	    OK) \
 	 : ERR)
-#else /* !(NCURSES_WIDECHAR && NCURSES_EXE_COLORS) */
+#else /* !(NCURSES_WIDECHAR && NCURSES_EXT_COLORS) */
 #define wattr_set(win,a,p,opts) \
 	 (NCURSES_OK_ADDR(win) \
 	  ? ((void)((win)->_attrs = (((a) & ~A_COLOR) | \
@@ -1391,7 +1429,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 		   : OK), \
 	    OK) \
 	 : ERR)
-#endif /* (NCURSES_WIDECHAR && NCURSES_EXE_COLORS) */
+#endif /* (NCURSES_WIDECHAR && NCURSES_EXT_COLORS) */
 #endif /* NCURSES_WATTR_MACROS */
 #endif /* NCURSES_OPAQUE */
 
@@ -1407,15 +1445,15 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(use_legacy_coding) (SCREEN*, int);	/*
 /*
  * Export fallback function for use in C++ binding.
  */
-#if !1
+#if !1 /* HAVE_VSSCANF */
 #define vsscanf(a,b,c) _nc_vsscanf(a,b,c)
-NCURSES_EXPORT(int) vsscanf(const char *, const char *, va_list);
+extern NCURSES_EXPORT(int) vsscanf(const char *, const char *, va_list);
 #endif
 
 /*
  * These macros are extensions - not in X/Open Curses.
  */
-#if 1
+#if 1	/* NCURSES_EXT_FUNCS */
 #if !NCURSES_OPAQUE
 #define is_cleared(win)		(NCURSES_OK_ADDR(win) ? (win)->_clear : FALSE)
 #define is_idcok(win)		(NCURSES_OK_ADDR(win) ? (win)->_idcok : FALSE)
@@ -1433,7 +1471,7 @@ NCURSES_EXPORT(int) vsscanf(const char *, const char *, va_list);
 #define wgetparent(win)		(NCURSES_OK_ADDR(win) ? (win)->_parent : 0)
 #define wgetscrreg(win,t,b)	(NCURSES_OK_ADDR(win) ? (*(t) = (win)->_regtop, *(b) = (win)->_regbottom, OK) : ERR)
 #endif
-#endif
+#endif /* NCURSES_EXT_FUNCS */
 
 /*
  * X/Open says this returns a bool; SVr4 also checked for out-of-range line.
@@ -1598,11 +1636,13 @@ extern NCURSES_EXPORT_VAR(int) TABSIZE;
 #define KEY_SUSPEND	0627		/* suspend key */
 #define KEY_UNDO	0630		/* undo key */
 #define KEY_MOUSE	0631		/* Mouse event has occurred */
-#define KEY_RESIZE	0632		/* Terminal resize event */
-#define KEY_EVENT	0633		/* We were interrupted by an event */
 
-#define KEY_MAX		0777		/* Maximum key value is 0633 */
-/* $Id: curses.wide,v 1.50 2017/03/26 16:05:21 tom Exp $ */
+#if NCURSES_SIGWINCH
+#define KEY_RESIZE	0632		/* Terminal resize event */
+#endif
+
+#define KEY_MAX		0777		/* Maximum key value is 0632 */
+/* $Id: curses.wide,v 1.53 2025/01/18 21:08:32 Branden.Robinson Exp $ */
 /*
  * vile:cmode:
  * This file is part of ncurses, designed to be appended after curses.h.in
@@ -1817,16 +1857,18 @@ extern NCURSES_EXPORT(int) winnwstr (WINDOW *, wchar_t *, int);		/* implemented 
 extern NCURSES_EXPORT(int) wins_nwstr (WINDOW *, const wchar_t *, int);	/* implemented */
 extern NCURSES_EXPORT(int) wins_wch (WINDOW *, const cchar_t *);	/* implemented */
 extern NCURSES_EXPORT(int) wins_wstr (WINDOW *, const wchar_t *);	/* generated:WIDEC */
-extern NCURSES_EXPORT(int) winwstr (WINDOW *, wchar_t *);		/* implemented */
+extern NCURSES_EXPORT(int) winwstr (WINDOW *, wchar_t *);		/* generated:WIDEC */
 extern NCURSES_EXPORT(wchar_t*) wunctrl (cchar_t *);			/* implemented */
 extern NCURSES_EXPORT(int) wvline_set (WINDOW *, const cchar_t *, int);	/* implemented */
 
 #if NCURSES_SP_FUNCS
 extern NCURSES_EXPORT(attr_t) NCURSES_SP_NAME(term_attrs) (SCREEN*);		/* implemented:SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(erasewchar) (SCREEN*, wchar_t *);	/* implemented:SP_FUNC */
+extern NCURSES_EXPORT(int) NCURSES_SP_NAME(killwchar) (SCREEN*, wchar_t *);	/* implemented:SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(unget_wch) (SCREEN*, const wchar_t);	/* implemented:SP_FUNC */
-extern NCURSES_EXPORT(wchar_t*) NCURSES_SP_NAME(wunctrl) (SCREEN*, cchar_t *);	/* implemented:SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vid_attr) (SCREEN*, attr_t, NCURSES_PAIRS_T, void *);	/* implemented:SP_FUNC */
 extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vid_puts) (SCREEN*, attr_t, NCURSES_PAIRS_T, void *, NCURSES_SP_OUTC);	/* implemented:SP_FUNC */
+extern NCURSES_EXPORT(wchar_t*) NCURSES_SP_NAME(wunctrl) (SCREEN*, cchar_t *);	/* implemented:SP_FUNC */
 #endif
 
 #ifndef NCURSES_NOMACROS
@@ -1842,7 +1884,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vid_puts) (SCREEN*, attr_t, NCURSES_P
 #define bkgrnd(c)			wbkgrnd(stdscr,(c))
 #define bkgrndset(c)			wbkgrndset(stdscr,(c))
 #define border_set(l,r,t,b,tl,tr,bl,br) wborder_set(stdscr,(l),(r),(t),(b),tl,tr,bl,br)
-#define box_set(w,v,h)			wborder_set((w),(v),(v),(h),(h),0,0,0,0)
+#define box_set(w,v,h)			wborder_set((w),(v),(v),(h),(h),NULL,NULL,NULL,NULL)
 #define echo_wchar(c)			wecho_wchar(stdscr,(c))
 #define get_wch(c)			wget_wch(stdscr,(c))
 #define get_wstr(t)			wget_wstr(stdscr,(t))
@@ -1863,6 +1905,7 @@ extern NCURSES_EXPORT(int) NCURSES_SP_NAME(vid_puts) (SCREEN*, attr_t, NCURSES_P
 #define wget_wstr(w,t)			wgetn_wstr((w),(t),-1)
 #define win_wchstr(w,c)			win_wchnstr((w),(c),-1)
 #define wins_wstr(w,t)			wins_nwstr((w),(t),-1)
+#define winwstr(w,c)			winnwstr((w),(c),-1)
 
 #if !NCURSES_OPAQUE
 #define wgetbkgrnd(win,wch)		(NCURSES_OK_ADDR(wch) ? ((win) ? (*(wch) = (win)->_bkgrnd) : *(wch), OK) : ERR)
@@ -1914,7 +1957,7 @@ extern NCURSES_EXPORT(const char *) _nc_viswibuf(const wint_t *);
 #endif
 
 #endif /* NCURSES_WIDECHAR */
-/* $Id: curses.tail,v 1.25 2019/12/14 22:28:39 tom Exp $ */
+/* $Id: curses.tail,v 1.29 2025/07/26 15:32:01 tom Exp $ */
 /*
  * vile:cmode:
  * This file is part of ncurses, designed to be appended after curses.h.in
@@ -1924,17 +1967,17 @@ extern NCURSES_EXPORT(const char *) _nc_viswibuf(const wint_t *);
 /* mouse interface */
 
 #if NCURSES_MOUSE_VERSION > 1
-#define NCURSES_MOUSE_MASK(b,m) ((m) << (((b) - 1) * 5))
+#define NCURSES_MOUSE_MASK(b,m) ((mmask_t)(m) << (((b) - 1) * 5))
 #else
-#define NCURSES_MOUSE_MASK(b,m) ((m) << (((b) - 1) * 6))
+#define NCURSES_MOUSE_MASK(b,m) ((mmask_t)(m) << (((b) - 1) * 6))
 #endif
 
-#define	NCURSES_BUTTON_RELEASED	001L
-#define	NCURSES_BUTTON_PRESSED	002L
-#define	NCURSES_BUTTON_CLICKED	004L
-#define	NCURSES_DOUBLE_CLICKED	010L
-#define	NCURSES_TRIPLE_CLICKED	020L
-#define	NCURSES_RESERVED_EVENT	040L
+#define	NCURSES_BUTTON_RELEASED	001UL
+#define	NCURSES_BUTTON_PRESSED	002UL
+#define	NCURSES_BUTTON_CLICKED	004UL
+#define	NCURSES_DOUBLE_CLICKED	010UL
+#define	NCURSES_TRIPLE_CLICKED	020UL
+#define	NCURSES_RESERVED_EVENT	040UL
 
 /* event masks */
 #define	BUTTON1_RELEASED	NCURSES_MOUSE_MASK(1, NCURSES_BUTTON_RELEASED)
@@ -1978,7 +2021,51 @@ extern NCURSES_EXPORT(const char *) _nc_viswibuf(const wint_t *);
 #define	BUTTON_ALT		NCURSES_MOUSE_MASK(6, 0004L)
 #define	REPORT_MOUSE_POSITION	NCURSES_MOUSE_MASK(6, 0010L)
 
-#else
+/*
+ * If mmask_T is 64-bits, we can define another 6 button stanzas, for a total
+ * of 11, which happens to be the maximum number supported in the X11 protocol.
+ */
+#if NCURSES_MOUSE_VERSION > 2
+
+#define	BUTTON6_RELEASED	NCURSES_MOUSE_MASK(6, NCURSES_BUTTON_RELEASED)
+#define	BUTTON6_PRESSED		NCURSES_MOUSE_MASK(6, NCURSES_BUTTON_PRESSED)
+#define	BUTTON6_CLICKED		NCURSES_MOUSE_MASK(6, NCURSES_BUTTON_CLICKED)
+#define	BUTTON6_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(6, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON6_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(6, NCURSES_TRIPLE_CLICKED)
+
+#define	BUTTON7_RELEASED	NCURSES_MOUSE_MASK(7, NCURSES_BUTTON_RELEASED)
+#define	BUTTON7_PRESSED		NCURSES_MOUSE_MASK(7, NCURSES_BUTTON_PRESSED)
+#define	BUTTON7_CLICKED		NCURSES_MOUSE_MASK(7, NCURSES_BUTTON_CLICKED)
+#define	BUTTON7_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(7, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON7_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(7, NCURSES_TRIPLE_CLICKED)
+
+#define	BUTTON8_RELEASED	NCURSES_MOUSE_MASK(8, NCURSES_BUTTON_RELEASED)
+#define	BUTTON8_PRESSED		NCURSES_MOUSE_MASK(8, NCURSES_BUTTON_PRESSED)
+#define	BUTTON8_CLICKED		NCURSES_MOUSE_MASK(8, NCURSES_BUTTON_CLICKED)
+#define	BUTTON8_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(8, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON8_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(8, NCURSES_TRIPLE_CLICKED)
+
+#define	BUTTON9_RELEASED	NCURSES_MOUSE_MASK(9, NCURSES_BUTTON_RELEASED)
+#define	BUTTON9_PRESSED		NCURSES_MOUSE_MASK(9, NCURSES_BUTTON_PRESSED)
+#define	BUTTON9_CLICKED		NCURSES_MOUSE_MASK(9, NCURSES_BUTTON_CLICKED)
+#define	BUTTON9_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(9, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON9_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(9, NCURSES_TRIPLE_CLICKED)
+
+#define	BUTTON10_RELEASED	NCURSES_MOUSE_MASK(10, NCURSES_BUTTON_RELEASED)
+#define	BUTTON10_PRESSED	NCURSES_MOUSE_MASK(10, NCURSES_BUTTON_PRESSED)
+#define	BUTTON10_CLICKED	NCURSES_MOUSE_MASK(10, NCURSES_BUTTON_CLICKED)
+#define	BUTTON10_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(10, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON10_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(10, NCURSES_TRIPLE_CLICKED)
+
+#define	BUTTON11_RELEASED	NCURSES_MOUSE_MASK(11, NCURSES_BUTTON_RELEASED)
+#define	BUTTON11_PRESSED	NCURSES_MOUSE_MASK(11, NCURSES_BUTTON_PRESSED)
+#define	BUTTON11_CLICKED	NCURSES_MOUSE_MASK(11, NCURSES_BUTTON_CLICKED)
+#define	BUTTON11_DOUBLE_CLICKED	NCURSES_MOUSE_MASK(11, NCURSES_DOUBLE_CLICKED)
+#define	BUTTON11_TRIPLE_CLICKED	NCURSES_MOUSE_MASK(11, NCURSES_TRIPLE_CLICKED)
+
+#endif
+
+#else	/* NCURSES_MOUSE_VERSION == 1 */
 
 #define	BUTTON1_RESERVED_EVENT	NCURSES_MOUSE_MASK(1, NCURSES_RESERVED_EVENT)
 #define	BUTTON2_RESERVED_EVENT	NCURSES_MOUSE_MASK(2, NCURSES_RESERVED_EVENT)
@@ -1990,7 +2077,7 @@ extern NCURSES_EXPORT(const char *) _nc_viswibuf(const wint_t *);
 #define	BUTTON_ALT		NCURSES_MOUSE_MASK(5, 0004L)
 #define	REPORT_MOUSE_POSITION	NCURSES_MOUSE_MASK(5, 0010L)
 
-#endif
+#endif	/* NCURSES_MOUSE_VERSION >= 1 */
 
 #define	ALL_MOUSE_EVENTS	(REPORT_MOUSE_POSITION - 1)
 
@@ -2090,7 +2177,7 @@ extern NCURSES_EXPORT(const char *) _nc_visbuf (const char *);
 #define OPTIMIZE_ALL		0xff	/* enable all optimizations (dflt) */
 #endif
 
-extern NCURSES_EXPORT(void) exit_curses (int) GCC_NORETURN;
+extern GCC_NORETURN NCURSES_EXPORT(void) exit_curses (int);
 
 #include <unctrl.h>
 

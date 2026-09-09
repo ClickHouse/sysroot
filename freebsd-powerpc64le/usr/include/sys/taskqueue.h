@@ -35,20 +35,12 @@
 
 #include <sys/queue.h>
 #include <sys/_task.h>
-#include <sys/_callout.h>
 #include <sys/_cpuset.h>
 
 struct taskqueue;
 struct taskqgroup;
 struct proc;
 struct thread;
-
-struct timeout_task {
-	struct taskqueue *q;
-	struct task t;
-	struct callout c;
-	int    f;
-};
 
 enum taskqueue_callback_type {
 	TASKQUEUE_CALLBACK_TYPE_INIT,
@@ -222,5 +214,13 @@ TASKQUEUE_DECLARE(fast);
 struct taskqueue *taskqueue_create_fast(const char *name, int mflags,
 				    taskqueue_enqueue_fn enqueue,
 				    void *context);
+
+/*
+ * This queue is used to process asynchronous device events such as
+ * hot plug insertion and removal of devices.
+ */
+TASKQUEUE_DECLARE(bus);
+
+extern unsigned int net_epoch_task_limit;
 
 #endif /* !_SYS_TASKQUEUE_H_ */

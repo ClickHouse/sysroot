@@ -98,7 +98,7 @@ struct nd_ifinfo {
 
 #ifdef _KERNEL
 #define ND_IFINFO(ifp) \
-	(((struct in6_ifextra *)(ifp)->if_afdata[AF_INET6])->nd_ifinfo)
+	(((struct in6_ifextra *)if_getafdata(ifp, AF_INET6))->nd_ifinfo)
 #define IN6_LINKMTU(ifp) \
 	((ND_IFINFO(ifp)->linkmtu && ND_IFINFO(ifp)->linkmtu < (ifp)->if_mtu) \
 	    ? ND_IFINFO(ifp)->linkmtu \
@@ -169,6 +169,10 @@ struct	in6_ndifreq {
 /* Prefix status */
 #define NDPRF_ONLINK		0x1
 #define NDPRF_DETACHED		0x2
+
+/* ND6 NA output flags */
+#define	ND6_NA_OPT_LLA		0x01
+#define	ND6_NA_CARP_MASTER	0x02
 
 /* protocol constants */
 #define MAX_RTR_SOLICITATION_DELAY	1	/* 1sec */
@@ -242,7 +246,6 @@ struct nd_prefix {
 #define ndpr_raf		ndpr_flags
 #define ndpr_raf_onlink		ndpr_flags.onlink
 #define ndpr_raf_auto		ndpr_flags.autonomous
-#define ndpr_raf_ra_derived	ndpr_flags.ra_derived
 #define ndpr_raf_router		ndpr_flags.router
 
 struct nd_pfxrouter {
@@ -255,26 +258,12 @@ MALLOC_DECLARE(M_IP6NDP);
 #endif
 
 /* nd6.c */
-VNET_DECLARE(int, nd6_prune);
-VNET_DECLARE(int, nd6_delay);
-VNET_DECLARE(int, nd6_umaxtries);
 VNET_DECLARE(int, nd6_mmaxtries);
-VNET_DECLARE(int, nd6_useloopback);
-VNET_DECLARE(int, nd6_maxnudhint);
-VNET_DECLARE(int, nd6_gctimer);
 VNET_DECLARE(struct nd_prhead, nd_prefix);
 VNET_DECLARE(int, nd6_debug);
-VNET_DECLARE(int, nd6_onlink_ns_rfc4861);
-#define	V_nd6_prune			VNET(nd6_prune)
-#define	V_nd6_delay			VNET(nd6_delay)
-#define	V_nd6_umaxtries			VNET(nd6_umaxtries)
 #define	V_nd6_mmaxtries			VNET(nd6_mmaxtries)
-#define	V_nd6_useloopback		VNET(nd6_useloopback)
-#define	V_nd6_maxnudhint		VNET(nd6_maxnudhint)
-#define	V_nd6_gctimer			VNET(nd6_gctimer)
 #define	V_nd_prefix			VNET(nd_prefix)
 #define	V_nd6_debug			VNET(nd6_debug)
-#define	V_nd6_onlink_ns_rfc4861		VNET(nd6_onlink_ns_rfc4861)
 
 /* Lock for the prefix and default router lists. */
 VNET_DECLARE(struct rwlock, nd6_lock);

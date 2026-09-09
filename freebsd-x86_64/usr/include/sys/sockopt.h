@@ -37,6 +37,7 @@
 #error "no user-serviceable parts inside"
 #endif
 
+struct cap_rights;
 struct thread;
 struct socket;
 
@@ -52,6 +53,7 @@ struct	sockopt {
 	int	sopt_name;	/* third arg of [gs]etsockopt */
 	void   *sopt_val;	/* fourth arg of [gs]etsockopt */
 	size_t	sopt_valsize;	/* (almost) fifth arg of [gs]etsockopt */
+	const struct cap_rights *sopt_rights; /* Capsicum rights for the fd */
 	struct	thread *sopt_td; /* calling thread or null if kernel */
 };
 
@@ -66,6 +68,5 @@ int	accept_filt_getopt(struct socket *, struct sockopt *);
 int	accept_filt_setopt(struct socket *, struct sockopt *);
 int	so_setsockopt(struct socket *so, int level, int optname,
 	    void *optval, size_t optlen);
-u_long	sogetmaxbuf(struct socket *so);
 
 #endif /* _SYS_SOCKOPT_H_ */

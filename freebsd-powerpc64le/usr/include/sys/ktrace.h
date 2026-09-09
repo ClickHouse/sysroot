@@ -34,8 +34,10 @@
 #ifndef _SYS_KTRACE_H_
 #define _SYS_KTRACE_H_
 
+#include <sys/param.h>
 #include <sys/caprights.h>
 #include <sys/signal.h>
+#include <sys/socket.h>
 #include <sys/_uio.h>
 
 /*
@@ -53,15 +55,31 @@
 /*
  * ktrace record header
  */
-struct ktr_header {
+struct ktr_header_v0 {
 	int	ktr_len;		/* length of buf */
 	short	ktr_type;		/* trace record type */
 	pid_t	ktr_pid;		/* process id */
 	char	ktr_comm[MAXCOMLEN + 1];/* command name */
 	struct	timeval ktr_time;	/* timestamp */
-	intptr_t	ktr_tid;	/* was ktr_buffer */
+	long	ktr_tid;		/* thread id */
 };
 
+struct ktr_header {
+	int	ktr_len;		/* length of buf */
+	short	ktr_type;		/* trace record type */
+	short	ktr_version;		/* ktr_header version */
+	pid_t	ktr_pid;		/* process id */
+	char	ktr_comm[MAXCOMLEN + 1];/* command name */
+	struct	timespec ktr_time;	/* timestamp */
+	/* XXX: make ktr_tid an lwpid_t on next ABI break */
+	long	ktr_tid;		/* thread id */
+	int	ktr_cpu;		/* cpu id */
+};
+
+#define	KTR_VERSION0	0
+#define	KTR_VERSION1	1
+#define	KTR_OFFSET_V0	sizeof(struct ktr_header_v0) - \
+			    sizeof(struct ktr_header)
 /*
  * Test for kernel trace point (MP SAFE).
  *
@@ -71,10 +89,9 @@ struct ktr_header {
  * is the public interface.
  */
 #define	KTRCHECK(td, type)	((td)->td_proc->p_traceflag & (1 << type))
-#define KTRPOINT(td, type)  (__predict_false(KTRCHECK((td), (type))))
-#define	KTRCHECKDRAIN(td)	(!(STAILQ_EMPTY(&(td)->td_proc->p_ktr)))
+#define	KTRPOINT(td, type)	(__predict_false(KTRCHECK((td), (type))))
 #define	KTRUSERRET(td) do {						\
-	if (__predict_false(KTRCHECKDRAIN(td)))				\
+	if (__predict_false(!STAILQ_EMPTY_ATOMIC(&(td)->td_proc->p_ktr))) \
 		ktruserret(td);						\
 } while (0)
 
@@ -191,16 +208,31 @@ struct ktr_proc_ctor {
  * KTR_CAPFAIL - trace capability check failures
  */
 #define KTR_CAPFAIL	12
-enum ktr_cap_fail_type {
+enum ktr_cap_violation {
 	CAPFAIL_NOTCAPABLE,	/* insufficient capabilities in cap_check() */
-	CAPFAIL_INCREASE,	/* attempt to increase capabilities */
+	CAPFAIL_INCREASE,	/* attempt to increase rights on a capability */
 	CAPFAIL_SYSCALL,	/* disallowed system call */
-	CAPFAIL_LOOKUP,		/* disallowed VFS lookup */
+	CAPFAIL_SIGNAL,		/* sent signal to process other than self */
+	CAPFAIL_PROTO,		/* disallowed protocol */
+	CAPFAIL_SOCKADDR,	/* restricted address lookup */
+	CAPFAIL_NAMEI,		/* restricted namei lookup */
+	CAPFAIL_CPUSET,		/* restricted CPU set modification */
 };
+
+union ktr_cap_data {
+	cap_rights_t	cap_rights[2];
+#define	cap_needed	cap_rights[0]
+#define	cap_held	cap_rights[1]
+	int		cap_int;
+	struct sockaddr	cap_sockaddr;
+	char		cap_path[MAXPATHLEN];
+};
+
 struct ktr_cap_fail {
-	enum ktr_cap_fail_type cap_type;
-	cap_rights_t	cap_needed;
-	cap_rights_t	cap_held;
+	enum ktr_cap_violation cap_type;
+	short	cap_code;
+	u_int	cap_svflags;
+	union ktr_cap_data cap_data;
 };
 
 /*
@@ -237,6 +269,13 @@ struct ktr_struct_array {
  * between the previous record and this record was dropped.
  */
 #define	KTR_DROP	0x8000
+/*
+ * KTR_VERSIONED - If this bit is set in ktr_type, then the kernel
+ * exposes the new struct ktr_header (versioned), otherwise the old
+ * struct ktr_header_v0 is exposed.
+ */
+#define	KTR_VERSIONED	0x4000
+#define	KTR_TYPE	(KTR_DROP | KTR_VERSIONED)
 
 /*
  * kernel trace points (in p_traceflag)
@@ -279,13 +318,13 @@ ktr_get_tracevp(struct proc *p, bool ref)
 }
 #endif
 void	ktr_io_params_free(struct ktr_io_params *);
-void	ktrnamei(char *);
+void	ktrnamei(const char *);
 void	ktrcsw(int, int, const char *);
 void	ktrpsig(int, sig_t, sigset_t *, int);
 void	ktrfault(vm_offset_t, int);
 void	ktrfaultend(int);
 void	ktrgenio(int, enum uio_rw, struct uio *, int);
-void	ktrsyscall(int, int narg, register_t args[]);
+void	ktrsyscall(int, int narg, syscallarg_t args[]);
 void	ktrsysctl(int *name, u_int namelen);
 void	ktrsysret(int, int, register_t);
 void	ktrprocctor(struct proc *);
@@ -296,8 +335,7 @@ void	ktruserret(struct thread *);
 void	ktrstruct(const char *, const void *, size_t);
 void	ktrstruct_error(const char *, const void *, size_t, int);
 void	ktrstructarray(const char *, enum uio_seg, const void *, int, size_t);
-void	ktrcapfail(enum ktr_cap_fail_type, const cap_rights_t *,
-	    const cap_rights_t *);
+void	ktrcapfail(enum ktr_cap_violation, const void *);
 #define ktrcaprights(s) \
 	ktrstruct("caprights", (s), sizeof(cap_rights_t))
 #define	ktritimerval(s) \
@@ -310,11 +348,17 @@ void	ktrcapfail(enum ktr_cap_fail_type, const cap_rights_t *,
 	ktrstruct_error("stat", (s), sizeof(struct stat), error)
 #define ktrcpuset(s, l) \
 	ktrstruct("cpuset_t", (s), l)
+#define	ktrsplice(s) \
+	ktrstruct("splice", (s), sizeof(struct splice))
+#define ktrthrparam(s) \
+	ktrstruct("thrparam", (s), sizeof(struct thr_param))
 extern u_int ktr_geniosize;
 #ifdef	KTRACE
 extern int ktr_filesize_limit_signal;
+#define	__ktrace_used
 #else
 #define	ktr_filesize_limit_signal 0
+#define	__ktrace_used	__unused
 #endif
 #else
 

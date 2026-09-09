@@ -34,8 +34,6 @@
 #include <sys/nv.h>
 #include <sys/gtaskqueue.h>
 
-struct if_clone;
-
 /*
  * The value type for indexing, limits max descriptors
  * to 65535 can be conditionally redefined to uint32_t
@@ -50,8 +48,6 @@ struct if_shared_ctx;
 typedef const struct if_shared_ctx *if_shared_ctx_t;
 struct if_int_delay_info;
 typedef struct if_int_delay_info  *if_int_delay_info_t;
-struct if_pseudo;
-typedef struct if_pseudo *if_pseudo_t;
 
 /*
  * File organization:
@@ -238,6 +234,8 @@ typedef struct if_softc_ctx {
 	int isc_disable_msix;
 	if_txrx_t isc_txrx;
 	struct ifmedia *isc_media;
+	bus_size_t isc_dma_width;	/* device dma width in bits, 0 means
+					   use BUS_SPACE_MAXADDR instead */
 } *if_softc_ctx_t;
 
 /*
@@ -276,7 +274,6 @@ struct if_shared_ctx {
 	int __spare0__;
 	int isc_tx_reclaim_thresh;
 	int isc_flags;
-	const char *isc_name;
 };
 
 typedef struct iflib_dma_info {
@@ -354,19 +351,9 @@ typedef enum {
 #define	IFLIB_SPARE6		0x400
 #define	IFLIB_SPARE5		0x800
 #define	IFLIB_SPARE4		0x1000
-/*
- * Don't need/want most of the niceties of
- * queue management
- */
-#define IFLIB_PSEUDO	0x02000
-/*
- * No DMA support needed / wanted
- */
-#define IFLIB_VIRTUAL	0x04000
-/*
- * autogenerate a MAC address
- */
-#define IFLIB_GEN_MAC	0x08000
+#define	IFLIB_SPARE3		0x2000
+#define	IFLIB_SPARE2		0x4000
+#define	IFLIB_SPARE1		0x8000
 /*
  * Interface needs admin task to ignore interface up/down status
  */
@@ -380,11 +367,15 @@ typedef enum {
  * interrupts instead of doing combined RX/TX processing.
  */
 #define	IFLIB_SINGLE_IRQ_RX_ONLY	0x40000
+#define	IFLIB_SPARE0		0x80000
 /*
- * Don't need/want most of the niceties of
- * emulating ethernet
+ * Interface has an admin completion queue
  */
-#define IFLIB_PSEUDO_ETHER	0x80000
+#define IFLIB_HAS_ADMINCQ	0x100000
+/*
+ * Interface needs to preserve TX ring indices across restarts.
+ */
+#define IFLIB_PRESERVE_TX_INDICES	0x200000
 
 /* The following IFLIB_FEATURE_* defines are for driver modules to determine
  * what features this version of iflib supports. They shall be defined to the
@@ -394,19 +385,19 @@ typedef enum {
  * Driver can set its own TX queue selection function
  * as ift_txq_select in struct if_txrx
  */
-#define IFLIB_FEATURE_QUEUE_SELECT	1300527
+#define IFLIB_FEATURE_QUEUE_SELECT	1400050
 /*
  * Driver can set its own TX queue selection function
  * as ift_txq_select_v2 in struct if_txrx. This includes
  * having iflib send L3+ extra header information to the
  * function.
  */
-#define IFLIB_FEATURE_QUEUE_SELECT_V2	1301509
+#define IFLIB_FEATURE_QUEUE_SELECT_V2	1400073
 /*
  * Driver can create subinterfaces with their own Tx/Rx queues
  * that all share a single device (or commonly, port)
  */
-#define IFLIB_FEATURE_SUB_INTERFACES	1303503
+#define IFLIB_FEATURE_SUB_INTERFACES	1500014
 
 /*
  * These enum values are used in iflib_needs_restart to indicate to iflib
@@ -479,9 +470,9 @@ void iflib_irq_free(if_ctx_t ctx, if_irq_t irq);
 void iflib_io_tqg_attach(struct grouptask *gt, void *uniq, int cpu,
     const char *name);
 
-void iflib_config_gtask_init(void *ctx, struct grouptask *gtask,
-			     gtask_fn_t *fn, const char *name);
-void iflib_config_gtask_deinit(struct grouptask *gtask);
+void iflib_config_task_init(if_ctx_t ctx, struct task *config_task,
+    task_fn_t *fn);
+void iflib_config_task_enqueue(if_ctx_t ctx, struct task *config_task);
 
 void iflib_tx_intr_deferred(if_ctx_t ctx, int txqid);
 void iflib_rx_intr_deferred(if_ctx_t ctx, int rxqid);
@@ -504,12 +495,6 @@ void iflib_led_create(if_ctx_t ctx);
 void iflib_add_int_delay_sysctl(if_ctx_t, const char *, const char *,
 								if_int_delay_info_t, int, int);
 uint16_t iflib_get_extra_msix_vectors_sysctl(if_ctx_t ctx);
-
-/*
- * Pseudo device support
- */
-if_pseudo_t iflib_clone_register(if_shared_ctx_t);
-void iflib_clone_deregister(if_pseudo_t);
 
 /*
  * Sub-interface support

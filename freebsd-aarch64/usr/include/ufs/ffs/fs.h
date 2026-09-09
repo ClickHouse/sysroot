@@ -76,6 +76,45 @@
 #define	SBLOCKSIZE	  8192
 #define	SBLOCKSEARCH \
 	{ SBLOCK_UFS2, SBLOCK_UFS1, SBLOCK_FLOPPY, SBLOCK_PIGGY, -1 }
+/*
+ * Request standard superblock location in ffs_sbget().
+ */
+#define	UFS_STDSB	-1	/* Search standard places for superblock */
+
+/*
+ * UFS_NOMSG indicates that superblock inconsistency error messages
+ *    should not be printed. It is used by programs like fsck that
+ *    want to print their own error message.
+ *
+ * UFS_NOCSUM causes only the superblock itself to be returned, but does
+ *    not read in any auxiliary data structures like the cylinder group
+ *    summary information. It is used by clients like glabel that just
+ *    want to check for possible filesystem types. Using UFS_NOCSUM
+ *    skips the superblock checks for csum data which allows superblocks
+ *    that have corrupted csum data to be read and used.
+ *
+ * UFS_NOHASHFAIL will note that the check hash is wrong but will still
+ *    return the superblock. This is used by the bootstrap code to
+ *    give the system a chance to come up so that fsck can be run to
+ *    correct the problem.
+ *
+ * UFS_NOWARNFAIL will warn about inconsistencies but still return the
+ *    superblock. It includes UFS_NOHASHFAIL. UFS_NOWARNFAIL is used by
+ *    programs like fsck_ffs(8) to debug broken filesystems.
+ *
+ * UFS_FSRONLY will only validate the superblock fields needed to
+ *    calculate where the backup filesystem superblocks are located.
+ *    If these values pass their validation tests, then the superblock
+ *    is returned. This flag is used as part of the attempt to find
+ *    alternate superblocks when using ffs_sbsearch().
+ */
+#define	UFS_NOHASHFAIL	0x0001	/* Ignore check-hash failure */
+#define	UFS_NOWARNFAIL	0x0003	/* Ignore non-fatal inconsistencies */
+#define	UFS_NOMSG	0x0004	/* Print no error message */
+#define	UFS_NOCSUM	0x0008	/* Read just the superblock without csum */
+#define	UFS_FSRONLY	0x0010	/* Validate only values needed for recovery
+				   of alternate superblocks */
+#define	UFS_ALTSBLK	0x1000	/* Flag used internally */
 
 /*
  * Max number of fragments per block. This value is NOT tweakable.
@@ -374,7 +413,8 @@ struct fs {
 	int64_t	 fs_unrefs;		/* number of unreferenced inodes */
 	int64_t  fs_providersize;	/* size of underlying GEOM provider */
 	int64_t	 fs_metaspace;		/* size of area reserved for metadata */
-	int64_t	 fs_sparecon64[13];	/* old rotation block list head */
+	uint64_t fs_save_maxfilesize;	/* save old UFS1 maxfilesize */
+	int64_t	 fs_sparecon64[12];	/* old rotation block list head */
 	int64_t	 fs_sblockactualloc;	/* byte offset of this superblock */
 	int64_t	 fs_sblockloc;		/* byte offset of standard superblock */
 	struct	csum_total fs_cstotal;	/* (u) cylinder summary information */
@@ -387,7 +427,7 @@ struct fs {
 	uint32_t fs_snapinum[FSMAXSNAP];/* list of snapshot inode numbers */
 	uint32_t fs_avgfilesize;	/* expected average file size */
 	uint32_t fs_avgfpdir;		/* expected # of files per directory */
-	int32_t	 fs_save_cgsize;	/* save real cg size to use fs_bsize */
+	uint32_t fs_available_spare;	/* old scratch space */
 	ufs_time_t fs_mtime;		/* Last mount or fsck time. */
 	int32_t  fs_sujfree;		/* SUJ free list */
 	int32_t	 fs_sparecon32[21];	/* reserved for future constants */

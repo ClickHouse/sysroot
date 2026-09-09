@@ -3,6 +3,10 @@
  * Public domain.
  */
 
+#ifdef __arm__
+#include <arm/ieeefp.h>
+#else /* !__arm__ */
+
 #ifndef _MACHINE_IEEEFP_H_
 #define	_MACHINE_IEEEFP_H_
 
@@ -40,3 +44,5 @@ extern fp_except_t fpsetmask(fp_except_t);
 __END_DECLS
 
 #endif /* _MACHINE_IEEEFP_H_ */
+
+#endif /* !__arm__ */

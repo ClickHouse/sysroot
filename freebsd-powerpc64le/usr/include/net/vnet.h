@@ -63,6 +63,7 @@
  * as required for libkvm.
  */
 #if defined(_KERNEL) || defined(_WANT_VNET)
+#include <machine/param.h>	/* for CACHE_LINE_SIZE */
 #include <sys/queue.h>
 
 struct vnet {
@@ -278,7 +279,7 @@ extern struct sx vnet_sxlock;
 #define	VNET_DEFINE(t, n)	\
     struct _hack; t VNET_NAME(n) __section(VNET_SETNAME) __used
 #if defined(KLD_MODULE) && (defined(__aarch64__) || defined(__riscv) \
-		|| defined(__powerpc64__))
+		|| defined(__powerpc64__) || defined(__i386__))
 /*
  * As with DPCPU_DEFINE_STATIC we are unable to mark this data as static
  * in modules on some architectures.
@@ -406,7 +407,7 @@ do {									\
 #define	VNET_LIST_RUNLOCK()
 #define	VNET_LIST_RUNLOCK_NOSLEEP()
 #define	VNET_ITERATOR_DECL(arg)
-#define	VNET_FOREACH(arg)
+#define	VNET_FOREACH(arg)	for (int _vn = 0; _vn == 0; _vn++)
 
 #define	IS_DEFAULT_VNET(arg)	1
 #define	CRED_TO_VNET(cr)	NULL

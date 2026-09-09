@@ -25,6 +25,7 @@
  */
 
 /*
+ * Copyright (c) 2023 by Domagoj Stolfa. All rights reserved.
  * Copyright (c) 2014, 2016 by Delphix. All rights reserved.
  * Copyright (c) 2013, Joyent, Inc. All rights reserved.
  */
@@ -69,6 +70,7 @@ typedef struct dtrace_aggdata dtrace_aggdata_t;
 #define	DTRACE_O_NOSYS		0x02	/* do not load /system/object modules */
 #define	DTRACE_O_LP64		0x04	/* force D compiler to be LP64 */
 #define	DTRACE_O_ILP32		0x08	/* force D compiler to be ILP32 */
+#define	DTRACE_O_MODEL_MASK	(DTRACE_O_LP64 | DTRACE_O_ILP32)
 #define	DTRACE_O_MASK		0x0f	/* mask of valid flags to dtrace_open */
 
 extern dtrace_hdl_t *dtrace_open(int, int, int *);
@@ -119,10 +121,11 @@ typedef struct dtrace_proginfo {
 #define	DTRACE_C_PSPEC	0x0080	/* Interpret ambiguous specifiers as probes */
 #define	DTRACE_C_ETAGS	0x0100	/* Prefix error messages with error tags */
 #define	DTRACE_C_ARGREF	0x0200	/* Do not require all macro args to be used */
+#define	DTRACE_C_SUGAR	0x0400	/* Dump D script post-dt_sugar */
 #define	DTRACE_C_DEFARG	0x0800	/* Use 0/"" as value for unspecified args */
 #define	DTRACE_C_NOLIBS	0x1000	/* Do not process D system libraries */
 #define	DTRACE_C_CTL	0x2000	/* Only process control directives */
-#define	DTRACE_C_MASK	0x3bff	/* mask of all valid flags to dtrace_*compile */
+#define	DTRACE_C_MASK	0x3fff	/* mask of all valid flags to dtrace_*compile */
 
 extern dtrace_prog_t *dtrace_program_strcompile(dtrace_hdl_t *,
     const char *, dtrace_probespec_t, uint_t, int, char *const []);
@@ -199,6 +202,7 @@ typedef struct dtrace_probedata {
 	dtrace_flowkind_t dtpda_flow;		/* flow kind */
 	const char *dtpda_prefix;		/* recommended flow prefix */
 	int dtpda_indent;			/* recommended flow indent */
+	uint64_t dtpda_timestamp;		/* hrtime of snapshot */
 } dtrace_probedata_t;
 
 typedef int dtrace_consume_probe_f(const dtrace_probedata_t *, void *);
@@ -232,6 +236,10 @@ extern void *dtrace_printf_create(dtrace_hdl_t *, const char *);
 extern void *dtrace_printa_create(dtrace_hdl_t *, const char *);
 extern size_t dtrace_printf_format(dtrace_hdl_t *, void *, char *, size_t);
 
+extern int dtrace_sprintf(dtrace_hdl_t *, FILE *, void *,
+    const dtrace_recdesc_t *, uint_t,
+    const void *, size_t);
+
 extern int dtrace_fprintf(dtrace_hdl_t *, FILE *, void *,
     const dtrace_probedata_t *, const dtrace_recdesc_t *, uint_t,
     const void *, size_t);
@@ -258,6 +266,8 @@ extern int dtrace_freopen(dtrace_hdl_t *, FILE *, void *,
  * plain string data.
  */
 extern int dtrace_print(dtrace_hdl_t *, FILE *, const char *,
+    caddr_t, size_t);
+extern int dtrace_format_print(dtrace_hdl_t *, FILE *, const char *,
     caddr_t, size_t);
 
 /*
@@ -610,9 +620,18 @@ extern int _dtrace_debug;
 }
 #endif
 
-#ifndef illumos
-#define _SC_CPUID_MAX		_SC_NPROCESSORS_CONF
-#define _SC_NPROCESSORS_MAX	_SC_NPROCESSORS_CONF
-#endif
+/*
+ * Values for the dt_oformat property.
+ */
+#define	DTRACE_OFORMAT_TEXT		0
+#define	DTRACE_OFORMAT_STRUCTURED	1
+
+extern int dtrace_oformat_configure(dtrace_hdl_t *);
+extern int dtrace_oformat(dtrace_hdl_t *);
+extern void dtrace_set_outfp(const FILE *);
+extern void dtrace_oformat_setup(dtrace_hdl_t *);
+extern void dtrace_oformat_teardown(dtrace_hdl_t *);
+extern void dtrace_oformat_probe(dtrace_hdl_t *, const dtrace_probedata_t *,
+    processorid_t, dtrace_probedesc_t *);
 
 #endif	/* _DTRACE_H */

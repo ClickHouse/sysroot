@@ -24,6 +24,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __arm__
+#include <arm/atomic.h>
+#else /* !__arm__ */
+
 #ifndef	_MACHINE_ATOMIC_H_
 #define	_MACHINE_ATOMIC_H_
 
@@ -51,15 +55,19 @@
 #define	wmb()	dmb(st)	/* Full system memory barrier store */
 #define	rmb()	dmb(ld)	/* Full system memory barrier load */
 
-#if defined(KCSAN) && !defined(KCSAN_RUNTIME)
+#ifdef _KERNEL
+extern _Bool lse_supported;
+#endif
+
+#if defined(SAN_NEEDS_INTERCEPTORS) && !defined(SAN_RUNTIME)
 #include <sys/atomic_san.h>
 #else
 
 #include <sys/atomic_common.h>
 
-#ifdef _KERNEL
-extern bool lse_supported;
-
+#if defined(__ARM_FEATURE_ATOMICS)
+#define	_ATOMIC_LSE_SUPPORTED	1
+#elif defined(_KERNEL)
 #ifdef LSE_ATOMICS
 #define	_ATOMIC_LSE_SUPPORTED	1
 #else
@@ -457,7 +465,7 @@ _ATOMIC_TEST_OP(set,   orr, set)
 
 #define	_ATOMIC_LOAD_ACQ_IMPL(t, w, s)					\
 static __inline uint##t##_t						\
-atomic_load_acq_##t(volatile uint##t##_t *p)				\
+atomic_load_acq_##t(const volatile uint##t##_t *p)			\
 {									\
 	uint##t##_t ret;						\
 									\
@@ -601,6 +609,8 @@ _ATOMIC_STORE_REL_IMPL(64,  ,  )
 #define	atomic_set_ptr			atomic_set_64
 #define	atomic_swap_ptr			atomic_swap_64
 #define	atomic_subtract_ptr		atomic_subtract_64
+#define	atomic_testandclear_ptr		atomic_testandclear_64
+#define	atomic_testandset_ptr		atomic_testandset_64
 
 #define	atomic_add_acq_long		atomic_add_acq_64
 #define	atomic_fcmpset_acq_long		atomic_fcmpset_acq_64
@@ -665,3 +675,5 @@ atomic_thread_fence_seq_cst(void)
 
 #endif /* KCSAN && !KCSAN_RUNTIME */
 #endif /* _MACHINE_ATOMIC_H_ */
+
+#endif /* !__arm__ */

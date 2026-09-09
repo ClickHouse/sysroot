@@ -52,7 +52,7 @@ void	rm_init(struct rmlock *rm, const char *name);
 void	rm_init_flags(struct rmlock *rm, const char *name, int opts);
 void	rm_destroy(struct rmlock *rm);
 int	rm_wowned(const struct rmlock *rm);
-void	rm_sysinit(void *arg);
+void	rm_sysinit(const void *arg);
 
 void	_rm_wlock_debug(struct rmlock *rm, const char *file, int line);
 void	_rm_wunlock_debug(struct rmlock *rm, const char *file, int line);
@@ -147,6 +147,13 @@ rms_wowned(struct rmslock *rms)
 
 	return (rms->owner == curthread);
 }
+
+#ifdef INVARIANTS
+#define rms_assert_rlock_ok(x)	\
+	WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL, __func__);
+#else
+#define rms_assert_rlock_ok(x)
+#endif
 
 #ifdef INVARIANTS
 /*
