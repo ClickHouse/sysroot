@@ -64,7 +64,7 @@
 
 #ifdef SMP
 #ifndef MAXCPU
-#define MAXCPU		256
+#define MAXCPU		1024
 #endif
 #else
 #define MAXCPU		1
@@ -133,7 +133,7 @@
 #define	IOPERM_BITMAP_SIZE	(IOPAGES * PAGE_SIZE + 1)
 
 #ifndef	KSTACK_PAGES
-#ifdef KASAN
+#if defined(KASAN) || defined(KMSAN)
 #define	KSTACK_PAGES	6
 #else
 #define	KSTACK_PAGES	4	/* pages of kstack (with pcb) */

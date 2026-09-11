@@ -296,6 +296,8 @@ typedef struct IOAPIC ioapic_t;
 /* constants relating to APIC ID registers */
 #define APIC_ID_MASK		0xff000000
 #define	APIC_ID_SHIFT		24
+#define APIC_EXT_ID_MASK	0x00fe0000
+#define	APIC_EXT_ID_SHIFT	17
 #define	APIC_ID_CLUSTER		0xf0
 #define	APIC_ID_CLUSTER_ID	0x0f
 #define	APIC_MAX_CLUSTER	0xe
@@ -437,7 +439,12 @@ typedef struct IOAPIC ioapic_t;
 #define	APIC_EXTF_SEIO_CAP	0x00000002
 #define	APIC_EXTF_IER_CAP	0x00000001
 
-/* LVT table indices */
+/*
+ * LVT table indices.
+ * Must be ordered following the appearance of the LVT entries in
+ * series the LAPIC versions, which is reported by LAPIC_VERSION
+ * MAXLVT field.
+ */
 #define	APIC_LVT_LINT0		0
 #define	APIC_LVT_LINT1		1
 #define	APIC_LVT_TIMER		2

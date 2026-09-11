@@ -63,6 +63,15 @@
 #define	_SCHED_H_
 
 #ifdef _KERNEL
+
+#include <sys/types.h>
+#ifdef SCHED_STATS
+#include <sys/pcpu.h>
+#endif
+
+struct proc;
+struct thread;
+
 /*
  * General scheduling info.
  *
@@ -74,7 +83,7 @@
  */
 int	sched_load(void);
 int	sched_rr_interval(void);
-int	sched_runnable(void);
+bool	sched_runnable(void);
 
 /* 
  * Proc related scheduling hooks.
@@ -89,9 +98,11 @@ void	sched_nice(struct proc *p, int nice);
  * Threads are switched in and out, block on resources, have temporary
  * priorities inherited from their procs, and use up cpu time.
  */
+void	sched_ap_entry(void);
 void	sched_exit_thread(struct thread *td, struct thread *child);
 u_int	sched_estcpu(struct thread *td);
 void	sched_fork_thread(struct thread *td, struct thread *child);
+void	sched_ithread_prio(struct thread *td, u_char prio);
 void	sched_lend_prio(struct thread *td, u_char prio);
 void	sched_lend_user_prio(struct thread *td, u_char pri);
 void	sched_lend_user_prio_cond(struct thread *td, u_char pri);
@@ -178,6 +189,7 @@ static __inline void
 sched_unpin(void)
 {
 	atomic_interrupt_fence();
+	MPASS(curthread->td_pinned > 0);
 	curthread->td_pinned--;
 }
 

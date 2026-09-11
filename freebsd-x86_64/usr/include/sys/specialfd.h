@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 2020 Greg V
+ * Copyright (c) 2020 Val Packett
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,10 +30,15 @@
 
 enum specialfd_type {
 	SPECIALFD_EVENTFD	  = 1,
+	SPECIALFD_INOTIFY	  = 2,
 };
 
 struct specialfd_eventfd {
 	unsigned int initval;
+	int flags;
+};
+
+struct specialfd_inotify {
 	int flags;
 };
 

@@ -57,6 +57,7 @@ struct sbuf;
 struct gctl_req;
 struct g_configargs;
 struct disk_zone_args;
+struct thread;
 
 typedef int g_config_t (struct g_configargs *ca);
 typedef void g_ctl_req_t (struct gctl_req *, struct g_class *cp, char const *verb);
@@ -94,7 +95,6 @@ struct g_class {
 	u_int			version;
 	u_int			spare0;
 	g_taste_t		*taste;
-	g_config_t		*config;
 	g_ctl_req_t		*ctlreq;
 	g_init_t		*init;
 	g_fini_t		*fini;
@@ -269,6 +269,7 @@ int g_media_gone(struct g_provider *pp, int flag);
 void g_orphan_provider(struct g_provider *pp, int error);
 struct g_event *g_alloc_event(int flag);
 void g_post_event_ep(g_event_t *func, void *arg, struct g_event *ep, ...);
+void	g_waitidle(struct thread *td);
 
 /* geom_subr.c */
 int g_access(struct g_consumer *cp, int nread, int nwrite, int nexcl);
@@ -281,7 +282,7 @@ void g_detach(struct g_consumer *cp);
 void g_error_provider(struct g_provider *pp, int error);
 struct g_provider *g_provider_by_name(char const *arg);
 int g_getattr__(const char *attr, struct g_consumer *cp, void *var, int len);
-#define g_getattr(a, c, v) g_getattr__((a), (c), (v), sizeof *(v))
+#define g_getattr(a, c, v) g_getattr__((a), (c), (v), sizeof(*(v)))
 int g_handleattr(struct bio *bp, const char *attribute, const void *val,
     int len);
 int g_handleattr_int(struct bio *bp, const char *attribute, int val);
@@ -435,6 +436,8 @@ char const *gctl_get_asciiparam(struct gctl_req *req, const char *param);
 void *gctl_get_paraml(struct gctl_req *req, const char *param, int len);
 void *gctl_get_paraml_opt(struct gctl_req *req, const char *param, int len);
 int gctl_error(struct gctl_req *req, const char *fmt, ...) __printflike(2, 3);
+void gctl_msg(struct gctl_req *req, int, const char *fmt, ...) __printflike(3, 4);
+void gctl_post_messages(struct gctl_req *req);
 struct g_class *gctl_get_class(struct gctl_req *req, char const *arg);
 struct g_geom *gctl_get_geom(struct gctl_req *req, struct g_class *mp, char const *arg);
 struct g_provider *gctl_get_provider(struct gctl_req *req, char const *arg);

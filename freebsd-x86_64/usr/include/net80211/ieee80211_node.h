@@ -109,6 +109,37 @@ enum ieee80211_mesh_mlstate {
 	"\20\1IDLE\2OPENSNT\2OPENRCV\3CONFIRMRCV\4ESTABLISHED\5HOLDING"
 
 /*
+ * This structure is shared with LinuxKPI 802.11 code describing up-to
+ * which channel width the station can receive.
+ * Rather than using hardcoded MHz values for the channel width use an enum with
+ * flags. This allows us to keep the uint8_t slot for ni_chw in
+ * struct ieee80211_node and means we do not have to sync to the value for
+ * LinuxKPI.
+ *
+ * NB: BW_20 needs to 0 and values need to be sorted!  Cannot make it
+ * bitfield-alike for use with %b.
+ */
+enum ieee80211_sta_rx_bw {
+	IEEE80211_STA_RX_BW_20		= 0x00,
+	IEEE80211_STA_RX_BW_40,
+	IEEE80211_STA_RX_BW_80,
+	IEEE80211_STA_RX_BW_160,
+	IEEE80211_STA_RX_BW_320,
+} __packed;
+
+static inline const char *
+ieee80211_ni_chw_to_str(enum ieee80211_sta_rx_bw bw)
+{
+	switch (bw) {
+	case IEEE80211_STA_RX_BW_20:	return ("BW_20");
+	case IEEE80211_STA_RX_BW_40:	return ("BW_40");
+	case IEEE80211_STA_RX_BW_80:	return ("BW_80");
+	case IEEE80211_STA_RX_BW_160:	return ("BW_160");
+	case IEEE80211_STA_RX_BW_320:	return ("BW_320");
+	}
+}
+
+/*
  * Node specific information.  Note that drivers are expected
  * to derive from this structure to add device-specific per-node
  * state.  This is done by overriding the ic_node_* methods in
@@ -222,7 +253,7 @@ struct ieee80211_node {
 	uint8_t			ni_ht2ndchan;	/* HT 2nd channel */
 	uint8_t			ni_htopmode;	/* HT operating mode */
 	uint8_t			ni_htstbc;	/* HT */
-	uint8_t			ni_chw;		/* negotiated channel width */
+	enum ieee80211_sta_rx_bw ni_chw;	/* negotiated channel width */
 	struct ieee80211_htrateset ni_htrates;	/* negotiated ht rate set */
 	struct ieee80211_tx_ampdu ni_tx_ampdu[WME_NUM_TID];
 	struct ieee80211_rx_ampdu ni_rx_ampdu[WME_NUM_TID];
@@ -279,7 +310,7 @@ MALLOC_DECLARE(M_80211_NODE_IE);
 #define	IEEE80211_NODE_BITS \
 	"\20\1AUTH\2QOS\3ERP\5PWR_MGT\6AREF\7HT\10HTCOMPAT\11WPS\12TSN" \
 	"\13AMPDU_RX\14AMPDU_TX\15MIMO_PS\16MIMO_RTS\17RIFS\20SGI20\21SGI40" \
-	"\22ASSOCID"
+	"\22ASSOCID\23AMSDU_RX\24AMSDU_TX\25VHT\26LDPC\27UAPSD"
 
 #define	IEEE80211_NODE_AID(ni)	IEEE80211_AID(ni->ni_associd)
 
@@ -318,20 +349,6 @@ MALLOC_DECLARE(M_80211_NODE_IE);
 	((((x) % (mul)) >= ((mul)/2)) ? ((x) + ((mul) - 1)) / (mul) : (x)/(mul))
 #define	IEEE80211_RSSI_GET(x) \
 	IEEE80211_RSSI_EP_RND(x, IEEE80211_RSSI_EP_MULTIPLIER)
-
-static __inline struct ieee80211_node *
-ieee80211_ref_node(struct ieee80211_node *ni)
-{
-	ieee80211_node_incref(ni);
-	return ni;
-}
-
-static __inline void
-ieee80211_unref_node(struct ieee80211_node **ni)
-{
-	ieee80211_node_decref(*ni);
-	*ni = NULL;			/* guard against use */
-}
 
 void	ieee80211_node_attach(struct ieee80211com *);
 void	ieee80211_node_lateattach(struct ieee80211com *);
@@ -402,71 +419,58 @@ struct ieee80211_node *ieee80211_dup_bss(struct ieee80211vap *,
 struct ieee80211_node *ieee80211_node_create_wds(struct ieee80211vap *,
 		const uint8_t bssid[IEEE80211_ADDR_LEN],
 		struct ieee80211_channel *);
-#ifdef IEEE80211_DEBUG_REFCNT
-void	ieee80211_free_node_debug(struct ieee80211_node *,
+
+/* These functions are taking __func__, __LINE__ for IEEE80211_DEBUG_REFCNT */
+struct ieee80211_node *_ieee80211_ref_node(struct ieee80211_node *,
 		const char *func, int line);
-struct ieee80211_node *ieee80211_find_node_locked_debug(
+void	_ieee80211_free_node(struct ieee80211_node *,
+		const char *func, int line);
+struct ieee80211_node *_ieee80211_find_node_locked(
 		struct ieee80211_node_table *,
 		const uint8_t macaddr[IEEE80211_ADDR_LEN],
 		const char *func, int line);
-struct ieee80211_node *ieee80211_find_node_debug(struct ieee80211_node_table *,
+struct ieee80211_node *_ieee80211_find_node(struct ieee80211_node_table *,
 		const uint8_t macaddr[IEEE80211_ADDR_LEN],
 		const char *func, int line);
-struct ieee80211_node *ieee80211_find_vap_node_locked_debug(
-		struct ieee80211_node_table *,
-		const struct ieee80211vap *vap,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN],
-		const char *func, int line);
-struct ieee80211_node *ieee80211_find_vap_node_debug(
+struct ieee80211_node *_ieee80211_find_vap_node_locked(
 		struct ieee80211_node_table *,
 		const struct ieee80211vap *vap,
 		const uint8_t macaddr[IEEE80211_ADDR_LEN],
 		const char *func, int line);
-struct ieee80211_node * ieee80211_find_rxnode_debug(struct ieee80211com *,
+struct ieee80211_node *_ieee80211_find_vap_node(
+		struct ieee80211_node_table *,
+		const struct ieee80211vap *vap,
+		const uint8_t macaddr[IEEE80211_ADDR_LEN],
+		const char *func, int line);
+struct ieee80211_node *_ieee80211_find_rxnode(struct ieee80211com *,
 		const struct ieee80211_frame_min *,
 		const char *func, int line);
-struct ieee80211_node * ieee80211_find_rxnode_withkey_debug(
+struct ieee80211_node *_ieee80211_find_rxnode_withkey(
 		struct ieee80211com *,
 		const struct ieee80211_frame_min *, uint16_t keyix,
 		const char *func, int line);
-struct ieee80211_node *ieee80211_find_txnode_debug(struct ieee80211vap *,
+struct ieee80211_node *_ieee80211_find_txnode(struct ieee80211vap *,
 		const uint8_t macaddr[IEEE80211_ADDR_LEN],
 		const char *func, int line);
+#define	ieee80211_ref_node(ni) \
+	_ieee80211_ref_node(ni, __func__, __LINE__)
 #define	ieee80211_free_node(ni) \
-	ieee80211_free_node_debug(ni, __func__, __LINE__)
+	_ieee80211_free_node(ni, __func__, __LINE__)
 #define	ieee80211_find_node_locked(nt, mac) \
-	ieee80211_find_node_locked_debug(nt, mac, __func__, __LINE__)
+	_ieee80211_find_node_locked(nt, mac, __func__, __LINE__)
 #define	ieee80211_find_node(nt, mac) \
-	ieee80211_find_node_debug(nt, mac, __func__, __LINE__)
+	_ieee80211_find_node(nt, mac, __func__, __LINE__)
 #define	ieee80211_find_vap_node_locked(nt, vap, mac) \
-	ieee80211_find_vap_node_locked_debug(nt, vap, mac, __func__, __LINE__)
+	_ieee80211_find_vap_node_locked(nt, vap, mac, __func__, __LINE__)
 #define	ieee80211_find_vap_node(nt, vap, mac) \
-	ieee80211_find_vap_node_debug(nt, vap, mac, __func__, __LINE__)
+	_ieee80211_find_vap_node(nt, vap, mac, __func__, __LINE__)
 #define	ieee80211_find_rxnode(ic, wh) \
-	ieee80211_find_rxnode_debug(ic, wh, __func__, __LINE__)
+	_ieee80211_find_rxnode(ic, wh, __func__, __LINE__)
 #define	ieee80211_find_rxnode_withkey(ic, wh, keyix) \
-	ieee80211_find_rxnode_withkey_debug(ic, wh, keyix, __func__, __LINE__)
+	_ieee80211_find_rxnode_withkey(ic, wh, keyix, __func__, __LINE__)
 #define	ieee80211_find_txnode(vap, mac) \
-	ieee80211_find_txnode_debug(vap, mac, __func__, __LINE__)
-#else
-void	ieee80211_free_node(struct ieee80211_node *);
-struct ieee80211_node *ieee80211_find_node_locked(struct ieee80211_node_table *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
-struct ieee80211_node *ieee80211_find_node(struct ieee80211_node_table *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
-struct ieee80211_node *ieee80211_find_vap_node_locked(
-		struct ieee80211_node_table *, const struct ieee80211vap *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
-struct ieee80211_node *ieee80211_find_vap_node(
-		struct ieee80211_node_table *, const struct ieee80211vap *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
-struct ieee80211_node * ieee80211_find_rxnode(struct ieee80211com *,
-		const struct ieee80211_frame_min *);
-struct ieee80211_node * ieee80211_find_rxnode_withkey(struct ieee80211com *,
-		const struct ieee80211_frame_min *, uint16_t keyix);
-struct ieee80211_node *ieee80211_find_txnode(struct ieee80211vap *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
-#endif
+	_ieee80211_find_txnode(vap, mac, __func__, __LINE__)
+
 int	ieee80211_node_delucastkey(struct ieee80211_node *);
 void	ieee80211_node_timeout(void *arg);
 

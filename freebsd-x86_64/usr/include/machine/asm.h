@@ -34,6 +34,10 @@
  *	from: @(#)DEFS.h	5.1 (Berkeley) 4/23/90
  */
 
+#ifdef __i386__
+#include <i386/asm.h>
+#else /* !__i386__ */
+
 #ifndef _MACHINE_ASM_H_
 #define	_MACHINE_ASM_H_
 
@@ -109,3 +113,5 @@
 #endif /* !STRIP_FBSDID */
 
 #endif /* !_MACHINE_ASM_H_ */
+
+#endif /* __i386__ */

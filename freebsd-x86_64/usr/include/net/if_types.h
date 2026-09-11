@@ -176,7 +176,7 @@ typedef enum {
 	IFT_A12MPPSWITCH = 0x82,	/* Avalon Parallel Processor */
 	IFT_TUNNEL	= 0x83,		/* Encapsulation interface */
 	IFT_COFFEE	= 0x84,		/* coffee pot */
-	IFT_CES		= 0x85,		/* Circiut Emulation Service */
+	IFT_CES		= 0x85,		/* Circuit Emulation Service */
 	IFT_ATMSUBINTERFACE = 0x86,	/* (x)  ATM Sub Interface */
 	IFT_L2VLAN	= 0x87,		/* Layer 2 Virtual LAN using 802.1Q */
 	IFT_L3IPVLAN	= 0x88,		/* Layer 3 Virtual LAN - IP Protocol */
@@ -256,6 +256,7 @@ typedef enum {
 	IFT_PFLOG	= 0xf6,		/* PF packet filter logging */
 	IFT_PFSYNC	= 0xf7,		/* PF packet filter synchronization */
 	IFT_WIREGUARD	= 0xf8,		/* WireGuard tunnel */
+	IFT_MBIM	= 0xf9,		/* Mobile Broadband Interface Model */
 } ifType;
 
 /*

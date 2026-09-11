@@ -31,6 +31,10 @@
  *	from: FreeBSD: src/sys/sparc64/include/signal.h,v 1.6 2001/09/30 18:52:17
  */
 
+#ifdef __arm__
+#include <arm/signal.h>
+#else /* !__arm__ */
+
 #ifndef	_MACHINE_SIGNAL_H_
 #define	_MACHINE_SIGNAL_H_
 
@@ -47,3 +51,5 @@ struct sigcontext {
 #endif
 
 #endif /* !_MACHINE_SIGNAL_H_ */
+
+#endif /* !__arm__ */

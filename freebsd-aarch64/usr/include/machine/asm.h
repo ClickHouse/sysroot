@@ -24,6 +24,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __arm__
+#include <arm/asm.h>
+#else /* !__arm__ */
+
 #ifndef _MACHINE_ASM_H_
 #define	_MACHINE_ASM_H_
 
@@ -213,3 +217,5 @@
 #endif
 
 #endif /* _MACHINE_ASM_H_ */
+
+#endif /* !__arm__ */

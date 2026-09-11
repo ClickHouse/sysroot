@@ -37,12 +37,12 @@
 
 /* Functions accessed by SIM drivers */
 #ifdef _KERNEL
-int32_t		xpt_bus_register(struct cam_sim *sim, device_t parent,
-				 u_int32_t bus);
-int32_t		xpt_bus_deregister(path_id_t path_id);
-u_int32_t	xpt_freeze_simq(struct cam_sim *sim, u_int count);
+int		xpt_bus_register(struct cam_sim *sim, device_t parent,
+				 uint32_t bus);
+int		xpt_bus_deregister(path_id_t path_id);
+uint32_t	xpt_freeze_simq(struct cam_sim *sim, u_int count);
 void		xpt_release_simq(struct cam_sim *sim, int run_queue);
-u_int32_t	xpt_freeze_devq(struct cam_path *path, u_int count);
+uint32_t	xpt_freeze_devq(struct cam_path *path, u_int count);
 void		xpt_release_devq(struct cam_path *path,
 		    u_int count, int run_queue);
 void		xpt_done(union ccb *done_ccb);

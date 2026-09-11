@@ -83,7 +83,6 @@
 #define	__GNUCLIKE_ASM 2
 #endif
 #define	__GNUCLIKE___TYPEOF 1
-#define	__GNUCLIKE___OFFSETOF 1
 #define	__GNUCLIKE___SECTION 1
 
 #define	__GNUCLIKE_CTOR_SECTION_HANDLING 1
@@ -215,6 +214,8 @@
 #define	__pure2		__attribute__((__const__))
 #define	__unused	__attribute__((__unused__))
 #define	__used		__attribute__((__used__))
+#define __deprecated	__attribute__((__deprecated__))
+#define __deprecated1(msg)	__attribute__((__deprecated__(msg)))
 #define	__packed	__attribute__((__packed__))
 #define	__aligned(x)	__attribute__((__aligned__(x)))
 #define	__section(x)	__attribute__((__section__(x)))
@@ -395,6 +396,55 @@
 #endif
 
 /*
+ * noexcept keyword added in C++11.
+ */
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define __noexcept noexcept
+#define __noexcept_if(__c) noexcept(__c)
+#else
+#define __noexcept
+#define __noexcept_if(__c)
+#endif
+
+/*
+ * nodiscard attribute added in C++17 and C23, but supported by both LLVM and
+ * GCC in earlier language versions, so we use __has_c{,pp}_attribute to test
+ * for it.
+ *
+ * __nodiscard may be used on a function:
+ * 	__nodiscard int f();
+ *
+ * or on a struct, union or enum:
+ * 	struct __nodiscard S{};
+ * 	struct S f();
+ *
+ * or in C++, on an object constructor.
+ */
+
+#if defined(__cplusplus) && defined(__has_cpp_attribute)
+#if __has_cpp_attribute(nodiscard)
+#define	__nodiscard	[[nodiscard]]
+#endif
+#elif defined(__STDC_VERSION__) && defined(__has_c_attribute)
+#if __has_c_attribute(__nodiscard__)
+#define	__nodiscard	[[__nodiscard__]]
+#endif
+#endif
+
+#ifndef __nodiscard
+/*
+ * LLVM 16 and earlier don't support [[nodiscard]] in C, but they do support
+ * __warn_unused_result__ with the same semantics, so fall back to that.
+ * We can't do this for GCC because the semantics are different.
+ */
+#ifdef __clang__
+#define	__nodiscard	__attribute__((__warn_unused_result__))
+#else
+#define	__nodiscard
+#endif
+#endif
+
+/*
  * We use `__restrict' as a way to define the `restrict' type qualifier
  * without disturbing older software that is unaware of C99 keywords.
  * GCC also provides `__restrict' as an extension to support C99-style
@@ -521,6 +571,13 @@
 #define	__printf0like(fmtarg, firstvararg)
 #endif
 
+/* To silence warnings about null terminator not fitting into an array. */
+#if __has_attribute(__nonstring__)
+#define	__nonstring	__attribute__((__nonstring__))
+#else
+#define	__nonstring
+#endif
+
 #if defined(__GNUC__)
 #define	__strong_reference(sym,aliassym)	\
 	extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)))
@@ -629,15 +686,23 @@
  * POSIX.1 requires that the macros we test be defined before any standard
  * header file is included.
  *
- * Here's a quick run-down of the versions:
+ * Here's a quick run-down of the versions (and some informal names)
  *  defined(_POSIX_SOURCE)		1003.1-1988
+ *					encoded as 198808 below
  *  _POSIX_C_SOURCE == 1		1003.1-1990
+ *					encoded as 199009 below
  *  _POSIX_C_SOURCE == 2		1003.2-1992 C Language Binding Option
+ *					encoded as 199209 below
  *  _POSIX_C_SOURCE == 199309		1003.1b-1993
+ *					(1003.1 Issue 4, Single Unix Spec v1, Unix 93)
  *  _POSIX_C_SOURCE == 199506		1003.1c-1995, 1003.1i-1995,
  *					and the omnibus ISO/IEC 9945-1: 1996
- *  _POSIX_C_SOURCE == 200112		1003.1-2001
- *  _POSIX_C_SOURCE == 200809		1003.1-2008
+ *					(1003.1 Issue 5, Single	Unix Spec v2, Unix 95)
+ *  _POSIX_C_SOURCE == 200112		1003.1-2001 (1003.1 Issue 6, Unix 03)
+ *  _POSIX_C_SOURCE == 200809		1003.1-2008 (1003.1 Issue 7)
+ *					IEEE Std 1003.1-2017 (Rev of 1003.1-2008) is
+ *					1003.1-2008 with two TCs applied with
+ *					_POSIX_C_SOURCE=200809 and _XOPEN_SOURCE=700
  *
  * In addition, the X/Open Portability Guide, which is now the Single UNIX
  * Specification, defines a feature-test macro which indicates the version of
@@ -716,7 +781,7 @@
 #undef __ISO_C_VISIBLE
 #define __ISO_C_VISIBLE		2011
 #endif
-#else
+#else /* _POSIX_C_SOURCE */
 /*-
  * Deal with _ANSI_SOURCE:
  * If it is defined, and no other compilation environment is explicitly
@@ -748,13 +813,13 @@
 #define	__ISO_C_VISIBLE		2011
 #define	__EXT1_VISIBLE		0
 #else				/* Default environment: show everything. */
-#define	__POSIX_VISIBLE		200809
-#define	__XSI_VISIBLE		700
+#define	__POSIX_VISIBLE		202405
+#define	__XSI_VISIBLE		800
 #define	__BSD_VISIBLE		1
-#define	__ISO_C_VISIBLE		2011
+#define	__ISO_C_VISIBLE		2023
 #define	__EXT1_VISIBLE		1
 #endif
-#endif
+#endif /* _POSIX_C_SOURCE */
 
 /* User override __EXT1_VISIBLE */
 #if defined(__STDC_WANT_LIB_EXT1__)
@@ -865,19 +930,43 @@
  * GCC has the nosanitize attribute, but as a function attribute only, and
  * warns on use as a variable attribute.
  */
-#if __has_attribute(no_sanitize) && defined(__clang__)
+#if __has_feature(address_sanitizer) && defined(__clang__)
 #ifdef _KERNEL
-#define __nosanitizeaddress	__attribute__((no_sanitize("kernel-address")))
-#define __nosanitizememory	__attribute__((no_sanitize("kernel-memory")))
+#define	__nosanitizeaddress	__attribute__((no_sanitize("kernel-address")))
 #else
-#define __nosanitizeaddress	__attribute__((no_sanitize("address")))
-#define __nosanitizememory	__attribute__((no_sanitize("memory")))
+#define	__nosanitizeaddress	__attribute__((no_sanitize("address")))
 #endif
-#define __nosanitizethread	__attribute__((no_sanitize("thread")))
 #else
-#define __nosanitizeaddress
-#define __nosanitizememory
-#define __nosanitizethread
+#define	__nosanitizeaddress
+#endif
+#if __has_feature(coverage_sanitizer) && defined(__clang__)
+#define	__nosanitizecoverage	__attribute__((no_sanitize("coverage")))
+#else
+#define	__nosanitizecoverage
+#endif
+#if __has_feature(memory_sanitizer) && defined(__clang__)
+#ifdef _KERNEL
+#define	__nosanitizememory	__attribute__((no_sanitize("kernel-memory")))
+#else
+#define	__nosanitizememory	__attribute__((no_sanitize("memory")))
+#endif
+#else
+#define	__nosanitizememory
+#endif
+#if __has_feature(thread_sanitizer) && defined(__clang__)
+#define	__nosanitizethread	__attribute__((no_sanitize("thread")))
+#else
+#define	__nosanitizethread
+#endif
+
+/*
+ * Make it possible to opt out of stack smashing protection.
+ */
+#if __has_attribute(no_stack_protector)
+#define	__nostackprotector	__attribute__((no_stack_protector))
+#else
+#define	__nostackprotector	\
+	__attribute__((__optimize__("-fno-stack-protector")))
 #endif
 
 /* Guard variables and structure members by lock. */

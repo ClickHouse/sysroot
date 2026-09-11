@@ -34,8 +34,11 @@
 #ifndef _NETINET_IP_VAR_H_
 #define	_NETINET_IP_VAR_H_
 
-#include <sys/queue.h>
 #include <sys/epoch.h>
+#include <sys/queue.h>
+#include <sys/types.h>
+
+#include <netinet/in.h>
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -52,18 +55,18 @@ struct ipovly {
 /*
  * Ip reassembly queue structure.  Each fragment
  * being reassembled is attached to one of these structures.
- * They are timed out after ipq_ttl drops to 0, and may also
- * be reclaimed if memory becomes tight.
+ * They are timed out after net.inet.ip.fragttl seconds, and may also be
+ * reclaimed if memory becomes tight.
  */
 struct ipq {
 	TAILQ_ENTRY(ipq) ipq_list;	/* to other reass headers */
-	u_char	ipq_ttl;		/* time for reass q to live */
+	time_t	ipq_expire;		/* time_uptime when ipq expires */
+	u_char	ipq_nfrags;		/* # frags in this packet */
 	u_char	ipq_p;			/* protocol of this fragment */
 	u_short	ipq_id;			/* sequence id for reassembly */
 	int	ipq_maxoff;		/* total length of packet */
 	struct mbuf *ipq_frags;		/* to ip headers of fragments */
 	struct	in_addr ipq_src,ipq_dst;
-	u_char	ipq_nfrags;		/* # frags in this packet */
 	struct label *ipq_label;	/* MAC label */
 };
 #endif /* _KERNEL */
@@ -185,14 +188,12 @@ VNET_DECLARE(int, ipsendredirects);
 #ifdef IPSTEALTH
 VNET_DECLARE(int, ipstealth);			/* stealth forwarding */
 #endif
-extern u_char	ip_protox[];
 VNET_DECLARE(struct socket *, ip_rsvpd);	/* reservation protocol daemon*/
 VNET_DECLARE(struct socket *, ip_mrouter);	/* multicast routing daemon */
 extern int	(*legal_vif_num)(int);
 extern u_long	(*ip_mcast_src)(int);
 VNET_DECLARE(int, rsvp_on);
 VNET_DECLARE(int, drop_redirect);
-extern struct	pr_usrreqs rip_usrreqs;
 
 #define	V_ip_id			VNET(ip_id)
 #define	V_ip_defttl		VNET(ip_defttl)
@@ -211,37 +212,43 @@ int	inp_getmoptions(struct inpcb *, struct sockopt *);
 int	inp_setmoptions(struct inpcb *, struct sockopt *);
 
 int	ip_ctloutput(struct socket *, struct sockopt *sopt);
-void	ip_drain(void);
 int	ip_fragment(struct ip *ip, struct mbuf **m_frag, int mtu,
 	    u_long if_hwassist_flags);
 void	ip_forward(struct mbuf *m, int srcrt);
-void	ip_init(void);
 extern int
 	(*ip_mforward)(struct ip *, struct ifnet *, struct mbuf *,
 	    struct ip_moptions *);
 int	ip_output(struct mbuf *,
 	    struct mbuf *, struct route *, int, struct ip_moptions *,
 	    struct inpcb *);
-int	ipproto_register(short);
-int	ipproto_unregister(short);
 struct mbuf *
 	ip_reass(struct mbuf *);
 void	ip_savecontrol(struct inpcb *, struct mbuf **, struct ip *,
 	    struct mbuf *);
-void	ip_slowtimo(void);
 void	ip_fillid(struct ip *);
 int	rip_ctloutput(struct socket *, struct sockopt *);
-void	rip_ctlinput(int, struct sockaddr *, void *);
-void	rip_init(void);
-int	rip_input(struct mbuf **, int *, int);
-int	rip_output(struct mbuf *, struct socket *, ...);
 int	ipip_input(struct mbuf **, int *, int);
 int	rsvp_input(struct mbuf **, int *, int);
+
 int	ip_rsvp_init(struct socket *);
 int	ip_rsvp_done(void);
 extern int	(*ip_rsvp_vif)(struct socket *, struct sockopt *);
 extern void	(*ip_rsvp_force_done)(struct socket *);
 extern int	(*rsvp_input_p)(struct mbuf **, int *, int);
+
+typedef int	ipproto_input_t(struct mbuf **, int *, int);
+struct icmp;
+typedef void	ipproto_ctlinput_t(struct icmp *);
+int	ipproto_register(uint8_t, ipproto_input_t, ipproto_ctlinput_t);
+int	ipproto_unregister(uint8_t);
+#define	IPPROTO_REGISTER(prot, input, ctl)	do {			\
+	int error __diagused;						\
+	error = ipproto_register(prot, input, ctl);			\
+	MPASS(error == 0);						\
+} while (0)
+
+ipproto_input_t		rip_input;
+ipproto_ctlinput_t	rip_ctlinput;
 
 VNET_DECLARE(struct pfil_head *, inet_pfil_head);
 #define	V_inet_pfil_head	VNET(inet_pfil_head)
@@ -252,6 +259,7 @@ VNET_DECLARE(struct pfil_head *, inet_local_pfil_head);
 #define	PFIL_INET_LOCAL_NAME	"inet-local"
 
 void	in_delayed_cksum(struct mbuf *m);
+void	in_delayed_cksum_o(struct mbuf *m, uint16_t o);
 
 /* Hooks for ipfw, dummynet, divert etc. Most are declared in raw_ip.c */
 /*
@@ -268,13 +276,30 @@ void	in_delayed_cksum(struct mbuf *m);
  * On entry, the structure is valid if slot>0, and refers to the starting
  * rules. 'info' contains the reason for reinject, e.g. divert port,
  * divert direction, and so on.
+ *
+ * Packet Mark is an analogue to ipfw tags with O(1) lookup from mbuf while
+ * regular tags require a single-linked list traversal. Mark is a 32-bit
+ * number that can be looked up in a table [with 'number' table-type], matched
+ * or compared with a number with optional mask applied before comparison.
+ * Having generic nature, Mark can be used in a variety of needs.
+ * For example, it could be used as a security group: mark will hold a
+ * security group id and represent a group of packet flows that shares same
+ * access control policy.
+ * O_MASK opcode can match mark value bitwise so one can build a hierarchical
+ * model designating different meanings for a bit range(s).
  */
 struct ipfw_rule_ref {
+/* struct m_tag spans 24 bytes above this point, see mbuf_tags(9) */
+	/* spare space just to be save in case struct m_tag grows */
+/* -- 32 bytes -- */
 	uint32_t	slot;		/* slot for matching rule	*/
 	uint32_t	rulenum;	/* matching rule number		*/
 	uint32_t	rule_id;	/* matching rule id		*/
 	uint32_t	chain_id;	/* ruleset id			*/
 	uint32_t	info;		/* see below			*/
+	uint32_t	pkt_mark;	/* packet mark			*/
+	uint32_t	spare[2];
+/* -- 64 bytes -- */
 };
 
 enum {
@@ -292,7 +317,6 @@ enum {
 #define	MTAG_IPFW_CALL	1308397630	/* call stack */
 
 struct ip_fw_args;
-typedef int	(*ip_fw_chk_ptr_t)(struct ip_fw_args *args);
 typedef int	(*ip_fw_ctl_ptr_t)(struct sockopt *);
 VNET_DECLARE(ip_fw_ctl_ptr_t, ip_fw_ctl_ptr);
 #define	V_ip_fw_ctl_ptr		VNET(ip_fw_ctl_ptr)
@@ -303,6 +327,21 @@ extern void	(*ip_divert_ptr)(struct mbuf *m, bool incoming);
 extern int	(*ng_ipfw_input_p)(struct mbuf **, struct ip_fw_args *, bool);
 extern int	(*ip_dn_ctl_ptr)(struct sockopt *);
 extern int	(*ip_dn_io_ptr)(struct mbuf **, struct ip_fw_args *);
+
+/* pf specific mtag for divert(4) support */
+__enum_uint8_decl(pf_mtag_dir) {
+	PF_DIVERT_MTAG_DIR_IN = 1,
+	PF_DIVERT_MTAG_DIR_OUT = 2
+};
+struct pf_divert_mtag {
+	__enum_uint8(pf_mtag_dir) idir;		/* initial pkt direction */
+	union {
+		__enum_uint8(pf_mtag_dir) ndir;	/* new dir after re-enter */
+		uint16_t port;			/* initial divert(4) port */
+	};
+};
+#define MTAG_PF_DIVERT	1262273569
+
 #endif /* _KERNEL */
 
 #endif /* !_NETINET_IP_VAR_H_ */

@@ -1,3 +1,0 @@
-/* GNU ld script
-   Use a trivial linker script instead of a symlink.  */
-GROUP ( libgcc_s.so.1 )

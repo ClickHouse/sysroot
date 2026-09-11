@@ -1,5 +1,5 @@
 /* Common threading primitives definitions for both POSIX and C11.
-   Copyright (C) 2017-2022 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -75,7 +75,7 @@ typedef struct __pthread_internal_slist
 
 #include <bits/struct_mutex.h>
 
-/* Arch-sepecific read-write lock definitions.  A generic implementation is
+/* Arch-specific read-write lock definitions.  A generic implementation is
    provided by struct_rwlock.h.  If required, an architecture can override it
    by defining:
 
@@ -95,11 +95,12 @@ struct __pthread_cond_s
 {
   __atomic_wide_counter __wseq;
   __atomic_wide_counter __g1_start;
-  unsigned int __g_refs[2] __LOCK_ALIGNMENT;
-  unsigned int __g_size[2];
+  unsigned int __g_size[2] __LOCK_ALIGNMENT;
   unsigned int __g1_orig_size;
   unsigned int __wrefs;
   unsigned int __g_signals[2];
+  unsigned int __unused_initialized_1;
+  unsigned int __unused_initialized_2;
 };
 
 typedef unsigned int __tss_t;

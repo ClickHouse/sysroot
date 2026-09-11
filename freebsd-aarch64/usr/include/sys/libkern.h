@@ -113,6 +113,7 @@ static __inline off_t omax(off_t a, off_t b) { return (a > b ? a : b); }
 static __inline off_t omin(off_t a, off_t b) { return (a < b ? a : b); }
 static __inline int abs(int a) { return (a < 0 ? -a : a); }
 static __inline long labs(long a) { return (a < 0 ? -a : a); }
+static __inline int64_t abs64(int64_t a) { return (a < 0 ? -a : a); }
 static __inline quad_t qabs(quad_t a) { return (a < 0 ? -a : a); }
 
 #ifndef RANDOM_FENESTRASX
@@ -131,24 +132,106 @@ void	 arc4rand(void *, u_int, int);
 int	 timingsafe_bcmp(const void *, const void *, size_t);
 void	*bsearch(const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *));
-#ifndef	HAVE_INLINE_FFS
-int	 ffs(int);
-#endif
-#ifndef	HAVE_INLINE_FFSL
-int	 ffsl(long);
-#endif
-#ifndef	HAVE_INLINE_FFSLL
-int	 ffsll(long long);
-#endif
-#ifndef	HAVE_INLINE_FLS
-int	 fls(int);
-#endif
-#ifndef	HAVE_INLINE_FLSL
-int	 flsl(long);
-#endif
-#ifndef	HAVE_INLINE_FLSLL
-int	 flsll(long long);
-#endif
+
+/*
+ * MHTODO: remove the 'HAVE_INLINE_FOO' defines once use of these flags has
+ * been purged everywhere. For now we provide them unconditionally.
+ */
+#define	HAVE_INLINE_FFS
+#define	HAVE_INLINE_FFSL
+#define	HAVE_INLINE_FFSLL
+#define	HAVE_INLINE_FLS
+#define	HAVE_INLINE_FLSL
+#define	HAVE_INLINE_FLSLL
+
+static __inline __pure2 int
+ffs(int mask)
+{
+
+	return (__builtin_ffs((u_int)mask));
+}
+
+static __inline __pure2 int
+ffsl(long mask)
+{
+
+	return (__builtin_ffsl((u_long)mask));
+}
+
+static __inline __pure2 int
+ffsll(long long mask)
+{
+
+	return (__builtin_ffsll((unsigned long long)mask));
+}
+
+static __inline __pure2 int
+fls(int mask)
+{
+
+	return (mask == 0 ? 0 :
+	    8 * sizeof(mask) - __builtin_clz((u_int)mask));
+}
+
+static __inline __pure2 int
+flsl(long mask)
+{
+
+	return (mask == 0 ? 0 :
+	    8 * sizeof(mask) - __builtin_clzl((u_long)mask));
+}
+
+static __inline __pure2 int
+flsll(long long mask)
+{
+
+	return (mask == 0 ? 0 :
+	    8 * sizeof(mask) - __builtin_clzll((unsigned long long)mask));
+}
+
+static __inline __pure2 int
+ilog2_int(int n)
+{
+
+	KASSERT(n != 0, ("ilog argument must be nonzero"));
+	return (8 * sizeof(n) - 1 - __builtin_clz((u_int)n));
+}
+
+static __inline __pure2 int
+ilog2_long(long n)
+{
+
+	KASSERT(n != 0, ("ilog argument must be nonzero"));
+	return (8 * sizeof(n) - 1 - __builtin_clzl((u_long)n));
+}
+
+static __inline __pure2 int
+ilog2_long_long(long long n)
+{
+
+	KASSERT(n != 0, ("ilog argument must be nonzero"));
+	return (8 * sizeof(n) - 1 -
+	    __builtin_clzll((unsigned long long)n));
+}
+
+#define ilog2_var(n)				\
+	_Generic((n),				\
+	    default: ilog2_int,			\
+	    long: ilog2_long,			\
+	    unsigned long: ilog2_long,		\
+	    long long: ilog2_long_long,		\
+	    unsigned long long: ilog2_long_long	\
+	)(n)
+
+#define	ilog2_const(n)				\
+    (8 * (int)sizeof(unsigned long long) - 1 -	\
+    __builtin_clzll(n))
+
+#define	ilog2(n) (__builtin_constant_p(n) ? ilog2_const(n) : ilog2_var(n))
+#define	rounddown_pow_of_two(n)	((__typeof(n))1 << ilog2(n))
+#define order_base_2(n) ilog2(2*(n)-1)
+#define	roundup_pow_of_two(n)	((__typeof(n))1 << order_base_2(n))
+
 #define	bitcount64(x)	__bitcount64((uint64_t)(x))
 #define	bitcount32(x)	__bitcount32((uint32_t)(x))
 #define	bitcount16(x)	__bitcount16((uint16_t)(x))
@@ -162,8 +245,8 @@ void	*memcchr(const void *s, int c, size_t n);
 void	*memmem(const void *l, size_t l_len, const void *s, size_t s_len);
 void	 qsort(void *base, size_t nmemb, size_t size,
 	    int (*compar)(const void *, const void *));
-void	 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
-	    int (*compar)(void *, const void *, const void *));
+void	 qsort_r(void *base, size_t nmemb, size_t size,
+	    int (*compar)(const void *, const void *, void *), void *thunk);
 u_long	 random(void);
 int	 scanc(u_int, const u_char *, const u_char *, int);
 int	 strcasecmp(const char *, const char *);
@@ -223,6 +306,22 @@ rindex(const char *p, int ch)
 {
 
 	return (strrchr(p, ch));
+}
+
+static __inline int64_t
+signed_extend64(uint64_t bitmap, int lsb, int width)
+{
+
+	return ((int64_t)(bitmap << (63 - lsb - (width - 1)))) >>
+	    (63 - (width - 1));
+}
+
+static __inline int32_t
+signed_extend32(uint32_t bitmap, int lsb, int width)
+{
+
+	return ((int32_t)(bitmap << (31 - lsb - (width - 1)))) >>
+	    (31 - (width - 1));
 }
 
 /* fnmatch() return values. */

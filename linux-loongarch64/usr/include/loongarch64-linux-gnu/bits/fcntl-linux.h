@@ -1,5 +1,5 @@
 /* O_*, F_*, FD_* bit values for Linux.
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -81,9 +81,7 @@
 #ifndef __O_NOFOLLOW
 # define __O_NOFOLLOW	0400000
 #endif
-#ifndef __O_CLOEXEC
-# define __O_CLOEXEC   02000000
-#endif
+#include <bits/cloexec.h>
 #ifndef __O_DIRECT
 # define __O_DIRECT	 040000
 #endif
@@ -101,7 +99,7 @@
 #endif
 
 #ifndef F_GETLK
-# ifndef __USE_FILE_OFFSET64
+# if !defined __USE_FILE_OFFSET64 && __TIMESIZE != 64
 #  define F_GETLK	5	/* Get record locking info.  */
 #  define F_SETLK	6	/* Set record locking info (non-blocking).  */
 #  define F_SETLKW	7	/* Set record locking info (blocking).  */
@@ -200,6 +198,8 @@
 # define F_SETLEASE	1024	/* Set a lease.  */
 # define F_GETLEASE	1025	/* Enquire what lease is active.  */
 # define F_NOTIFY	1026	/* Request notifications on a directory.  */
+# define F_DUPFD_QUERY  1027    /* Compare two file descriptors for sameness.  */
+# define F_CREATED_QUERY 1028   /* Was the file just created?  */
 # define F_SETPIPE_SZ	1031	/* Set pipe page size array.  */
 # define F_GETPIPE_SZ	1032	/* Set pipe page size array.  */
 # define F_ADD_SEALS	1033	/* Add seals to file.  */
@@ -217,6 +217,9 @@
 
 /* For F_[GET|SET]FD.  */
 #define FD_CLOEXEC	1	/* Actually anything with low bit set goes */
+#ifdef __USE_GNU
+# define FD_PIDFS_ROOT	-10002	/* Root of the pidfs filesystem */
+#endif
 
 #ifndef F_RDLCK
 /* For posix fcntl() and `l_type' field of a `struct flock' for lockf().  */
@@ -286,6 +289,7 @@ struct f_owner_ex
 # define F_SEAL_WRITE	0x0008	/* Prevent writes.  */
 # define F_SEAL_FUTURE_WRITE	0x0010	/* Prevent future writes while
 					   mapped.  */
+# define F_SEAL_EXEC	0x0020	/* Prevent chmod modifying exec bits. */
 #endif
 
 #ifdef __USE_GNU
@@ -367,27 +371,22 @@ struct file_handle
 # define MAX_HANDLE_SZ	128
 #endif
 
-/* Values for `*at' functions.  */
-#ifdef __USE_ATFILE
-# define AT_FDCWD		-100	/* Special value used to indicate
-					   the *at functions should use the
-					   current working directory. */
-# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
-# define AT_REMOVEDIR		0x200	/* Remove directory instead of
-					   unlinking file.  */
-# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
-# ifdef __USE_GNU
-#  define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
-					   traversal.  */
-#  define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname.  */
-#  define AT_STATX_SYNC_TYPE	0x6000
-#  define AT_STATX_SYNC_AS_STAT	0x0000
-#  define AT_STATX_FORCE_SYNC	0x2000
-#  define AT_STATX_DONT_SYNC	0x4000
-#  define AT_RECURSIVE		0x8000	/* Apply to the entire subtree.  */
-# endif
-# define AT_EACCESS		0x200	/* Test access permitted for
-					   effective IDs, not real IDs.  */
+#ifdef __USE_GNU
+/* Flags for name_to_handle_at.  See comment in fcntl.h about the use
+   of the same AT_* flag bits for different purposes in different
+   functions.  */
+# define AT_HANDLE_FID		AT_REMOVEDIR /* File handle is needed
+						to compare object
+						identity and may not
+						be usable to
+						open_by_handle_at.  */
+# define AT_HANDLE_MNT_ID_UNIQUE 1 /* Return the 64-bit unique mount
+				      ID.  */
+# define AT_HANDLE_CONNECTABLE 2 /* Request a connectable file handle */
+
+/* Flags for execveat2(2). */
+# define AT_EXECVE_CHECK 0x10000 /* Only perform a check if execution
+				    would be allowed */
 #endif
 
 __BEGIN_DECLS
@@ -462,6 +461,33 @@ extern int name_to_handle_at (int __dfd, const char *__name,
 extern int open_by_handle_at (int __mountdirfd, struct file_handle *__handle,
 			      int __flags);
 
+#ifdef __has_include
+# if __has_include ("linux/openat2.h")
+#  include "linux/openat2.h"
+#  define __glibc_has_open_how 1
+# endif
+#endif
+
+#include <bits/openat2.h>
+
+/* Similar to `openat' but the arguments are packed on HOW with the size
+   USIZE.  If flags and mode from HOW are non-zero, then openat2 operates
+   like openat.
+
+   Unlike openat, unknown or invalid flags result in an error (EINVAL),
+   rather than being ignored.  The mode must be zero unless one of O_CREAT
+   or O_TMPFILE are set.
+
+   The kernel does not support legacy non-LFS interface.  */
+extern int openat2 (int __dfd, const char * __filename,
+		    const struct open_how * __how,
+		    __SIZE_TYPE__ __usize)
+     __nonnull ((2, 3));
+
 #endif	/* use GNU */
+
+#if __USE_FORTIFY_LEVEL > 0 && defined __fortify_function
+# include <bits/fcntl-linux-fortify.h>
+#endif
 
 __END_DECLS

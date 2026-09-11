@@ -123,10 +123,10 @@ mfdec(void)
 	return (value);
 }
 
-static __inline register_t
+static __inline uint32_t
 mfpvr(void)
 {
-	register_t value;
+	uint32_t value;
 
 	__asm __volatile ("mfpvr %0" : "=r"(value));
 
@@ -254,20 +254,6 @@ get_pcpu(void)
 	__asm __volatile("mfsprg %0, 0" : "=r"(ret));
 
 	return (ret);
-}
-
-#define	HAVE_INLINE_FLS
-static __inline __pure2 int
-fls(int mask)
-{
-	return (mask ? 32 - __builtin_clz(mask) : 0);
-}
-
-#define HAVE_INLINE_FLSL
-static __inline __pure2 int
-flsl(long mask)
-{
-	return (mask ? (8 * sizeof(long) - __builtin_clzl(mask)) : 0);
 }
 
 /* "NOP" operations to signify priorities to the kernel. */

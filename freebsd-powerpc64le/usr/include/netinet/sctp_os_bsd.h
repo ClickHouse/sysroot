@@ -69,6 +69,7 @@
 #include <net/if.h>
 #include <net/if_types.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/route.h>
 #include <net/route/nhop.h>
 #include <net/vnet.h>
@@ -88,7 +89,6 @@
 #include <netinet6/in6_fib.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>
-#include <netinet6/ip6protosw.h>
 #include <netinet6/nd6.h>
 #include <netinet6/scope6_var.h>
 #endif				/* INET6 */

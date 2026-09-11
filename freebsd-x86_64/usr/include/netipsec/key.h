@@ -55,6 +55,7 @@ void key_addref(struct secpolicy *);
 void key_freesp(struct secpolicy **);
 int key_spdacquire(struct secpolicy *);
 int key_havesp(u_int);
+int key_havesp_any(void);
 void key_bumpspgen(void);
 uint32_t key_getspgen(void);
 uint32_t key_newreqid(void);
@@ -79,10 +80,6 @@ void key_delete_xform(const struct xformsw *);
 extern u_long key_random(void);
 extern void key_freereg(struct socket *);
 extern int key_parse(struct mbuf *, struct socket *);
-extern void key_init(void);
-#ifdef VIMAGE
-extern void key_destroy(void);
-#endif
 extern void key_sa_recordxfer(struct secasvar *, struct mbuf *);
 uint16_t key_portfromsaddr(struct sockaddr *);
 void key_porttosaddr(struct sockaddr *, uint16_t port);

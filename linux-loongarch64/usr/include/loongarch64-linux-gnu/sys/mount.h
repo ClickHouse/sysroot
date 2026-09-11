@@ -1,5 +1,5 @@
 /* Header file for mounting/unmount Linux filesystems.
-   Copyright (C) 1996-2022 Free Software Foundation, Inc.
+   Copyright (C) 1996-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -21,7 +21,6 @@
 #ifndef _SYS_MOUNT_H
 #define _SYS_MOUNT_H	1
 
-#include <fcntl.h>
 #include <features.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -121,7 +120,7 @@ enum
   MS_ACTIVE = 1 << 30,
 #define MS_ACTIVE	MS_ACTIVE
 #undef MS_NOUSER
-  MS_NOUSER = 1 << 31
+  MS_NOUSER = 1U << 31
 #define MS_NOUSER	MS_NOUSER
 };
 
@@ -226,6 +225,7 @@ struct mount_attr
 #define MOVE_MOUNT_T_AUTOMOUNTS 0x00000020 /* Follow automounts on to path */
 #define MOVE_MOUNT_T_EMPTY_PATH 0x00000040 /* Empty to path permitted */
 #define MOVE_MOUNT_SET_GROUP    0x00000100 /* Set sharing group instead */
+#define MOVE_MOUNT_BENEATH      0x00000200 /* Mount beneath top mount */
 
 
 /* fspick flags.  */
@@ -255,6 +255,8 @@ enum fsconfig_command
 # define FSCONFIG_CMD_CREATE FSCONFIG_CMD_CREATE
   FSCONFIG_CMD_RECONFIGURE = 7,   /* Invoke superblock reconfiguration */
 # define FSCONFIG_CMD_RECONFIGURE FSCONFIG_CMD_RECONFIGURE
+  FSCONFIG_CMD_CREATE_EXCL = 8,    /* Create new superblock, fail if reusing existing superblock */
+# define FSCONFIG_CMD_CREATE_EXCL FSCONFIG_CMD_CREATE_EXCL
 };
 #endif
 
@@ -262,9 +264,16 @@ enum fsconfig_command
 #define FSOPEN_CLOEXEC          0x00000001
 
 /* open_tree flags.  */
-#define OPEN_TREE_CLONE    1         /* Clone the target tree and attach the clone */
-#define OPEN_TREE_CLOEXEC  O_CLOEXEC /* Close the file on execve() */
-
+#ifndef OPEN_TREE_CLONE
+# define OPEN_TREE_CLONE    1 /* Clone the target tree and attach the clone */
+#endif
+#ifndef O_CLOEXEC
+# include <bits/cloexec.h>
+# define O_CLOEXEC __O_CLOEXEC
+#endif
+#ifndef OPEN_TREE_CLOEXEC
+# define OPEN_TREE_CLOEXEC  O_CLOEXEC /* Close the file on execve() */
+#endif
 
 __BEGIN_DECLS
 

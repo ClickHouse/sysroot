@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2020 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2025 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -19,9 +19,11 @@
 #define	_SYS_EPOLL_H	1
 
 #include <stdint.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 
 #include <bits/types/sigset_t.h>
+#include <bits/types/struct_timespec.h>
 
 /* Get the platform-dependent flags.  */
 #include <bits/epoll.h>
@@ -86,6 +88,19 @@ struct epoll_event
   epoll_data_t data;	/* User data variable */
 } __EPOLL_PACKED;
 
+struct epoll_params
+{
+  uint32_t busy_poll_usecs;
+  uint16_t busy_poll_budget;
+  uint8_t prefer_busy_poll;
+
+  /* pad the struct to a multiple of 64bits */
+  uint8_t __pad;
+};
+
+#define EPOLL_IOC_TYPE 0x8A
+#define EPIOCSPARAMS _IOW(EPOLL_IOC_TYPE, 0x01, struct epoll_params)
+#define EPIOCGPARAMS _IOR(EPOLL_IOC_TYPE, 0x02, struct epoll_params)
 
 __BEGIN_DECLS
 
@@ -121,7 +136,8 @@ extern int epoll_ctl (int __epfd, int __op, int __fd,
    This function is a cancellation point and therefore not marked with
    __THROW.  */
 extern int epoll_wait (int __epfd, struct epoll_event *__events,
-		       int __maxevents, int __timeout);
+		       int __maxevents, int __timeout)
+	__attr_access ((__write_only__, 2, 3)) __nonnull ((2));
 
 
 /* Same as epoll_wait, but the thread's signal mask is temporarily
@@ -131,7 +147,30 @@ extern int epoll_wait (int __epfd, struct epoll_event *__events,
    __THROW.  */
 extern int epoll_pwait (int __epfd, struct epoll_event *__events,
 			int __maxevents, int __timeout,
-			const __sigset_t *__ss);
+			const __sigset_t *__ss)
+	__attr_access ((__write_only__, 2, 3)) __nonnull ((2));
+
+/* Same as epoll_pwait, but the timeout as a timespec.
+
+   This function is a cancellation point and therefore not marked with
+   __THROW.  */
+#ifndef __USE_TIME64_REDIRECTS
+extern int epoll_pwait2 (int __epfd, struct epoll_event *__events,
+			 int __maxevents, const struct timespec *__timeout,
+			 const __sigset_t *__ss)
+	__attr_access ((__write_only__, 2, 3)) __nonnull ((2));
+#else
+# ifdef __REDIRECT
+extern int __REDIRECT (epoll_pwait2, (int __epfd, struct epoll_event *__ev,
+				      int __maxevs,
+				      const struct timespec *__timeout,
+				      const __sigset_t *__ss),
+		       __epoll_pwait2_time64)
+	__attr_access ((__write_only__, 2, 3)) __nonnull ((2));
+# else
+#  define epoll_pwait2 __epoll_pwait2_time64
+# endif
+#endif
 
 __END_DECLS
 

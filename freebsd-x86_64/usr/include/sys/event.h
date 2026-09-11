@@ -58,9 +58,10 @@
 	    .udata = (f),			\
 	    .ext = {0},				\
 	};					\
-} while(0)
+} while (0)
 #else /* Pre-C99 or not STDC (e.g., C++) */
-/* The definition of the local variable kevp could possibly conflict
+/*
+ * The definition of the local variable kevp could possibly conflict
  * with a user-defined value passed in parameters a-f.
  */
 #define EV_SET(kevp_, a, b, c, d, e, f) do {	\
@@ -75,7 +76,7 @@
 	(kevp)->ext[1] = 0;			\
 	(kevp)->ext[2] = 0;			\
 	(kevp)->ext[3] = 0;			\
-} while(0)
+} while (0)
 #endif
 
 struct kevent {
@@ -90,7 +91,7 @@ struct kevent {
 
 #if defined(_WANT_FREEBSD11_KEVENT)
 /* Older structure used in FreeBSD 11.x and older. */
-struct kevent_freebsd11 {
+struct freebsd11_kevent {
 	__uintptr_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
 	unsigned short	flags;
@@ -100,7 +101,9 @@ struct kevent_freebsd11 {
 };
 #endif
 
-#if defined(_WANT_KEVENT32) || (defined(_KERNEL) && defined(__LP64__))
+#if defined(_WANT_KEVENT32) || defined(_KERNEL)
+#include <sys/abi_types.h>
+
 struct kevent32 {
 	__uint32_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
@@ -109,16 +112,16 @@ struct kevent32 {
 #ifndef __amd64__
 	__uint32_t	pad0;
 #endif
-	__uint32_t	data1, data2;
+	freebsd32_uint64_t data;
 	__uint32_t	udata;		/* opaque user data identifier */
 #ifndef __amd64__
 	__uint32_t	pad1;
 #endif
-	__uint32_t	ext64[8];
+	freebsd32_uint64_t ext[4];
 };
 
 #ifdef _WANT_FREEBSD11_KEVENT
-struct kevent32_freebsd11 {
+struct freebsd11_kevent32 {
 	__uint32_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
 	unsigned short	flags;
@@ -135,6 +138,7 @@ struct kevent32_freebsd11 {
 #define EV_ENABLE	0x0004		/* enable event */
 #define EV_DISABLE	0x0008		/* disable event (not reported) */
 #define EV_FORCEONESHOT	0x0100		/* enable _ONESHOT and force trigger */
+#define EV_KEEPUDATA	0x0200		/* do not update the udata field */
 
 /* flags */
 #define EV_ONESHOT	0x0010		/* only report one occurrence */
@@ -199,7 +203,10 @@ struct kevent32_freebsd11 {
 #define	NOTE_EXIT	0x80000000		/* process exited */
 #define	NOTE_FORK	0x40000000		/* process forked */
 #define	NOTE_EXEC	0x20000000		/* process exec'd */
-#define	NOTE_PCTRLMASK	0xf0000000		/* mask for hint bits */
+#define	NOTE_SIGNAL	0x08000000		/* process received a signal,
+						   shared with EVFIL_SIGNAL */
+#define	NOTE_REAP	0x04000000		/* process reaped */
+#define	NOTE_PCTRLMASK	0xec000000		/* mask for hint bits */
 #define	NOTE_PDATAMASK	0x000fffff		/* mask for pid */
 
 /* additional flags for EVFILT_PROC */
@@ -245,12 +252,6 @@ struct knlist {
 #define	KNLIST_EMPTY(list)		SLIST_EMPTY(&(list)->kl_list)
 
 /*
- * Flag indicating hint is a signal.  Used by EVFILT_SIGNAL, and also
- * shared by EVFILT_PROC  (all knotes attached to p->p_klist)
- */
-#define NOTE_SIGNAL	0x08000000
-
-/*
  * Hint values for the optional f_touch event filter.  If f_touch is not set 
  * to NULL and f_isfd is zero the f_touch filter will be called with the type
  * argument set to EVENT_REGISTER during a kevent() system call.  It is also
@@ -260,12 +261,17 @@ struct knlist {
 #define EVENT_REGISTER	1
 #define EVENT_PROCESS	2
 
+struct kinfo_knote;
+struct proc;
+
 struct filterops {
 	int	f_isfd;		/* true if ident == filedescriptor */
 	int	(*f_attach)(struct knote *kn);
 	void	(*f_detach)(struct knote *kn);
 	int	(*f_event)(struct knote *kn, long hint);
 	void	(*f_touch)(struct knote *kn, struct kevent *kev, u_long type);
+	int	(*f_userdump)(struct proc *p, struct knote *kn,
+		    struct kinfo_knote *kin);
 };
 
 /*
@@ -336,7 +342,6 @@ int	knlist_empty(struct knlist *knl);
 void	knlist_init(struct knlist *knl, void *lock, void (*kl_lock)(void *),
 	    void (*kl_unlock)(void *), void (*kl_assert_lock)(void *, int));
 void	knlist_init_mtx(struct knlist *knl, struct mtx *lock);
-void	knlist_init_rw_reader(struct knlist *knl, struct rwlock *lock);
 void	knlist_destroy(struct knlist *knl);
 void	knlist_cleardel(struct knlist *knl, struct thread *td,
 	    int islocked, int killkn);

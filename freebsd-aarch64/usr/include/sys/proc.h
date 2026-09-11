@@ -55,7 +55,6 @@
 #include <sys/osd.h>
 #include <sys/priority.h>
 #include <sys/rtprio.h>			/* XXX. */
-#include <sys/runq.h>
 #include <sys/resource.h>
 #include <sys/sigio.h>
 #include <sys/signal.h>
@@ -158,7 +157,6 @@ struct pargs {
  *	k*- only accessed by curthread and from an interrupt
  *	kx- only accessed by curthread and by debugger
  *      l - the attaching proc or attaching proc parent
- *      m - Giant
  *      n - not locked, lazy
  *      o - ktrace lock
  *      q - td_contested lock
@@ -170,7 +168,6 @@ struct pargs {
  *      x - created at fork, only changes during single threading in exec
  *      y - created at first aio, doesn't change until exit or exec at which
  *          point we are single-threaded and only curthread changes it
- *      z - zombie threads lock
  *
  * If the locking key specifies two identifiers (for example, p_pptr) then
  * either lock is sufficient for read access, but both locks must be held
@@ -184,6 +181,7 @@ struct kaudit_record;
 struct kcov_info;
 struct kdtrace_proc;
 struct kdtrace_thread;
+struct kmsan_td;
 struct kq_timer_cb_data;
 struct mqueue_notifier;
 struct p_sched;
@@ -193,7 +191,6 @@ struct racct;
 struct sbuf;
 struct sleepqueue;
 struct socket;
-struct syscall_args;
 struct td_sched;
 struct thread;
 struct trapframe;
@@ -201,6 +198,13 @@ struct turnstile;
 struct vm_map;
 struct vm_map_entry;
 struct epoch_tracker;
+
+struct syscall_args {
+	u_int code;
+	u_int original_code;
+	struct sysent *callp;
+	register_t args[8];
+};
 
 /*
  * XXX: Does this belong in resource.h or resourcevar.h instead?
@@ -251,10 +255,13 @@ struct thread {
 #define	td_siglist	td_sigqueue.sq_signals
 	u_char		td_lend_user_pri; /* (t) Lend user pri. */
 	u_char		td_allocdomain;	/* (b) NUMA domain backing this struct thread. */
+	u_char		td_base_ithread_pri; /* (t) Base ithread pri */
+	struct kmsan_td	*td_kmsan;	/* (k) KMSAN state */
 
 /* Cleared during fork1(), thread_create(), or kthread_add(). */
 #define	td_startzero td_flags
 	int		td_flags;	/* (t) TDF_* flags. */
+	int		td_ast;		/* (t) TDA_* indicators */
 	int		td_inhibitors;	/* (t) Why can not run. */
 	int		td_pflags;	/* (k) Private thread (TDP_*) flags. */
 	int		td_pflags2;	/* (k) Private thread (TDP2_*) flags. */
@@ -264,11 +271,11 @@ struct thread {
 	const char	*td_wmesg;	/* (t) Reason for sleep. */
 	volatile u_char td_owepreempt;  /* (k*) Preempt on last critical_exit */
 	u_char		td_tsqueue;	/* (t) Turnstile queue blocked on. */
-	short		td_locks;	/* (k) Debug: count of non-spin locks */
-	short		td_rw_rlocks;	/* (k) Count of rwlock read locks. */
-	short		td_sx_slocks;	/* (k) Count of sx shared locks. */
-	short		td_lk_slocks;	/* (k) Count of lockmgr shared locks. */
-	short		td_stopsched;	/* (k) Scheduler stopped. */
+	u_char		td_stopsched;	/* (k) Scheduler stopped. */
+	int		td_locks;	/* (k) Debug: count of non-spin locks */
+	int		td_rw_rlocks;	/* (k) Count of rwlock read locks. */
+	int		td_sx_slocks;	/* (k) Count of sx shared locks. */
+	int		td_lk_slocks;	/* (k) Count of lockmgr shared locks. */
 	struct turnstile *td_blocked;	/* (t) Lock thread is blocked on. */
 	const char	*td_lockname;	/* (t) Name of lock blocked on. */
 	LIST_HEAD(, turnstile) td_contested;	/* (q) Contested locks. */
@@ -314,7 +321,7 @@ struct thread {
 	int		td_errno;	/* (k) Error from last syscall. */
 	size_t		td_vslock_sz;	/* (k) amount of vslock-ed space */
 	struct kcov_info *td_kcov_info;	/* (*) Kernel code coverage data */
-	u_int		td_ucredref;	/* (k) references on td_realucred */
+	long		td_ucredref;	/* (k) references on td_realucred */
 #define	td_endzero td_sigmask
 
 /* Copied during fork1(), thread_create(), or kthread_add(). */
@@ -326,7 +333,6 @@ struct thread {
 	u_char		td_pri_class;	/* (t) Scheduling class. */
 	u_char		td_user_pri;	/* (t) User pri from estcpu and nice. */
 	u_char		td_base_user_pri; /* (t) Base user pri */
-	u_char		td_unused_0;	/* no longer used field */
 	uintptr_t	td_rb_list;	/* (k) Robust list head. */
 	uintptr_t	td_rbp_list;	/* (k) Robust priv list head. */
 	uintptr_t	td_rb_inact;	/* (k) Current in-action mutex loc. */
@@ -349,8 +355,9 @@ struct thread {
 		TDS_RUNQ,
 		TDS_RUNNING
 	} td_state;			/* (t) thread state */
+	/* Note: td_state must be accessed using TD_{GET,SET}_STATE(). */
 	union {
-		register_t	tdu_retval[2];
+		syscallarg_t	tdu_retval[2];
 		off_t		tdu_off;
 	} td_uretoff;			/* (k) Syscall aux returns. */
 #define td_retval	td_uretoff.tdu_retval
@@ -423,7 +430,7 @@ do {									\
 #define	TD_LOCKS_INC(td)	((td)->td_locks++)
 #define	TD_LOCKS_DEC(td) do {						\
 	KASSERT(SCHEDULER_STOPPED_TD(td) || (td)->td_locks > 0,		\
-	    ("thread %p owns no locks", (td)));				\
+	    ("Thread %p owns no locks", (td)));				\
 	(td)->td_locks--;						\
 } while (0)
 #else
@@ -449,13 +456,13 @@ do {									\
 #define	TDF_KTH_SUSP	0x00000100 /* kthread is suspended */
 #define	TDF_ALLPROCSUSP	0x00000200 /* suspended by SINGLE_ALLPROC */
 #define	TDF_BOUNDARY	0x00000400 /* Thread suspended at user boundary */
-#define	TDF_ASTPENDING	0x00000800 /* Thread has some asynchronous events. */
-#define	TDF_KQTICKLED	0x00001000 /* AST drain kqueue taskqueue */
+#define	TDF_UNUSED1	0x00000800 /* Available */
+#define	TDF_UNUSED2	0x00001000 /* Available */
 #define	TDF_SBDRY	0x00002000 /* Stop only on usermode boundary. */
 #define	TDF_UPIBLOCKED	0x00004000 /* Thread blocked on user PI mutex. */
-#define	TDF_NEEDSUSPCHK	0x00008000 /* Thread may need to suspend. */
-#define	TDF_NEEDRESCHED	0x00010000 /* Thread needs to yield. */
-#define	TDF_NEEDSIGCHK	0x00020000 /* Thread may need signal delivery. */
+#define	TDF_UNUSED3	0x00008000 /* Available */
+#define	TDF_UNUSED4	0x00010000 /* Available */
+#define	TDF_UNUSED5	0x00020000 /* Available */
 #define	TDF_NOLOAD	0x00040000 /* Ignore during load avg calculations. */
 #define	TDF_SERESTART	0x00080000 /* ERESTART on stop attempts. */
 #define	TDF_THRWAKEUP	0x00100000 /* Libthr thread must not suspend itself. */
@@ -466,9 +473,36 @@ do {									\
 #define	TDF_SCHED1	0x02000000 /* Reserved for scheduler private use */
 #define	TDF_SCHED2	0x04000000 /* Reserved for scheduler private use */
 #define	TDF_SCHED3	0x08000000 /* Reserved for scheduler private use */
-#define	TDF_ALRMPEND	0x10000000 /* Pending SIGVTALRM needs to be posted. */
-#define	TDF_PROFPEND	0x20000000 /* Pending SIGPROF needs to be posted. */
-#define	TDF_MACPEND	0x40000000 /* AST-based MAC event pending. */
+#define	TDF_UNUSED7	0x10000000 /* Available */
+#define	TDF_UNUSED8	0x20000000 /* Available */
+#define	TDF_UNUSED9	0x40000000 /* Available */
+#define	TDF_UNUSED10	0x80000000 /* Available */
+
+enum {
+	TDA_AST = 0,		/* Special: call all non-flagged AST handlers */
+	TDA_OWEUPC,
+	TDA_HWPMC,
+	TDA_VFORK,
+	TDA_ALRM,
+	TDA_PROF,
+	TDA_MAC,
+	TDA_SCHED,
+	TDA_UFS,
+	TDA_GEOM,
+	TDA_KQUEUE,
+	TDA_RACCT,
+	TDA_MOD1,		/* For third party use, before signals are */
+	TAD_MOD2,		/* processed .. */
+	TDA_SIG,
+	TDA_KTRACE,
+	TDA_SUSPEND,
+	TDA_SIGSUSPEND,
+	TDA_MOD3,		/* .. and after */
+	TAD_MOD4,
+	TDA_MAX,
+};
+#define	TDAI(tda)		(1U << (tda))
+#define	td_ast_pending(td, tda)	((td->td_ast & TDAI(tda)) != 0)
 
 /* Userland debug flags */
 #define	TDB_SUSPEND	0x00000001 /* Thread is suspended by debugger */
@@ -525,13 +559,15 @@ do {									\
 #define	TDP_RESETSPUR	0x04000000 /* Reset spurious page fault history. */
 #define	TDP_NERRNO	0x08000000 /* Last errno is already in td_errno */
 #define	TDP_UIOHELD	0x10000000 /* Current uio has pages held in td_ma */
-#define	TDP_FORKING	0x20000000 /* Thread is being created through fork() */
+#define	TDP_INTCPCALLOUT 0x20000000 /* used by netinet/tcp_timer.c */
 #define	TDP_EXECVMSPC	0x40000000 /* Execve destroyed old vmspace */
 #define	TDP_SIGFASTPENDING 0x80000000 /* Pending signal due to sigfastblock */
 
 #define	TDP2_SBPAGES	0x00000001 /* Owns sbusy on some pages */
 #define	TDP2_COMPAT32RB	0x00000002 /* compat32 ABI for robust lists */
 #define	TDP2_ACCT	0x00000004 /* Doing accounting */
+#define	TDP2_EFIRT	0x20000000 /* In firmware (EFI RT) call */
+#define	TDP2_SAN_QUIET	0x00000008 /* Disable warnings from K(A|M)SAN */
 
 /*
  * Reasons that the current thread can not be run yet.
@@ -549,10 +585,15 @@ do {									\
 #define	TD_IS_SWAPPED(td)	((td)->td_inhibitors & TDI_SWAPPED)
 #define	TD_ON_LOCK(td)		((td)->td_inhibitors & TDI_LOCK)
 #define	TD_AWAITING_INTR(td)	((td)->td_inhibitors & TDI_IWAIT)
-#define	TD_IS_RUNNING(td)	((td)->td_state == TDS_RUNNING)
-#define	TD_ON_RUNQ(td)		((td)->td_state == TDS_RUNQ)
-#define	TD_CAN_RUN(td)		((td)->td_state == TDS_CAN_RUN)
-#define	TD_IS_INHIBITED(td)	((td)->td_state == TDS_INHIBITED)
+#ifdef _KERNEL
+#define	TD_GET_STATE(td)	atomic_load_int(&(td)->td_state)
+#else
+#define	TD_GET_STATE(td)	((td)->td_state)
+#endif
+#define	TD_IS_RUNNING(td)	(TD_GET_STATE(td) == TDS_RUNNING)
+#define	TD_ON_RUNQ(td)		(TD_GET_STATE(td) == TDS_RUNQ)
+#define	TD_CAN_RUN(td)		(TD_GET_STATE(td) == TDS_CAN_RUN)
+#define	TD_IS_INHIBITED(td)	(TD_GET_STATE(td) == TDS_INHIBITED)
 #define	TD_ON_UPILOCK(td)	((td)->td_flags & TDF_UPIBLOCKED)
 #define TD_IS_IDLETHREAD(td)	((td)->td_flags & TDF_IDLETD)
 
@@ -566,15 +607,15 @@ do {									\
 	((td)->td_inhibitors & TDI_LOCK) != 0 ? "blocked" :		\
 	((td)->td_inhibitors & TDI_IWAIT) != 0 ? "iwait" : "yielding")
 
-#define	TD_SET_INHIB(td, inhib) do {			\
-	(td)->td_state = TDS_INHIBITED;			\
-	(td)->td_inhibitors |= (inhib);			\
+#define	TD_SET_INHIB(td, inhib) do {		\
+	TD_SET_STATE(td, TDS_INHIBITED);	\
+	(td)->td_inhibitors |= (inhib);		\
 } while (0)
 
 #define	TD_CLR_INHIB(td, inhib) do {			\
 	if (((td)->td_inhibitors & (inhib)) &&		\
 	    (((td)->td_inhibitors &= ~(inhib)) == 0))	\
-		(td)->td_state = TDS_CAN_RUN;		\
+		TD_SET_STATE(td, TDS_CAN_RUN);		\
 } while (0)
 
 #define	TD_SET_SLEEPING(td)	TD_SET_INHIB((td), TDI_SLEEPING)
@@ -590,9 +631,15 @@ do {									\
 #define	TD_CLR_SUSPENDED(td)	TD_CLR_INHIB((td), TDI_SUSPENDED)
 #define	TD_CLR_IWAIT(td)	TD_CLR_INHIB((td), TDI_IWAIT)
 
-#define	TD_SET_RUNNING(td)	(td)->td_state = TDS_RUNNING
-#define	TD_SET_RUNQ(td)		(td)->td_state = TDS_RUNQ
-#define	TD_SET_CAN_RUN(td)	(td)->td_state = TDS_CAN_RUN
+#ifdef _KERNEL
+#define	TD_SET_STATE(td, state)	atomic_store_int(&(td)->td_state, state)
+#else
+#define	TD_SET_STATE(td, state)	(td)->td_state = state
+#endif
+#define	TD_SET_RUNNING(td)	TD_SET_STATE(td, TDS_RUNNING)
+#define	TD_SET_RUNQ(td)		TD_SET_STATE(td, TDS_RUNQ)
+#define	TD_SET_CAN_RUN(td)	TD_SET_STATE(td, TDS_CAN_RUN)
+
 
 #define	TD_SBDRY_INTR(td) \
     (((td)->td_flags & (TDF_SEINTR | TDF_SERESTART)) != 0)
@@ -655,8 +702,9 @@ struct proc {
 	volatile int	p_exitthreads;	/* (j) Number of threads exiting */
 	int		p_traceflag;	/* (o) Kernel trace points. */
 	struct ktr_io_params	*p_ktrioparms;	/* (c + o) Params for ktrace. */
-	void		*p_pad0;
 	struct vnode	*p_textvp;	/* (b) Vnode of executable. */
+	struct vnode	*p_textdvp;	/* (b) Dir containing textvp. */
+	char		*p_binname;	/* (b) Binary hardlink name. */
 	u_int		p_lock;		/* (c) Proclock (prevent swap) count. */
 	struct sigiolst	p_sigiolst;	/* (c) List of sigio sources. */
 	int		p_sigparent;	/* (c) Signal to parent on exit. */
@@ -667,7 +715,7 @@ struct proc {
 	int		p_suspcount;	/* (j) Num threads in suspended mode. */
 	struct thread	*p_xthread;	/* (c) Trap thread */
 	int		p_boundary_count;/* (j) Num threads at user boundary */
-	int		p_pendingcnt;	/* how many signals are pending */
+	int		p_pendingcnt;	/* (c) how many signals are pending */
 	struct itimers	*p_itimers;	/* (c) POSIX interval timers. */
 	struct procdesc	*p_procdesc;	/* (e) Process descriptor, if any. */
 	u_int		p_treeflag;	/* (e) P_TREE flags */
@@ -692,8 +740,10 @@ struct proc {
 	pid_t		p_reapsubtree;	/* (e) Pid of the direct child of the
 					       reaper which spawned
 					       our subtree. */
-	uint16_t	p_elf_machine;	/* (x) ELF machine type */
 	uint64_t	p_elf_flags;	/* (x) ELF flags */
+	void		*p_elf_brandinfo; /* (x) Elf_Brandinfo, NULL for
+						 non ELF binaries. */
+	sbintime_t	p_umtx_min_timeout;
 /* End area that is copied on creation. */
 #define	p_endcopy	p_xexit
 
@@ -713,7 +763,7 @@ struct proc {
 	LIST_HEAD(, mqueue_notifier)	p_mqnotifier; /* (c) mqueue notifiers.*/
 	struct kdtrace_proc	*p_dtrace; /* (*) DTrace-specific data. */
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec. */
-	uint64_t	p_prev_runtime;	/* (c) Resource usage accounting. */
+	uint64_t        p_spare;	/* Unused spare. */
 	struct racct	*p_racct;	/* (b) Resource accounting. */
 	int		p_throttled;	/* (c) Flag for racct pcpu throttling */
 	/*
@@ -726,11 +776,8 @@ struct proc {
 	LIST_HEAD(, proc) p_orphans;	/* (e) Pointer to list of orphans. */
 
 	TAILQ_HEAD(, kq_timer_cb_data)	p_kqtim_stop;	/* (c) */
-	struct vnode	*p_textdvp;	/* (b) Dir containing textvp. */
-	char		*p_binname;	/* (b) Binary hardlink name. */
-	void		*p_elf_brandinfo; /* (x) Elf_Brandinfo, NULL for
-						 non ELF binaries. */
-	sbintime_t	p_umtx_min_timeout;
+	LIST_ENTRY(proc) p_jaillist;	/* (d) Jail process linkage. */
+	u_int		p_execblock;	/* (c) Blockers for execve. */
 };
 
 #define	p_session	p_pgrp->pg_session
@@ -761,7 +808,7 @@ struct proc {
 					   lock. */
 #define	P_CONTROLT	0x00000002	/* Has a controlling terminal. */
 #define	P_KPROC		0x00000004	/* Kernel process. */
-#define	P_UNUSED3	0x00000008	/* --available-- */
+#define	P_IDLEPROC	0x00000008	/* Container for system idle threads. */
 #define	P_PPWAIT	0x00000010	/* Parent is waiting for child to
 					   exec/exit. */
 #define	P_PROFIL	0x00000020	/* Has started profiling. */
@@ -829,7 +876,7 @@ struct proc {
 						   MAP_STACK */
 #define	P2_STKGAP_DISABLE_EXEC	0x00001000	/* Stack gap disabled
 						   after exec */
-#define	P2_ITSTOPPED		0x00002000
+#define	P2_ITSTOPPED		0x00002000	/* itimers stopped */
 #define	P2_PTRACEREQ		0x00004000	/* Active ptrace req */
 #define	P2_NO_NEW_PRIVS		0x00008000	/* Ignore setuid */
 #define	P2_WXORX_DISABLE	0x00010000	/* WX mappings enabled */
@@ -837,13 +884,15 @@ struct proc {
 #define	P2_WEXIT		0x00040000	/* exit just started, no
 						   external thread_single() is
 						   permitted */
-#define	P2_REAPKILLED		0x00080000
+#define	P2_REAPKILLED		0x00080000	/* REAP_KILL pass touched me */
 #define	P2_MEMBAR_PRIVE		0x00100000	/* membar private expedited
 						   registered */
 #define	P2_MEMBAR_PRIVE_SYNCORE	0x00200000	/* membar private expedited
 						   sync core registered */
 #define	P2_MEMBAR_GLOBE		0x00400000	/* membar global expedited
 						   registered */
+#define	P2_INEXEC_WAIT		0x80000000	/* Not same as in HEAD.
+						   Waiters for P_INEXEC/p_execblock */
 
 /* Flags protected by proctree_lock, kept in p_treeflags. */
 #define	P_TREE_ORPHANED		0x00000001	/* Reparented, on orphan list */
@@ -868,22 +917,20 @@ struct proc {
 
 #ifdef _KERNEL
 
-/* Types and flags for mi_switch(). */
+/* Types and flags for mi_switch(9). */
 #define	SW_TYPE_MASK		0xff	/* First 8 bits are switch type */
-#define	SWT_NONE		0	/* Unspecified switch. */
-#define	SWT_PREEMPT		1	/* Switching due to preemption. */
-#define	SWT_OWEPREEMPT		2	/* Switching due to owepreempt. */
-#define	SWT_TURNSTILE		3	/* Turnstile contention. */
-#define	SWT_SLEEPQ		4	/* Sleepq wait. */
-#define	SWT_SLEEPQTIMO		5	/* Sleepq timeout wait. */
-#define	SWT_RELINQUISH		6	/* yield call. */
-#define	SWT_NEEDRESCHED		7	/* NEEDRESCHED was set. */
-#define	SWT_IDLE		8	/* Switching from the idle thread. */
-#define	SWT_IWAIT		9	/* Waiting for interrupts. */
-#define	SWT_SUSPEND		10	/* Thread suspended. */
-#define	SWT_REMOTEPREEMPT	11	/* Remote processor preempted. */
-#define	SWT_REMOTEWAKEIDLE	12	/* Remote processor preempted idle. */
-#define	SWT_COUNT		13	/* Number of switch types. */
+#define	SWT_OWEPREEMPT		1	/* Switching due to owepreempt. */
+#define	SWT_TURNSTILE		2	/* Turnstile contention. */
+#define	SWT_SLEEPQ		3	/* Sleepq wait. */
+#define	SWT_RELINQUISH		4	/* yield call. */
+#define	SWT_NEEDRESCHED		5	/* NEEDRESCHED was set. */
+#define	SWT_IDLE		6	/* Switching from the idle thread. */
+#define	SWT_IWAIT		7	/* Waiting for interrupts. */
+#define	SWT_SUSPEND		8	/* Thread suspended. */
+#define	SWT_REMOTEPREEMPT	9	/* Remote processor preempted. */
+#define	SWT_REMOTEWAKEIDLE	10	/* Remote processor preempted idle. */
+#define	SWT_BIND		11	/* Thread bound to a new CPU. */
+#define	SWT_COUNT		12	/* Number of switch types. */
 /* Flags */
 #define	SW_VOL		0x0100		/* Voluntary switch. */
 #define	SW_INVOL	0x0200		/* Involuntary switch. */
@@ -1002,9 +1049,18 @@ extern pid_t pid_max;
 } while (0)
 
 #define	PROC_UPDATE_COW(p) do {						\
-	PROC_LOCK_ASSERT((p), MA_OWNED);				\
-	(p)->p_cowgen++;						\
+	struct proc *_p = (p);						\
+	PROC_LOCK_ASSERT((_p), MA_OWNED);				\
+	atomic_store_int(&_p->p_cowgen, _p->p_cowgen + 1);		\
 } while (0)
+
+#define	PROC_COW_CHANGECOUNT(td, p) ({					\
+	struct thread *_td = (td);					\
+	struct proc *_p = (p);						\
+	MPASS(_td == curthread);					\
+	PROC_LOCK_ASSERT(_p, MA_OWNED);					\
+	_p->p_cowgen - _td->td_cowgen;					\
+})
 
 /* Check whether a thread is safe to be swapped out. */
 #define	thread_safetoswapout(td)	((td)->td_flags & TDF_CANSWAP)
@@ -1093,21 +1149,33 @@ struct	fork_req {
 
 int	pget(pid_t pid, int flags, struct proc **pp);
 
+/* ast_register() flags */
+#define	ASTR_ASTF_REQUIRED	0x0001	/* td_ast TDAI(TDA_X) flag set is
+					   required for call */
+#define	ASTR_TDP		0x0002	/* td_pflags flag set is required */
+#define	ASTR_KCLEAR		0x0004	/* call me on ast_kclear() */
+#define	ASTR_UNCOND		0x0008	/* call me always */
+
 void	ast(struct trapframe *framep);
+void	ast_kclear(struct thread *td);
+void	ast_register(int ast, int ast_flags, int tdp,
+	    void (*f)(struct thread *td, int asts));
+void	ast_deregister(int tda);
+void	ast_sched_locked(struct thread *td, int tda);
+void	ast_sched_mask(struct thread *td, int ast);
+void	ast_sched(struct thread *td, int tda);
+void	ast_unsched_locked(struct thread *td, int tda);
+
 struct	thread *choosethread(void);
 int	cr_bsd_visible(struct ucred *u1, struct ucred *u2);
 int	cr_cansee(struct ucred *u1, struct ucred *u2);
 int	cr_canseesocket(struct ucred *cred, struct socket *so);
-int	cr_canseeothergids(struct ucred *u1, struct ucred *u2);
-int	cr_canseeotheruids(struct ucred *u1, struct ucred *u2);
-int	cr_canseejailproc(struct ucred *u1, struct ucred *u2);
 int	cr_cansignal(struct ucred *cred, struct proc *proc, int signum);
 int	enterpgrp(struct proc *p, pid_t pgid, struct pgrp *pgrp,
 	    struct session *sess);
 int	enterthispgrp(struct proc *p, struct pgrp *pgrp);
 void	faultin(struct proc *p);
 int	fork1(struct thread *, struct fork_req *);
-void	fork_rfppwait(struct thread *);
 void	fork_exit(void (*)(void *, struct trapframe *), void *,
 	    struct trapframe *);
 void	fork_return(struct thread *, struct trapframe *);
@@ -1186,7 +1254,7 @@ int	cpu_procctl(struct thread *td, int idtype, id_t id, int com,
 void	cpu_set_syscall_retval(struct thread *, int);
 int	cpu_set_upcall(struct thread *, void (*)(void *), void *,
 	    stack_t *);
-int	cpu_set_user_tls(struct thread *, void *tls_base);
+int	cpu_set_user_tls(struct thread *, void *tls_base, int flags);
 void	cpu_thread_alloc(struct thread *);
 void	cpu_thread_clean(struct thread *);
 void	cpu_thread_exit(struct thread *);
@@ -1194,18 +1262,19 @@ void	cpu_thread_free(struct thread *);
 void	cpu_thread_swapin(struct thread *);
 void	cpu_thread_swapout(struct thread *);
 struct	thread *thread_alloc(int pages);
-int	thread_alloc_stack(struct thread *, int pages);
 int	thread_check_susp(struct thread *td, bool sleep);
 void	thread_cow_get_proc(struct thread *newtd, struct proc *p);
 void	thread_cow_get(struct thread *newtd, struct thread *td);
 void	thread_cow_free(struct thread *td);
 void	thread_cow_update(struct thread *td);
+void	thread_cow_synced(struct thread *td);
 int	thread_create(struct thread *td, struct rtprio *rtp,
 	    int (*initialize_thread)(struct thread *, void *), void *thunk);
 void	thread_exit(void) __dead2;
 void	thread_free(struct thread *td);
 void	thread_link(struct thread *td, struct proc *p);
 void	thread_reap_barrier(void);
+int	thread_recycle(struct thread *, int pages);
 int	thread_single(struct proc *p, int how);
 void	thread_single_end(struct proc *p, int how);
 void	thread_stash(struct thread *td);
@@ -1265,13 +1334,6 @@ curthread_pflags2_restore(int save)
 	curthread->td_pflags2 &= save;
 }
 
-static __inline bool
-kstack_contains(struct thread *td, vm_offset_t va, size_t len)
-{
-	return (va >= td->td_kstack && va + len >= va &&
-	    va + len <= td->td_kstack + td->td_kstack_pages * PAGE_SIZE);
-}
-
 static __inline __pure2 struct td_sched *
 td_get_sched(struct thread *td)
 {
@@ -1279,13 +1341,16 @@ td_get_sched(struct thread *td)
 	return ((struct td_sched *)&td[1]);
 }
 
-extern void (*softdep_ast_cleanup)(struct thread *);
 static __inline void
-td_softdep_cleanup(struct thread *td)
+ruxreset(struct rusage_ext *rux)
 {
-
-	if (td->td_su != NULL && softdep_ast_cleanup != NULL)
-		softdep_ast_cleanup(td);
+	rux->rux_runtime = 0;
+	rux->rux_uticks = 0;
+	rux->rux_sticks = 0;
+	rux->rux_iticks = 0;
+	rux->rux_uu = 0;
+	rux->rux_su = 0;
+	rux->rux_tu = 0;
 }
 
 #define	PROC_ID_PID	0

@@ -46,6 +46,7 @@
 #ifdef DIAGNOSTIC
 #include <sys/stack.h>
 #endif
+#include <sys/buf.h>
 
 /*
  * This must agree with the definition in <ufs/ufs/dir.h>.
@@ -89,10 +90,7 @@ struct inode {
 	/*
 	 * The real copy of the on-disk inode.
 	 */
-	union {
-		struct ufs1_dinode *din1;	/* UFS1 on-disk dinode. */
-		struct ufs2_dinode *din2;	/* UFS2 on-disk dinode. */
-	} dinode_u;
+	union dinodep i_dp;	/* On-disk dinode */
 
 	ino_t	  i_number;	/* The identity of the inode. */
 	uint32_t  i_flag;	/* flags, see below */
@@ -113,6 +111,8 @@ struct inode {
 #endif
 
 	int	i_nextclustercg; /* last cg searched for cluster */
+
+	struct vn_clusterw i_clusterw;	/* Buffer clustering information */
 
 	/*
 	 * Data for extended attribute modification.
@@ -203,16 +203,16 @@ struct inode {
 
 #define	i_dirhash i_un.dirhash
 #define	i_snapblklist i_un.snapblklist
-#define	i_din1 dinode_u.din1
-#define	i_din2 dinode_u.din2
-
-#ifdef _KERNEL
+#define	i_din1 i_dp.dp1
+#define	i_din2 i_dp.dp2
 
 #define	ITOUMP(ip)	((ip)->i_ump)
 #define	ITODEV(ip)	(ITOUMP(ip)->um_dev)
 #define	ITODEVVP(ip)	(ITOUMP(ip)->um_devvp)
 #define	ITOFS(ip)	(ITOUMP(ip)->um_fs)
 #define	ITOVFS(ip)	((ip)->i_vnode->v_mount)
+
+#ifdef _KERNEL
 
 static inline _Bool
 I_IS_UFS1(const struct inode *ip)
@@ -227,6 +227,7 @@ I_IS_UFS2(const struct inode *ip)
 
 	return ((ip->i_flag & IN_UFS2) != 0);
 }
+#endif	/* _KERNEL */
 
 /*
  * The DIP macro is used to access fields in the dinode that are
@@ -279,6 +280,7 @@ struct ufid {
 	uint32_t  ufid_gen;	/* Generation number. */
 };
 
+#ifdef _KERNEL
 #ifdef DIAGNOSTIC
 void ufs_init_trackers(struct inode *ip);
 void ufs_unlock_tracker(struct inode *ip);

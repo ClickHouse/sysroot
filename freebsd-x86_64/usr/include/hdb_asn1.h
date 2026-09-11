@@ -380,6 +380,46 @@ ASN1EXP void   ASN1CALL free_HDB_Ext_Aliases  (HDB_Ext_Aliases *);
 
 
 /*
+hdb_keyset ::= SEQUENCE {
+  kvno            [0] INTEGER (0..4294967295),
+  replace-time    [1] KerberosTime,
+  keys            [2] SEQUENCE OF Key,
+}
+*/
+
+typedef struct hdb_keyset {
+  unsigned int kvno;
+  KerberosTime replace_time;
+  struct hdb_keyset_keys {
+    unsigned int len;
+    Key *val;
+  } keys;
+} hdb_keyset;
+
+ASN1EXP int    ASN1CALL decode_hdb_keyset(const unsigned char *, size_t, hdb_keyset *, size_t *);
+ASN1EXP int    ASN1CALL encode_hdb_keyset(unsigned char *, size_t, const hdb_keyset *, size_t *);
+ASN1EXP size_t ASN1CALL length_hdb_keyset(const hdb_keyset *);
+ASN1EXP int    ASN1CALL copy_hdb_keyset  (const hdb_keyset *, hdb_keyset *);
+ASN1EXP void   ASN1CALL free_hdb_keyset  (hdb_keyset *);
+
+
+/*
+HDB-Ext-KeySet ::= SEQUENCE OF hdb_keyset
+*/
+
+typedef struct HDB_Ext_KeySet {
+  unsigned int len;
+  hdb_keyset *val;
+} HDB_Ext_KeySet;
+
+ASN1EXP int    ASN1CALL decode_HDB_Ext_KeySet(const unsigned char *, size_t, HDB_Ext_KeySet *, size_t *);
+ASN1EXP int    ASN1CALL encode_HDB_Ext_KeySet(unsigned char *, size_t, const HDB_Ext_KeySet *, size_t *);
+ASN1EXP size_t ASN1CALL length_HDB_Ext_KeySet(const HDB_Ext_KeySet *);
+ASN1EXP int    ASN1CALL copy_HDB_Ext_KeySet  (const HDB_Ext_KeySet *, HDB_Ext_KeySet *);
+ASN1EXP void   ASN1CALL free_HDB_Ext_KeySet  (HDB_Ext_KeySet *);
+
+
+/*
 HDB-extension ::= SEQUENCE {
   mandatory       [0] BOOLEAN,
   data            [1] CHOICE {
@@ -391,6 +431,7 @@ HDB-extension ::= SEQUENCE {
     aliases                  [6] HDB-Ext-Aliases,
     last-pw-change           [7] KerberosTime,
     pkinit-cert              [8] HDB-Ext-PKINIT-cert,
+    hist-keys                [9] HDB-Ext-KeySet,
     ...,
   },
   ...,
@@ -409,7 +450,8 @@ typedef struct HDB_extension {
       choice_HDB_extension_data_password,
       choice_HDB_extension_data_aliases,
       choice_HDB_extension_data_last_pw_change,
-      choice_HDB_extension_data_pkinit_cert
+      choice_HDB_extension_data_pkinit_cert,
+      choice_HDB_extension_data_hist_keys
       /* ... */
     } element;
     union {
@@ -421,6 +463,7 @@ typedef struct HDB_extension {
       HDB_Ext_Aliases aliases;
       KerberosTime last_pw_change;
       HDB_Ext_PKINIT_cert pkinit_cert;
+      HDB_Ext_KeySet hist_keys;
       heim_octet_string asn1_ellipsis;
     } u;
   } data;
@@ -447,28 +490,6 @@ ASN1EXP int    ASN1CALL encode_HDB_extensions(unsigned char *, size_t, const HDB
 ASN1EXP size_t ASN1CALL length_HDB_extensions(const HDB_extensions *);
 ASN1EXP int    ASN1CALL copy_HDB_extensions  (const HDB_extensions *, HDB_extensions *);
 ASN1EXP void   ASN1CALL free_HDB_extensions  (HDB_extensions *);
-
-
-/*
-hdb_keyset ::= SEQUENCE {
-  kvno            [1] INTEGER (0..4294967295),
-  keys            [0] SEQUENCE OF Key,
-}
-*/
-
-typedef struct hdb_keyset {
-  unsigned int kvno;
-  struct hdb_keyset_keys {
-    unsigned int len;
-    Key *val;
-  } keys;
-} hdb_keyset;
-
-ASN1EXP int    ASN1CALL decode_hdb_keyset(const unsigned char *, size_t, hdb_keyset *, size_t *);
-ASN1EXP int    ASN1CALL encode_hdb_keyset(unsigned char *, size_t, const hdb_keyset *, size_t *);
-ASN1EXP size_t ASN1CALL length_hdb_keyset(const hdb_keyset *);
-ASN1EXP int    ASN1CALL copy_hdb_keyset  (const hdb_keyset *, hdb_keyset *);
-ASN1EXP void   ASN1CALL free_hdb_keyset  (hdb_keyset *);
 
 
 /*
