@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/mps/amd64
+includedir=/usr/include/mps
+
+Name: NSPR
+Description: The Netscape Portable Runtime
+Version: 4.37.0
+Libs: -L/usr/lib/mps/amd64 -R/usr/lib/mps/amd64 -lplds4 -lplc4 -lnspr4
+Cflags: -I/usr/include/mps

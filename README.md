@@ -132,6 +132,12 @@ apt update && apt install gcc
 docker export <container-id> > rootfs.tar
 ```
 
+illumos:
+
+- Run ./refresh-illumos-sysroot.sh on an illumos host.
+
+TODO:
+- simplify directory structure even more.
 Then copy from the tarball, keeping the existing directory layout of the sysroot
 (`<triple>/libc/{lib,lib64,usr/include,usr/lib64}` and `lib/gcc/<triple>/<N>/`):
 

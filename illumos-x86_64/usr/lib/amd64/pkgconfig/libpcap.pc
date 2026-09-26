@@ -1,0 +1,19 @@
+#
+# pkg-config file for libpcap.
+#
+# These variables come from the configure script, so includedir and
+# libdir may be defined in terms of prefix and exec_prefix, so the
+# latter must be defined as well.
+#
+prefix="/usr"
+exec_prefix="${prefix}"
+includedir="/usr/include"
+libdir="/usr/lib/amd64"
+
+Name: libpcap
+Description: Platform-independent network traffic capture library
+Version: 1.10.5
+Requires.private:  dbus-1
+Libs: -L${libdir}  -lpcap
+Libs.private: -ldlpi 
+Cflags: -I${includedir}

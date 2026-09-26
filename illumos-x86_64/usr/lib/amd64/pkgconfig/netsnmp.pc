@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=${prefix}
+includedir=/usr/include
+libdir=/usr/lib/amd64
+
+Name: netsnmp (Net-SNMP)
+Description: SNMP (Simple Network Management Protocol) daemon and applications.
+URL: http://www.net-snmp.org
+Version: 5.9.4.pre2
+Cflags: -I${includedir}
+Libs: -L${libdir} -lnetsnmp
+Libs.private: -L/usr/ssl/lib  -m64 -lm   -lkstat -lsocket -lssl -L/usr -lssl -lcrypto -lnsl -lsocket -lelf  
