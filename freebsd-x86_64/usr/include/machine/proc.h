@@ -31,6 +31,10 @@
  *	from: @(#)proc.h	7.1 (Berkeley) 5/15/91
  */
 
+#ifdef __i386__
+#include <i386/proc.h>
+#else /* !__i386__ */
+
 #ifndef _MACHINE_PROC_H_
 #define	_MACHINE_PROC_H_
 
@@ -90,22 +94,7 @@ struct mdproc {
 #define	KINFO_PROC_SIZE 1088
 #define	KINFO_PROC32_SIZE 768
 
-struct syscall_args {
-	u_int code;
-	struct sysent *callp;
-	register_t args[8];
-};
-
 #ifdef	_KERNEL
-
-/* Get the current kernel thread stack usage. */
-#define GET_STACK_USAGE(total, used) do {				\
-	struct thread	*td = curthread;				\
-	(total) = td->td_kstack_pages * PAGE_SIZE;			\
-	(used) = (char *)td->td_kstack +				\
-	    td->td_kstack_pages * PAGE_SIZE -				\
-	    (char *)&td;						\
-} while (0)
 
 struct proc_ldt *user_ldt_alloc(struct proc *, int);
 void user_ldt_free(struct thread *);
@@ -122,3 +111,5 @@ extern int max_ldt_segment;
 #endif  /* _KERNEL */
 
 #endif /* !_MACHINE_PROC_H_ */
+
+#endif /* __i386__ */

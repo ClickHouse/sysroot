@@ -1,5 +1,5 @@
 /* Definition of the generic version of struct statx.
-   Copyright (C) 2018-2022 Free Software Foundation, Inc.
+   Copyright (C) 2018-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -49,7 +49,17 @@ struct statx
   __uint32_t stx_rdev_minor;
   __uint32_t stx_dev_major;
   __uint32_t stx_dev_minor;
-  __uint64_t __statx_pad2[14];
+  __uint64_t stx_mnt_id;
+  __uint32_t stx_dio_mem_align;
+  __uint32_t stx_dio_offset_align;
+  __uint64_t stx_subvol;
+  __uint32_t stx_atomic_write_unit_min;
+  __uint32_t stx_atomic_write_unit_max;
+  __uint32_t stx_atomic_write_segments_max;
+  __uint32_t stx_dio_read_offset_align;
+  __uint32_t stx_atomic_write_unit_max_opt;
+  __uint32_t __statx_pad2;
+  __uint64_t __statx_pad3[8];
 };
 
 #endif /* __statx_defined */

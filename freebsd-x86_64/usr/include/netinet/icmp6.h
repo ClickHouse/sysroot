@@ -646,6 +646,10 @@ struct icmp6stat {
 #ifdef _KERNEL
 #include <sys/counter.h>
 
+#ifdef SYSCTL_DECL
+SYSCTL_DECL(_net_inet6_icmp6);
+#endif
+
 VNET_PCPUSTAT_DECLARE(struct icmp6stat, icmp6stat);
 /*
  * In-kernel consumers can use these accessor macros directly to update
@@ -700,14 +704,14 @@ struct	rttimer;
 struct	in6_multi;
 # endif
 void	icmp6_paramerror(struct mbuf *, int);
+int	icmp6_errmap(const struct icmp6_hdr *);
 void	icmp6_error(struct mbuf *, int, int, int);
 void	icmp6_error2(struct mbuf *, int, int, int, struct ifnet *);
 int	icmp6_input(struct mbuf **, int *, int);
-void	icmp6_fasttimo(void);
-void	icmp6_slowtimo(void);
 void	icmp6_prepare(struct mbuf *);
 void	icmp6_redirect_input(struct mbuf *, int);
 void	icmp6_redirect_output(struct mbuf *, struct nhop_object *);
+int	icmp6_ratelimit(const struct in6_addr *, const int, const int);
 
 struct	ip6ctlparam;
 void	icmp6_mtudisc_update(struct ip6ctlparam *, int);
@@ -773,12 +777,6 @@ do { \
 			 break; \
 		} \
 } while (/*CONSTCOND*/ 0)
-
-VNET_DECLARE(int, icmp6_rediraccept);	/* accept/process redirects */
-VNET_DECLARE(int, icmp6_redirtimeout);	/* cache time for redirect routes */
-
-#define	V_icmp6_rediraccept	VNET(icmp6_rediraccept)
-#define	V_icmp6_redirtimeout	VNET(icmp6_redirtimeout)
 
 #define ICMP6_NODEINFO_FQDNOK		0x1
 #define ICMP6_NODEINFO_NODEADDROK	0x2

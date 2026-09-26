@@ -136,8 +136,8 @@ struct intr_event {
 #define	SWI_DELAY	0x2
 
 /*
- * Software interrupt numbers in priority order.  The priority determines
- * the priority of the corresponding interrupt thread.
+ * Software interrupt numbers.  Historically this was used to determine
+ * the relative priority of SWI ithreads.
  */
 #define	SWI_TTY		0
 #define	SWI_NET		1
@@ -147,6 +147,9 @@ struct intr_event {
 #define	SWI_TQ_FAST	5
 #define	SWI_TQ		6
 #define	SWI_TQ_GIANT	6
+
+/* Maximum number of stray interrupts to log */
+#define	INTR_STRAY_LOG_MAX	5
 
 struct proc;
 

@@ -36,8 +36,8 @@
 struct ifinfomsg {
 	unsigned char	ifi_family;	/* not used */
 	unsigned char	__ifi_pad;
-	unsigned short	ifi_type;	/* ARPHRD_* */
-	int		ifi_index;	/* Inteface index */
+	unsigned short	ifi_type;	/* IFT_* (net/if_types.h) */
+	int		ifi_index;	/* Interface index */
 	unsigned	ifi_flags;	/* IFF_* flags */
 	unsigned	ifi_change;	/* IFF_* change mask */
 };
@@ -134,9 +134,27 @@ enum {
 	IFLA_ALT_IFNAME, /* Alternative ifname */
 	IFLA_PERM_ADDRESS,
 	IFLA_PROTO_DOWN_REASON,
+	IFLA_PARENT_DEV_NAME,
+	IFLA_PARENT_DEV_BUS_NAME,
+	IFLA_GRO_MAX_SIZE,
+	IFLA_TSO_MAX_SEGS,
+	IFLA_ALLMULTI,
+	IFLA_DEVLINK_PORT,
+	IFLA_GSO_IPV4_MAX_SIZE,
+	IFLA_GRO_IPV4_MAX_SIZE,
+	IFLA_FREEBSD,
 	__IFLA_MAX
 };
 #define IFLA_MAX (__IFLA_MAX - 1)
+
+enum {
+	IFLAF_UNSPEC		= 0,
+	IFLAF_ORIG_IFNAME	= 1,	/* string, original interface name at creation */
+	IFLAF_ORIG_HWADDR	= 2,	/* binary, original hardware address */
+	IFLAF_CAPS		= 3,	/* bitset, interface capabilities */
+	__IFLAF_MAX
+};
+#define IFLAF_MAX (__IFLAF_MAX - 1)
 
 /*
  * Attributes that can be used as filters:

@@ -787,6 +787,10 @@ struct sctp_get_nonce_values {
 	uint32_t gn_local_tag;
 };
 
+/* Values for SCTP_ACCEPT_ZERO_CHECKSUM */
+#define SCTP_EDMID_NONE             0
+#define SCTP_EDMID_LOWER_LAYER_DTLS 1
+
 /* Debugging logs */
 struct sctp_str_log {
 	void *stcb;		/* FIXME: LP64 issue */
@@ -1117,7 +1121,11 @@ struct sctpstat {
 					 * fwd-tsn's */
 	uint32_t sctps_queue_upd_ecne;	/* Number of times we queued or
 					 * updated an ECN chunk on send queue */
-	uint32_t sctps_reserved[31];	/* Future ABI compat - remove int's
+	uint32_t sctps_recvzerocrc;	/* Number of accepted packets with
+					 * zero CRC */
+	uint32_t sctps_sendzerocrc;	/* Number of packets sent with zero
+					 * CRC */
+	uint32_t sctps_reserved[29];	/* Future ABI compat - remove int's
 					 * from here when adding new */
 };
 

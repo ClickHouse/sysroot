@@ -84,6 +84,7 @@
  * to use that ID.
  */
 #define	IOAPIC_MAX_ID		0xff
+#define	IOAPIC_MAX_EXT_ID	0x7fff
 
 /* I/O Interrupts are used for external devices such as ISA, PCI, etc. */
 #define	APIC_IO_INTS	(IDT_IO_INTS + 16)
@@ -183,319 +184,94 @@ struct apic_enumerator {
 inthand_t
 	IDTVEC(apic_isr1), IDTVEC(apic_isr2), IDTVEC(apic_isr3),
 	IDTVEC(apic_isr4), IDTVEC(apic_isr5), IDTVEC(apic_isr6),
-	IDTVEC(apic_isr7), IDTVEC(cmcint), IDTVEC(errorint),
-	IDTVEC(spuriousint), IDTVEC(timerint),
+	IDTVEC(apic_isr7), IDTVEC(cmcint), IDTVEC(thermalint),
+	IDTVEC(errorint), IDTVEC(spuriousint), IDTVEC(timerint),
 	IDTVEC(apic_isr1_pti), IDTVEC(apic_isr2_pti), IDTVEC(apic_isr3_pti),
 	IDTVEC(apic_isr4_pti), IDTVEC(apic_isr5_pti), IDTVEC(apic_isr6_pti),
-	IDTVEC(apic_isr7_pti), IDTVEC(cmcint_pti), IDTVEC(errorint_pti),
-	IDTVEC(spuriousint_pti), IDTVEC(timerint_pti);
+	IDTVEC(apic_isr7_pti), IDTVEC(cmcint_pti), IDTVEC(thermalint_pti),
+	IDTVEC(errorint_pti), IDTVEC(spuriousint_pti), IDTVEC(timerint_pti);
 
 extern vm_paddr_t lapic_paddr;
 extern int *apic_cpuids;
 
+/* Allow to replace the lapic_ipi_vectored implementation. */
+extern void (*ipi_vectored)(u_int, int);
+
+typedef struct ioapic *ioapic_drv_t;
+
 void	apic_register_enumerator(struct apic_enumerator *enumerator);
-void	*ioapic_create(vm_paddr_t addr, int32_t apic_id, int intbase);
-int	ioapic_disable_pin(void *cookie, u_int pin);
-int	ioapic_get_vector(void *cookie, u_int pin);
-void	ioapic_register(void *cookie);
-int	ioapic_remap_vector(void *cookie, u_int pin, int vector);
-int	ioapic_set_bus(void *cookie, u_int pin, int bus_type);
-int	ioapic_set_extint(void *cookie, u_int pin);
-int	ioapic_set_nmi(void *cookie, u_int pin);
-int	ioapic_set_polarity(void *cookie, u_int pin, enum intr_polarity pol);
-int	ioapic_set_triggermode(void *cookie, u_int pin,
+ioapic_drv_t	ioapic_create(vm_paddr_t addr, int32_t apic_id, int intbase);
+int	ioapic_disable_pin(ioapic_drv_t cookie, u_int pin);
+int	ioapic_get_vector(ioapic_drv_t cookie, u_int pin);
+void	ioapic_register(ioapic_drv_t cookie);
+int	ioapic_remap_vector(ioapic_drv_t cookie, u_int pin, int vector);
+int	ioapic_set_bus(ioapic_drv_t cookie, u_int pin, int bus_type);
+int	ioapic_set_extint(ioapic_drv_t cookie, u_int pin);
+int	ioapic_set_nmi(ioapic_drv_t cookie, u_int pin);
+int	ioapic_set_polarity(ioapic_drv_t cookie, u_int pin, enum intr_polarity pol);
+int	ioapic_set_triggermode(ioapic_drv_t cookie, u_int pin,
 	    enum intr_trigger trigger);
-int	ioapic_set_smi(void *cookie, u_int pin);
+int	ioapic_set_smi(ioapic_drv_t cookie, u_int pin);
 
-/*
- * Struct containing pointers to APIC functions whose
- * implementation is run time selectable.
- */
-struct apic_ops {
-	void	(*create)(u_int, int);
-	void	(*init)(vm_paddr_t);
-	void	(*xapic_mode)(void);
-	bool	(*is_x2apic)(void);
-	void	(*setup)(int);
-	void	(*dump)(const char *);
-	void	(*disable)(void);
-	void	(*eoi)(void);
-	int	(*id)(void);
-	int	(*intr_pending)(u_int);
-	void	(*set_logical_id)(u_int, u_int, u_int);
-	u_int	(*cpuid)(u_int);
+/* First argument: 'cpuid' from 'struct pcpu', second: Opaque cookie. */
+typedef void lapic_thermal_handler_t(int, void *);
 
-	/* Vectors */
-	u_int	(*alloc_vector)(u_int, u_int);
-	u_int	(*alloc_vectors)(u_int, u_int *, u_int, u_int);
-	void	(*enable_vector)(u_int, u_int);
-	void	(*disable_vector)(u_int, u_int);
-	void	(*free_vector)(u_int, u_int, u_int);
-
-	/* Timer */
-	void	(*calibrate_timer)(void);
-
-	/* PMC */
-	int	(*enable_pmc)(void);
-	void	(*disable_pmc)(void);
-	void	(*reenable_pmc)(void);
-
-	/* CMC */
-	void	(*enable_cmc)(void);
-
-	/* AMD ELVT */
-	int	(*enable_mca_elvt)(void);
-
-	/* IPI */
-	void	(*ipi_raw)(register_t, u_int);
-	void	(*ipi_vectored)(u_int, int);
-	int	(*ipi_wait)(int);
-	int	(*ipi_alloc)(inthand_t *ipifunc);
-	void	(*ipi_free)(int vector);
-
-	/* LVT */
-	int	(*set_lvt_mask)(u_int, u_int, u_char);
-	int	(*set_lvt_mode)(u_int, u_int, u_int32_t);
-	int	(*set_lvt_polarity)(u_int, u_int, enum intr_polarity);
-	int	(*set_lvt_triggermode)(u_int, u_int, enum intr_trigger);
-};
-
-extern struct apic_ops apic_ops;
-
-static inline void
-lapic_create(u_int apic_id, int boot_cpu)
-{
-
-	apic_ops.create(apic_id, boot_cpu);
-}
-
-static inline void
-lapic_init(vm_paddr_t addr)
-{
-
-	apic_ops.init(addr);
-}
-
-static inline void
-lapic_xapic_mode(void)
-{
-
-	apic_ops.xapic_mode();
-}
-
-static inline bool
-lapic_is_x2apic(void)
-{
-
-	return (apic_ops.is_x2apic());
-}
-
-static inline void
-lapic_setup(int boot)
-{
-
-	apic_ops.setup(boot);
-}
-
-static inline void
-lapic_dump(const char *str)
-{
-
-	apic_ops.dump(str);
-}
-
-static inline void
-lapic_disable(void)
-{
-
-	apic_ops.disable();
-}
-
-static inline void
-lapic_eoi(void)
-{
-
-	apic_ops.eoi();
-}
-
-static inline int
-lapic_id(void)
-{
-
-	return (apic_ops.id());
-}
-
-static inline int
-lapic_intr_pending(u_int vector)
-{
-
-	return (apic_ops.intr_pending(vector));
-}
-
+void	lapic_create(u_int apic_id, int boot_cpu);
+void	lapic_init(vm_paddr_t addr);
+void	lapic_xapic_mode(void);
+bool	lapic_is_x2apic(void);
+void	lapic_setup(int boot);
+void	lapic_dump(const char *str);
+void	lapic_disable(void);
+void	lapic_eoi(void);
+int	lapic_id(void);
+int	lapic_intr_pending(u_int vector);
 /* XXX: UNUSED */
-static inline void
-lapic_set_logical_id(u_int apic_id, u_int cluster, u_int cluster_id)
-{
-
-	apic_ops.set_logical_id(apic_id, cluster, cluster_id);
-}
-
-static inline u_int
-apic_cpuid(u_int apic_id)
-{
-
-	return (apic_ops.cpuid(apic_id));
-}
-
-static inline u_int
-apic_alloc_vector(u_int apic_id, u_int irq)
-{
-
-	return (apic_ops.alloc_vector(apic_id, irq));
-}
-
-static inline u_int
-apic_alloc_vectors(u_int apic_id, u_int *irqs, u_int count, u_int align)
-{
-
-	return (apic_ops.alloc_vectors(apic_id, irqs, count, align));
-}
-
-static inline void
-apic_enable_vector(u_int apic_id, u_int vector)
-{
-
-	apic_ops.enable_vector(apic_id, vector);
-}
-
-static inline void
-apic_disable_vector(u_int apic_id, u_int vector)
-{
-
-	apic_ops.disable_vector(apic_id, vector);
-}
-
-static inline void
-apic_free_vector(u_int apic_id, u_int vector, u_int irq)
-{
-
-	apic_ops.free_vector(apic_id, vector, irq);
-}
-
-static inline void
-lapic_calibrate_timer(void)
-{
-
-	apic_ops.calibrate_timer();
-}
-
-static inline int
-lapic_enable_pmc(void)
-{
-
-	return (apic_ops.enable_pmc());
-}
-
-static inline void
-lapic_disable_pmc(void)
-{
-
-	apic_ops.disable_pmc();
-}
-
-static inline void
-lapic_reenable_pmc(void)
-{
-
-	apic_ops.reenable_pmc();
-}
-
-static inline void
-lapic_enable_cmc(void)
-{
-
-	apic_ops.enable_cmc();
-}
-
-static inline int
-lapic_enable_mca_elvt(void)
-{
-
-	return (apic_ops.enable_mca_elvt());
-}
-
-static inline void
-lapic_ipi_raw(register_t icrlo, u_int dest)
-{
-
-	apic_ops.ipi_raw(icrlo, dest);
-}
+void	lapic_set_logical_id(u_int apic_id, u_int cluster, u_int cluster_id);
+u_int	apic_cpuid(u_int apic_id);
+u_int	apic_alloc_vector(u_int apic_id, u_int irq);
+u_int	apic_alloc_vectors(u_int apic_id, u_int *irqs, u_int count, u_int align);
+void	apic_enable_vector(u_int apic_id, u_int vector);
+void	apic_disable_vector(u_int apic_id, u_int vector);
+void	apic_free_vector(u_int apic_id, u_int vector, u_int irq);
+void	lapic_calibrate_timer(void);
+bool	lapic_enable_thermal(lapic_thermal_handler_t *func, void *func_arg);
+void	lapic_disable_thermal(void);
+int	lapic_enable_pmc(void);
+void	lapic_disable_pmc(void);
+void	lapic_reenable_pmc(void);
+void	lapic_enable_cmc(void);
+int	lapic_enable_mca_elvt(void);
+void	lapic_ipi_raw(register_t icrlo, u_int dest);
 
 static inline void
 lapic_ipi_vectored(u_int vector, int dest)
 {
 
-	apic_ops.ipi_vectored(vector, dest);
+	ipi_vectored(vector, dest);
 }
 
-static inline int
-lapic_ipi_wait(int delay)
-{
-
-	return (apic_ops.ipi_wait(delay));
-}
-
-static inline int
-lapic_ipi_alloc(inthand_t *ipifunc)
-{
-
-	return (apic_ops.ipi_alloc(ipifunc));
-}
-
-static inline void
-lapic_ipi_free(int vector)
-{
-
-	return (apic_ops.ipi_free(vector));
-}
-
-static inline int
-lapic_set_lvt_mask(u_int apic_id, u_int lvt, u_char masked)
-{
-
-	return (apic_ops.set_lvt_mask(apic_id, lvt, masked));
-}
-
-static inline int
-lapic_set_lvt_mode(u_int apic_id, u_int lvt, u_int32_t mode)
-{
-
-	return (apic_ops.set_lvt_mode(apic_id, lvt, mode));
-}
-
-static inline int
-lapic_set_lvt_polarity(u_int apic_id, u_int lvt, enum intr_polarity pol)
-{
-
-	return (apic_ops.set_lvt_polarity(apic_id, lvt, pol));
-}
-
-static inline int
-lapic_set_lvt_triggermode(u_int apic_id, u_int lvt, enum intr_trigger trigger)
-{
-
-	return (apic_ops.set_lvt_triggermode(apic_id, lvt, trigger));
-}
-
+int	lapic_ipi_wait(int delay);
+int	lapic_ipi_alloc(inthand_t *ipifunc);
+void	lapic_ipi_free(int vector);
+int	lapic_set_lvt_mask(u_int apic_id, u_int lvt, u_char masked);
+int	lapic_set_lvt_mode(u_int apic_id, u_int lvt, u_int32_t mode);
+int	lapic_set_lvt_polarity(u_int apic_id, u_int lvt,
+	    enum intr_polarity pol);
+int	lapic_set_lvt_triggermode(u_int apic_id, u_int lvt,
+	    enum intr_trigger trigger);
 void	lapic_handle_cmc(void);
+void	lapic_handle_thermal(void);
 void	lapic_handle_error(void);
 void	lapic_handle_intr(int vector, struct trapframe *frame);
 void	lapic_handle_timer(struct trapframe *frame);
 
 int	ioapic_get_rid(u_int apic_id, uint16_t *ridp);
+device_t ioapic_get_dev(u_int apic_id);
 
 extern int x2apic_mode;
 extern int lapic_eoi_suppression;
+extern int apic_ext_dest_id;
 
 #ifdef _SYS_SYSCTL_H_
 SYSCTL_DECL(_hw_apic);

@@ -61,7 +61,7 @@ int	ffs_balloc_ufs1(struct vnode *a_vp, off_t a_startoffset, int a_size,
 int	ffs_balloc_ufs2(struct vnode *a_vp, off_t a_startoffset, int a_size,
             struct ucred *a_cred, int a_flags, struct buf **a_bpp);
 void	ffs_blkfree(struct ufsmount *, struct fs *, struct vnode *,
-	    ufs2_daddr_t, long, ino_t, enum vtype, struct workhead *,
+	    ufs2_daddr_t, long, ino_t, __enum_uint8(vtype), struct workhead *,
 	    uint64_t);
 ufs2_daddr_t ffs_blkpref_ufs1(struct inode *, ufs_lbn_t, int, ufs1_daddr_t *);
 ufs2_daddr_t ffs_blkpref_ufs2(struct inode *, ufs_lbn_t, int, ufs2_daddr_t *);
@@ -84,20 +84,23 @@ int	ffs_inotovp(struct mount *, ino_t, uint64_t, int, struct vnode **,
 	    int);
 int	ffs_isblock(struct fs *, uint8_t *, ufs1_daddr_t);
 int	ffs_isfreeblock(struct fs *, uint8_t *, ufs1_daddr_t);
-void	ffs_oldfscompat_write(struct fs *, struct ufsmount *);
+void	ffs_oldfscompat_write(struct fs *);
+bool	ffs_oldfscompat_inode_read(struct fs *, union dinodep, time_t);
 int	ffs_own_mount(const struct mount *mp);
+int	ffs_sbsearch(void *, struct fs **, int, struct malloc_type *,
+	    int (*)(void *, off_t, void **, int));
 int	ffs_reallocblks(struct vop_reallocblks_args *);
 int	ffs_realloccg(struct inode *, ufs2_daddr_t, ufs2_daddr_t,
 	    ufs2_daddr_t, int, int, int, struct ucred *, struct buf **);
 int	ffs_reload(struct mount *, int);
-int	ffs_sbget(void *, struct fs **, off_t, struct malloc_type *,
+int	ffs_sbget(void *, struct fs **, off_t, int, struct malloc_type *,
 	    int (*)(void *, off_t, void **, int));
 int	ffs_sbput(void *, struct fs *, off_t, int (*)(void *, off_t, void *,
 	    int));
 int	ffs_sbupdate(struct ufsmount *, int, int);
 void	ffs_setblock(struct fs *, uint8_t *, ufs1_daddr_t);
 int	ffs_snapblkfree(struct fs *, struct vnode *, ufs2_daddr_t, long, ino_t,
-	    enum vtype, struct workhead *);
+	    __enum_uint8(vtype), struct workhead *);
 void	ffs_snapremove(struct vnode *vp);
 int	ffs_snapshot(struct mount *mp, char *snapfile);
 void	ffs_snapshot_mount(struct mount *mp);
@@ -137,12 +140,6 @@ int	ffs_breadz(struct ufsmount *, struct vnode *, daddr_t, daddr_t, int,
  */
 #define	FFSR_FORCE	0x0001
 #define	FFSR_UNSUSPEND	0x0002
-
-/*
- * Request standard superblock location in ffs_sbget
- */
-#define	STDSB			-1	/* Fail if check-hash is bad */
-#define	STDSB_NOHASHFAIL	-2	/* Ignore check-hash failure */
 
 /*
  * Definitions for TRIM interface

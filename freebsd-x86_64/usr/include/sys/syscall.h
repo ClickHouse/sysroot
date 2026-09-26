@@ -140,7 +140,7 @@
 #define	SYS_mkdir	136
 #define	SYS_rmdir	137
 #define	SYS_utimes	138
-				/* 139 is obsolete 4.2 sigreturn */
+				/* 139 is obsolete sigreturn */
 #define	SYS_adjtime	140
 				/* 141 is old getpeername */
 				/* 142 is old gethostid */
@@ -516,9 +516,17 @@
 #define	SYS___specialfd	577
 #define	SYS_aio_writev	578
 #define	SYS_aio_readv	579
+#define	SYS_fspacectl	580
 #define	SYS_sched_getcpu	581
 #define	SYS_swapoff	582
 #define	SYS_kqueuex	583
 #define	SYS_membarrier	584
+#define	SYS_timerfd_create	585
+#define	SYS_timerfd_gettime	586
+#define	SYS_timerfd_settime	587
 #define	SYS_kcmp	588
-#define	SYS_MAXSYSCALL	589
+#define	SYS_getrlimitusage	589
+#define	SYS_setcred	591
+#define	SYS_inotify_add_watch_at	593
+#define	SYS_inotify_rm_watch	594
+#define	SYS_MAXSYSCALL	595

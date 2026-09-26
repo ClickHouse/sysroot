@@ -54,12 +54,12 @@ struct tcphdr {
 	tcp_seq	th_seq;			/* sequence number */
 	tcp_seq	th_ack;			/* acknowledgement number */
 #if BYTE_ORDER == LITTLE_ENDIAN
-	u_char	th_x2:4,		/* (unused) */
+	u_char	th_x2:4,		/* upper 4 (reserved) flags */
 		th_off:4;		/* data offset */
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
 	u_char	th_off:4,		/* data offset */
-		th_x2:4;		/* (unused) */
+		th_x2:4;		/* upper 4 (reserved) flags */
 #endif
 	u_char	th_flags;
 #define	TH_FIN	0x01
@@ -187,6 +187,9 @@ struct tcphdr {
 #define	TCP_RXTLS_MODE	42	/* Receive TLS mode */
 #define	TCP_IWND_NB	43	/* Override initial window (units: bytes) */
 #define	TCP_IWND_NSEG	44	/* Override initial window (units: MSS segs) */
+#ifdef _KERNEL
+#define	TCP_USE_DDP	45	/* Use direct data placement for so_rcvbuf */
+#endif
 #define	TCP_LOGID_CNT	46	/* get number of connections with the same ID */
 #define	TCP_LOG_TAG	47	/* configure tag for grouping logs */
 #define	TCP_USER_LOG	48	/* userspace log event */
@@ -203,6 +206,7 @@ struct tcphdr {
 #define TCP_PROC_ACCOUNTING 76	/* Do accounting on tcp cpu usage and counts */
 #define TCP_USE_CMP_ACKS 77 	/* The transport can handle the Compressed mbuf acks */
 #define	TCP_PERF_INFO	78	/* retrieve accounting counters */
+#define	TCP_LRD		79	/* toggle Lost Retransmission Detection for A/B testing */
 #define	TCP_KEEPINIT	128	/* N, time to establish connection */
 #define	TCP_KEEPIDLE	256	/* L,N,X start keeplives after this period */
 #define	TCP_KEEPINTVL	512	/* L,N interval between keepalives */
@@ -211,18 +215,19 @@ struct tcphdr {
 #define	TCP_PCAP_OUT	2048	/* number of output packets to keep */
 #define	TCP_PCAP_IN	4096	/* number of input packets to keep */
 #define TCP_FUNCTION_BLK 8192	/* Set the tcp function pointers to the specified stack */
+#define TCP_FUNCTION_ALIAS 8193	/* Get the current tcp function pointer name alias */
 /* Options for Rack and BBR */
 #define	TCP_REUSPORT_LB_NUMA   1026	/* set listen socket numa domain */
 #define TCP_RACK_MBUF_QUEUE   1050 /* Do we allow mbuf queuing if supported */
-#define TCP_RACK_PROP	      1051 /* RACK proportional rate reduction (bool) */
+#define TCP_RACK_PROP	      1051 /* Not used */
 #define TCP_RACK_TLP_REDUCE   1052 /* RACK TLP cwnd reduction (bool) */
 #define TCP_RACK_PACE_REDUCE  1053 /* RACK Pacingv reduction factor (divisor) */
 #define TCP_RACK_PACE_MAX_SEG 1054 /* Max TSO size we will send  */
 #define TCP_RACK_PACE_ALWAYS  1055 /* Use the always pace method */
-#define TCP_RACK_PROP_RATE    1056 /* The proportional reduction rate */
+#define TCP_RACK_PROP_RATE    1056 /* Not used */
 #define TCP_RACK_PRR_SENDALOT 1057 /* Allow PRR to send more than one seg */
 #define TCP_RACK_MIN_TO       1058 /* Minimum time between rack t-o's in ms */
-#define TCP_RACK_EARLY_RECOV  1059 /* Should recovery happen early (bool) */
+#define TCP_RACK_EARLY_RECOV  1059 /* Not used */
 #define TCP_RACK_EARLY_SEG    1060 /* If early recovery max segments */
 #define TCP_RACK_REORD_THRESH 1061 /* RACK reorder threshold (shift amount) */
 #define TCP_RACK_REORD_FADE   1062 /* Does reordering fade after ms time */
@@ -306,10 +311,21 @@ struct tcphdr {
 #define TCP_REC_ABC_VAL 1134	/* Do we use the ABC value for recovery or the override one from sysctl  */
 #define TCP_RACK_MEASURE_CNT 1135 /* How many measurements are required in GP pacing */
 #define TCP_DEFER_OPTIONS 1136 /* Defer options until the proper number of measurements occur, does not defer TCP_RACK_MEASURE_CNT */
-#define TCP_FAST_RSM_HACK 1137 /* Do we do the broken thing where we don't twiddle the TLP bits properly in fast_rsm_output? */
+#define TCP_FAST_RSM_HACK 1137	/* Not used in modern stacks */
 #define TCP_RACK_PACING_BETA 1138	/* Changing the beta for pacing */
 #define TCP_RACK_PACING_BETA_ECN 1139	/* Changing the beta for ecn with pacing */
 #define TCP_RACK_TIMER_SLOP 1140	/* Set or get the timer slop used */
+#define TCP_RACK_DSACK_OPT 1141		/* How do we setup rack timer DSACK options bit 1/2 */
+#define TCP_RACK_ENABLE_HYSTART 1142	/* Do we allow hystart in the CC modules */
+#define TCP_RACK_SET_RXT_OPTIONS 1143	/* Set the bits in the retransmit options */
+#define TCP_RACK_HI_BETA 1144 /* Turn on/off high beta */
+#define TCP_RACK_SPLIT_LIMIT 1145	/* Set a split limit for split allocations */
+#define TCP_RACK_PACING_DIVISOR 1146 /* Pacing divisor given to rate-limit code for burst sizing */
+#define TCP_RACK_PACE_MIN_SEG 1147	/* Pacing min seg size rack will use */
+#define TCP_RACK_DGP_IN_REC 1148	/* Do we use full DGP in recovery? */
+#define TCP_RXT_CLAMP 1149 /* Do we apply a threshold to rack so if excess rxt clamp cwnd? */
+#define TCP_HYBRID_PACING   1150	/* Hybrid pacing enablement */
+#define TCP_PACING_DND	    1151	/* When pacing with rr_config=3 can sacks disturb us */
 
 /* Start of reserved space for third-party user-settable options. */
 #define	TCP_VENDOR	SO_VENDOR
@@ -322,9 +338,22 @@ struct tcphdr {
 #define	TCPI_OPT_ECN		0x08
 #define	TCPI_OPT_TOE		0x10
 #define	TCPI_OPT_TFO		0x20
+#define	TCPI_OPT_ACE		0x40
 
 /* Maximum length of log ID. */
 #define TCP_LOG_ID_LEN	64
+
+/* TCP accounting counters */
+#define TCP_NUM_PROC_COUNTERS 11
+#define TCP_NUM_CNT_COUNTERS 13
+
+/* Must match counter array sizes in tcpcb */
+struct tcp_perf_info {
+	uint64_t	tcp_cnt_counters[TCP_NUM_CNT_COUNTERS];
+	uint64_t	tcp_proc_time[TCP_NUM_CNT_COUNTERS];
+	uint64_t	timebase;	/* timebase for tcp_proc_time */
+	uint8_t		tb_is_stable;	/* timebase is stable/invariant */
+};
 
 /*
  * The TCP_INFO socket option comes from the Linux 2.6 TCP API, and permits
@@ -389,8 +418,8 @@ struct tcp_info {
 	u_int32_t	tcpi_snd_zerowin;	/* Zero-sized windows sent */
 
 	/* Accurate ECN counters. */
-	u_int32_t	__tcpi_delivered_ce;
-	u_int32_t	__tcpi_received_ce;		/* # of CE marks received */
+	u_int32_t	tcpi_delivered_ce;
+	u_int32_t	tcpi_received_ce;		/* # of CE marks received */
 	u_int32_t	__tcpi_delivered_e1_bytes;
 	u_int32_t	__tcpi_delivered_e0_bytes;
 	u_int32_t	__tcpi_delivered_ce_bytes;
@@ -398,8 +427,8 @@ struct tcp_info {
 	u_int32_t	__tcpi_received_e0_bytes;
 	u_int32_t	__tcpi_received_ce_bytes;
 
-	u_int32_t	__tcpi_total_tlp;	/* tail loss probes sent */
-	u_int64_t	__tcpi_total_tlp_bytes;	/* tail loss probe bytes sent */
+	u_int32_t	tcpi_total_tlp;		/* tail loss probes sent */
+	u_int64_t	tcpi_total_tlp_bytes;	/* tail loss probe bytes sent */
 
 	u_int32_t	tcpi_snd_una;		/* Unacked seqno sent */
 	u_int32_t	tcpi_snd_max;		/* Highest seqno sent */
@@ -441,6 +470,55 @@ struct tcp_function_set {
 #define	TLS_GET_RECORD		2
 
 /*
+ * TCP log user opaque
+ */
+struct tcp_snd_req {
+	uint64_t timestamp;
+	uint64_t start;
+	uint64_t end;
+	uint32_t flags;
+};
+
+union tcp_log_userdata {
+	struct tcp_snd_req tcp_req;
+};
+
+struct tcp_log_user {
+	uint32_t type;
+	uint32_t subtype;
+	union tcp_log_userdata data;
+};
+
+/* user types, i.e. apps */
+#define TCP_LOG_USER_HTTPD	1
+
+/* user subtypes */
+#define TCP_LOG_HTTPD_TS	1	/* client timestamp */
+#define TCP_LOG_HTTPD_TS_REQ	2	/* client timestamp and request info */
+
+/* HTTPD REQ flags */
+#define TCP_LOG_HTTPD_RANGE_START	0x0001
+#define TCP_LOG_HTTPD_RANGE_END		0x0002
+
+/* Flags for hybrid pacing */
+#define TCP_HYBRID_PACING_CU		0x0001		/* Enable catch-up mode */
+#define TCP_HYBRID_PACING_DTL		0x0002		/* Enable Detailed logging */
+#define TCP_HYBRID_PACING_CSPR		0x0004		/* A client suggested rate is present  */
+#define TCP_HYBRID_PACING_H_MS		0x0008		/* A client hint for maxseg is present  */
+#define TCP_HYBRID_PACING_ENABLE	0x0010		/* We are enabling hybrid pacing else disable */
+#define TCP_HYBRID_PACING_S_MSS		0x0020		/* Clent wants us to set the mss overriding gp est in CU */
+#define TCP_HYBRID_PACING_SETMSS	0x1000		/* Internal flag that tellsus we set the mss on this entry */
+#define TCP_HYBRID_PACING_WASSET	0x2000		/* We init to this to know if a hybrid command was issued */
+
+
+struct tcp_hybrid_req {
+	struct tcp_snd_req req;
+	uint64_t cspr;
+	uint32_t hint_maxseg;
+	uint32_t hybrid_flags;
+};
+
+/*
  * TCP specific variables of interest for tp->t_stats stats(9) accounting.
  */
 #define	VOI_TCP_TXPB		0 /* Transmit payload bytes */
@@ -453,6 +531,7 @@ struct tcp_function_set {
 #define	VOI_TCP_CALCFRWINDIFF	7 /* Congestion avoidance LCWIN - FRWIN */
 #define	VOI_TCP_GPUT_ND		8 /* Goodput normalised delta */
 #define	VOI_TCP_ACKLEN		9 /* Average ACKed bytes per ACK */
+#define VOI_TCP_PATHRTT		10 /* The path RTT based on ACK arrival */
 
 #define TCP_REUSPORT_LB_NUMA_NODOM	(-2) /* remove numa binding */
 #define TCP_REUSPORT_LB_NUMA_CURDOM	(-1) /* bind to current domain */

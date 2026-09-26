@@ -131,7 +131,8 @@ struct buf {
 	union {
 		TAILQ_ENTRY(buf) b_freelist; /* (Q) */
 		struct {
-			void	(*b_pgiodone)(void *, vm_page_t *, int, int);
+			void	(*b_pgiodone)(void *, struct vm_page **,
+				    int, int);
 			int	b_pgbefore;
 			int	b_pgafter;
 		};
@@ -297,7 +298,7 @@ struct buf {
  * Initialize a lock.
  */
 #define BUF_LOCKINIT(bp, wmesg)						\
-	lockinit(&(bp)->b_lock, PRIBIO + 4, wmesg, 0, LK_NEW)
+	lockinit(&(bp)->b_lock, PVFS, wmesg, 0, LK_NEW)
 /*
  *
  * Get a lock sleeping non-interruptably until it becomes available.
@@ -312,7 +313,7 @@ struct buf {
  */
 #define	BUF_TIMELOCK(bp, locktype, interlock, wmesg, catch, timo)	\
 	_lockmgr_args_rw(&(bp)->b_lock, (locktype) | LK_TIMELOCK,	\
-	    (interlock), (wmesg), (PRIBIO + 4) | (catch), (timo),	\
+	    (interlock), (wmesg), PVFS | (catch), (timo),	\
 	    LOCK_FILE, LOCK_LINE)
 
 /*
@@ -401,6 +402,16 @@ struct cluster_save {
 	long	bs_bufsize;		/* Saved b_bufsize. */
 	int	bs_nchildren;		/* Number of associated buffers. */
 	struct buf **bs_children;	/* List of associated buffers. */
+};
+
+/*
+ * Vnode clustering tracker
+ */
+struct vn_clusterw {
+	daddr_t	v_cstart;			/* v start block of cluster */
+	daddr_t	v_lasta;			/* v last allocation  */
+	daddr_t	v_lastw;			/* v last write  */
+	int	v_clen;				/* v length of cur. cluster */
 };
 
 #ifdef _KERNEL
@@ -503,7 +514,6 @@ extern int	nbuf;			/* The number of buffer headers */
 extern u_long	maxswzone;		/* Max KVA for swap structures */
 extern u_long	maxbcache;		/* Max KVA for buffer cache */
 extern int	maxbcachebuf;		/* Max buffer cache block size */
-extern long	runningbufspace;
 extern long	hibufspace;
 extern int	dirtybufthresh;
 extern int	bdwriteskip;
@@ -520,6 +530,7 @@ buf_mapped(struct buf *bp)
 	return (bp->b_data != unmapped_buf);
 }
 
+long	runningbufclaim(struct buf *, int);
 void	runningbufwakeup(struct buf *);
 void	waitrunningbufspace(void);
 caddr_t	kern_vfs_bio_buffer_alloc(caddr_t v, long physmem_est);
@@ -569,10 +580,14 @@ void	bd_speedup(void);
 extern uma_zone_t pbuf_zone;
 uma_zone_t pbuf_zsecond_create(const char *name, int max);
 
+struct vn_clusterw;
+
+void	cluster_init_vn(struct vn_clusterw *vnc);
 int	cluster_read(struct vnode *, u_quad_t, daddr_t, long,
 	    struct ucred *, long, int, int, struct buf **);
 int	cluster_wbuild(struct vnode *, long, daddr_t, int, int);
-void	cluster_write(struct vnode *, struct buf *, u_quad_t, int, int);
+void	cluster_write(struct vnode *, struct vn_clusterw *, struct buf *,
+	    u_quad_t, int, int);
 void	vfs_bio_brelse(struct buf *bp, int ioflags);
 void	vfs_bio_bzero_buf(struct buf *bp, int base, int size);
 void	vfs_bio_clrbuf(struct buf *);

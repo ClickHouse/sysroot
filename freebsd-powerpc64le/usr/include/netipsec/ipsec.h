@@ -93,7 +93,7 @@ struct secpolicy {
 	uint32_t id;			/* It's unique number on the system. */
 	/*
 	 * lifetime handler.
-	 * the policy can be used without limitiation if both lifetime and
+	 * the policy can be used without limitation if both lifetime and
 	 * validtime are zero.
 	 * "lifetime" is passed by sadb_lifetime.sadb_lifetime_addtime.
 	 * "validtime" is passed by sadb_lifetime.sadb_lifetime_usetime.
@@ -245,6 +245,7 @@ struct ipsecstat {
 #define	IPSECCTL_ECN			11
 #define	IPSECCTL_DEBUG			12
 #define	IPSECCTL_ESP_RANDPAD		13
+#define	IPSECCTL_MIN_PMTU		14
 
 #ifdef _KERNEL
 #include <sys/counter.h>
@@ -276,6 +277,7 @@ VNET_DECLARE(int, ip4_esp_net_deflev);
 VNET_DECLARE(int, ip4_ah_trans_deflev);
 VNET_DECLARE(int, ip4_ah_net_deflev);
 VNET_DECLARE(int, ip4_ipsec_dfbit);
+VNET_DECLARE(int, ip4_ipsec_min_pmtu);
 VNET_DECLARE(int, ip4_ipsec_ecn);
 VNET_DECLARE(int, crypto_support);
 VNET_DECLARE(int, async_crypto);
@@ -288,6 +290,7 @@ VNET_DECLARE(int, natt_cksum_policy);
 #define	V_ip4_ah_trans_deflev	VNET(ip4_ah_trans_deflev)
 #define	V_ip4_ah_net_deflev	VNET(ip4_ah_net_deflev)
 #define	V_ip4_ipsec_dfbit	VNET(ip4_ipsec_dfbit)
+#define	V_ip4_ipsec_min_pmtu	VNET(ip4_ipsec_min_pmtu)
 #define	V_ip4_ipsec_ecn		VNET(ip4_ipsec_ecn)
 #define	V_crypto_support	VNET(crypto_support)
 #define	V_async_crypto		VNET(async_crypto)
@@ -321,25 +324,19 @@ u_int ipsec_get_reqlevel(struct secpolicy *, u_int);
 
 void udp_ipsec_adjust_cksum(struct mbuf *, struct secasvar *, int, int);
 int udp_ipsec_output(struct mbuf *, struct secasvar *);
-int udp_ipsec_input(struct mbuf *, int, int);
-int udp_ipsec_pcbctl(struct inpcb *, struct sockopt *);
 
 int ipsec_chkreplay(uint32_t, uint32_t *, struct secasvar *);
 int ipsec_updatereplay(uint32_t, struct secasvar *);
 int ipsec_updateid(struct secasvar *, crypto_session_t *, crypto_session_t *);
 int ipsec_initialized(void);
+size_t ipsec_hdrsiz_internal(struct secpolicy *);
 
 void ipsec_setspidx_inpcb(struct inpcb *, struct secpolicyindex *, u_int);
 
 void ipsec4_setsockaddrs(const struct mbuf *, union sockaddr_union *,
     union sockaddr_union *);
-int ipsec4_in_reject(const struct mbuf *, struct inpcb *);
-int ipsec4_input(struct mbuf *, int, int);
-int ipsec4_forward(struct mbuf *);
-int ipsec4_pcbctl(struct inpcb *, struct sockopt *);
-int ipsec4_output(struct mbuf *, struct inpcb *);
-int ipsec4_capability(struct mbuf *, u_int);
 int ipsec4_common_input_cb(struct mbuf *, struct secasvar *, int, int);
+int ipsec4_check_pmtu(struct mbuf *, struct secpolicy *, int);
 int ipsec4_process_packet(struct mbuf *, struct secpolicy *, struct inpcb *);
 int ipsec_process_done(struct mbuf *, struct secpolicy *, struct secasvar *,
     u_int);

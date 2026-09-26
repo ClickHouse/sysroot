@@ -45,7 +45,7 @@ struct eventhandler_entry_vimage {
 
 struct eventhandler_list {
 	char				*el_name;
-	int				el_flags;	/* Unused. */
+	u_int				el_deadcount;
 	u_int				el_runcount;
 	struct mtx			el_lock;
 	TAILQ_ENTRY(eventhandler_list)	el_link;
@@ -81,7 +81,7 @@ struct eventhandler_list {
 	KASSERT((list)->el_runcount > 0,				\
 	    ("eventhandler_invoke: runcount underflow"));		\
 	(list)->el_runcount--;						\
-	if ((list)->el_runcount == 0)					\
+	if ((list)->el_runcount == 0 && (list)->el_deadcount != 0)	\
 		eventhandler_prune_list(list);				\
 	EHL_UNLOCK((list));						\
 } while (0)
@@ -145,7 +145,7 @@ do {									\
 									\
 	if ((_el = eventhandler_find_list(#name)) != NULL)		\
 		eventhandler_deregister(_el, tag);			\
-} while(0)
+} while (0)
 
 #define EVENTHANDLER_DEREGISTER_NOWAIT(name, tag)			\
 do {									\
@@ -153,7 +153,7 @@ do {									\
 									\
 	if ((_el = eventhandler_find_list(#name)) != NULL)		\
 		eventhandler_deregister_nowait(_el, tag);		\
-} while(0)
+} while (0)
 
 eventhandler_tag eventhandler_register(struct eventhandler_list *list, 
 	    const char *name, void *func, void *arg, int priority);
@@ -182,7 +182,14 @@ eventhandler_tag vimage_eventhandler_register(struct eventhandler_list *list,
 #define	EVENTHANDLER_PRI_ANY	10000
 #define	EVENTHANDLER_PRI_LAST	20000
 
-/* Shutdown events */
+/*
+ * Successive shutdown events invoked by kern_reboot(9).
+ *
+ * Handlers will receive the 'howto' value as their second argument.
+ *
+ * All handlers must be prepared to be executed from a panic/debugger context;
+ * see the man page for details.
+ */
 typedef void (*shutdown_fn)(void *, int);
 
 #define	SHUTDOWN_PRI_FIRST	EVENTHANDLER_PRI_FIRST
@@ -203,6 +210,8 @@ EVENTHANDLER_DECLARE(power_suspend_early, power_change_fn);
 typedef void (*vm_lowmem_handler_t)(void *, int);
 #define	LOWMEM_PRI_DEFAULT	EVENTHANDLER_PRI_FIRST
 EVENTHANDLER_DECLARE(vm_lowmem, vm_lowmem_handler_t);
+/* Some of mbuf(9) zones reached maximum */
+EVENTHANDLER_DECLARE(mbuf_lowmem, vm_lowmem_handler_t);
 
 /* Root mounted event */
 typedef void (*mountroot_handler_t)(void *);
@@ -307,8 +316,10 @@ enum evhdev_detach {
 };
 typedef void (*device_attach_fn)(void *, device_t);
 typedef void (*device_detach_fn)(void *, device_t, enum evhdev_detach);
+typedef void (*device_nomatch_fn)(void *, device_t);
 EVENTHANDLER_DECLARE(device_attach, device_attach_fn);
 EVENTHANDLER_DECLARE(device_detach, device_detach_fn);
+EVENTHANDLER_DECLARE(device_nomatch, device_nomatch_fn);
 
 /* Interface address addition and removal event */
 struct ifaddr;

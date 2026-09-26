@@ -48,7 +48,7 @@
 #define TCP_DEFER_ACCEPT	 9  /* Wake up listener only when data arrive */
 #define TCP_WINDOW_CLAMP	 10 /* Bound advertised window */
 #define TCP_INFO		 11 /* Information about this connection. */
-#define	TCP_QUICKACK		 12 /* Bock/reenable quick ACKs.  */
+#define	TCP_QUICKACK		 12 /* Bock/re-enable quick ACKs.  */
 #define TCP_CONGESTION		 13 /* Congestion control algorithm.  */
 #define TCP_MD5SIG		 14 /* TCP MD5 Signature (RFC2385) */
 #define TCP_COOKIE_TRANSACTIONS	 15 /* TCP Cookie Transactions */
@@ -209,9 +209,12 @@ enum
 # define TCPI_OPT_TIMESTAMPS	1
 # define TCPI_OPT_SACK		2
 # define TCPI_OPT_WSCALE	4
-# define TCPI_OPT_ECN		8  /* ECN was negociated at TCP session init */
+# define TCPI_OPT_ECN		8  /* ECN was negotiated at TCP session init */
 # define TCPI_OPT_ECN_SEEN	16 /* we received at least one packet with ECT */
 # define TCPI_OPT_SYN_DATA	32 /* SYN-ACK acked data in SYN sent or rcvd */
+# define TCPI_OPT_USEC_TS	64 /* usec timestamps */
+# define TCPI_OPT_TFO_CHILD	128 /* child from a Fast Open option on SYN */
+
 
 /* Values for tcpi_state.  */
 enum tcp_ca_state
@@ -264,14 +267,100 @@ struct tcp_info
   uint32_t	tcpi_rcv_space;
 
   uint32_t	tcpi_total_retrans;
+
+  uint64_t	tcpi_pacing_rate;
+  uint64_t	tcpi_max_pacing_rate;
+  uint64_t	tcpi_bytes_acked;    /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
+  uint64_t	tcpi_bytes_received; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
+  uint32_t	tcpi_segs_out;       /* RFC4898 tcpEStatsPerfSegsOut */
+  uint32_t	tcpi_segs_in;        /* RFC4898 tcpEStatsPerfSegsIn */
+
+  uint32_t	tcpi_notsent_bytes;
+  uint32_t	tcpi_min_rtt;
+  uint32_t	tcpi_data_segs_in;    /* RFC4898 tcpEStatsDataSegsIn */
+  uint32_t	tcpi_data_segs_out;   /* RFC4898 tcpEStatsDataSegsOut */
+
+  uint64_t	tcpi_delivery_rate;
+
+  uint64_t	tcpi_busy_time;       /* Time (usec) busy sending data */
+  uint64_t	tcpi_rwnd_limited;    /* Time (usec) limited by receive window */
+  uint64_t	tcpi_sndbuf_limited;  /* Time (usec) limited by send buffer */
+
+  uint32_t	tcpi_delivered;
+  uint32_t	tcpi_delivered_ce;
+
+  uint64_t	tcpi_bytes_sent;    /* RFC4898 tcpEStatsPerfHCDataOctetsOut */
+  uint64_t	tcpi_bytes_retrans; /* RFC4898 tcpEStatsPerfOctetsRetrans */
+  uint32_t	tcpi_dsack_dups;    /* RFC4898 tcpEStatsStackDSACKDups */
+  uint32_t	tcpi_reord_seen;    /* reordering events seen */
+
+
+  uint32_t	tcpi_rcv_ooopack; /* Out-of-order packets received */
+  /* Peer's advertised receive window after scaling (bytes) */
+  uint32_t	tcpi_snd_wnd;
+  /* Local advertised receive window after scaling (bytes) */
+  uint32_t	tcpi_rcv_wnd;
+
+  uint32_t	tcpi_rehash; /* PLB or timeout triggered rehash attempts */
+  /* Total number of RTO timeouts, including
+   * SYN/SYN-ACK and recurring timeouts
+   */
+  uint16_t	tcpi_total_rto;
+  /* Total number of RTO recoveries, including any unfinished recovery. */
+  uint16_t	tcpi_total_rto_recoveries;
+  /* Total time spent in RTO recoveries in milliseconds, including any
+   * unfinished recovery.
+   */
+  uint32_t	tcpi_total_rto_time;
+  uint32_t	tcpi_received_ce;        /* # of CE marks received */
+  uint32_t	tcpi_delivered_e1_bytes; /* Accurate ECN byte counters */
+  uint32_t	tcpi_delivered_e0_bytes;
+  uint32_t	tcpi_delivered_ce_bytes;
+  uint32_t	tcpi_received_e1_bytes;
+  uint32_t	tcpi_received_e0_bytes;
+  uint32_t	tcpi_received_ce_bytes;
+  uint16_t	tcpi_accecn_fail_mode;
+  uint16_t	tcpi_accecn_opt_seen;
 };
 
+/* Netlink attributes types for SCM_TIMESTAMPING_OPT_STATS */
+enum {
+  TCP_NLA_PAD,
+  TCP_NLA_BUSY,                   /* Time (usec) busy sending data */
+  TCP_NLA_RWND_LIMITED,           /* Time (usec) limited by receive window */
+  TCP_NLA_SNDBUF_LIMITED,         /* Time (usec) limited by send buffer */
+  TCP_NLA_DATA_SEGS_OUT,          /* Data pkts sent including retransmission */
+  TCP_NLA_TOTAL_RETRANS,          /* Data pkts retransmitted */
+  TCP_NLA_PACING_RATE,            /* Pacing rate in bytes per second */
+  TCP_NLA_DELIVERY_RATE,          /* Delivery rate in bytes per second */
+  TCP_NLA_SND_CWND,               /* Sending congestion window */
+  TCP_NLA_REORDERING,             /* Reordering metric */
+  TCP_NLA_MIN_RTT,                /* minimum RTT */
+  TCP_NLA_RECUR_RETRANS,          /* Recurring retransmits for the current pkt */
+  TCP_NLA_DELIVERY_RATE_APP_LMT,  /* delivery rate application limited ? */
+  TCP_NLA_SNDQ_SIZE,              /* Data (bytes) pending in send queue */
+  TCP_NLA_CA_STATE,               /* ca_state of socket */
+  TCP_NLA_SND_SSTHRESH,           /* Slow start size threshold */
+  TCP_NLA_DELIVERED,              /* Data pkts delivered incl. out-of-order */
+  TCP_NLA_DELIVERED_CE,           /* Like above but only ones w/ CE marks */
+  TCP_NLA_BYTES_SENT,             /* Data bytes sent including retransmission */
+  TCP_NLA_BYTES_RETRANS,          /* Data bytes retransmitted */
+  TCP_NLA_DSACK_DUPS,             /* DSACK blocks received */
+  TCP_NLA_REORD_SEEN,             /* reordering events seen */
+  TCP_NLA_SRTT,                   /* smoothed RTT in usecs */
+  TCP_NLA_TIMEOUT_REHASH,         /* Timeout-triggered rehash attempts */
+  TCP_NLA_BYTES_NOTSENT,          /* Bytes in write queue not yet sent */
+  TCP_NLA_EDT,                    /* Earliest departure time (CLOCK_MONOTONIC) */
+  TCP_NLA_TTL,                    /* TTL or hop limit of a packet received */
+  TCP_NLA_REHASH,                 /* PLB and timeout triggered rehash attempts */
+};
 
 /* For TCP_MD5SIG socket option.  */
 #define TCP_MD5SIG_MAXKEYLEN	80
 
 /* tcp_md5sig extension flags for TCP_MD5SIG_EXT.  */
 #define TCP_MD5SIG_FLAG_PREFIX	1 /* Address prefix length.  */
+#define TCP_MD5SIG_FLAG_IFINDEX	2 /* Ifindex set.  */
 
 struct tcp_md5sig
 {
@@ -279,9 +368,117 @@ struct tcp_md5sig
   uint8_t	tcpm_flags;			/* Extension flags.  */
   uint8_t	tcpm_prefixlen;			/* Address prefix.  */
   uint16_t	tcpm_keylen;			/* Key length.  */
-  uint32_t	__tcpm_pad;			/* Zero.  */
+  int		tcpm_ifindex;			/* Device index for scope.  */
   uint8_t	tcpm_key[TCP_MD5SIG_MAXKEYLEN];	/* Key (binary).  */
 };
+
+/* INET_DIAG_MD5SIG */
+struct tcp_diag_md5sig {
+  uint8_t   tcpm_family;
+  uint8_t   tcpm_prefixlen;
+  uint16_t  tcpm_keylen;
+  uint32_t  tcpm_addr[4];
+  uint8_t   tcpm_key[TCP_MD5SIG_MAXKEYLEN];
+};
+
+#define TCP_AO_MAXKEYLEN  80
+
+#define TCP_AO_KEYF_IFINDEX  (1 << 0)     /* L3 ifindex for VRF */
+#define TCP_AO_KEYF_EXCLUDE_OPT  (1 << 1) /* Indicates whether TCP options
+                                           * other than TCP-AO are included
+                                           * in the MAC calculation
+                                           */
+
+struct tcp_ao_add { /* setsockopt(TCP_AO_ADD_KEY) */
+  struct sockaddr_storage addr;   /* Peer's address for the key */
+  int8_t    alg_name[64];         /* Crypto hash algorithm to use */
+  int32_t   ifindex;              /* L3 dev index for VRF */
+  uint32_t  set_current  :1,      /* Set key as Current_key at once */
+            set_rnext    :1,      /* Request it from peer with RNext_key */
+            reserved     :30;     /* Must be 0 */
+  uint16_t  reserved2;            /* Padding, must be 0 */
+  uint8_t   prefix;               /* Peer's address prefix */
+  uint8_t   sndid;                /* SendID for outgoing segments */
+  uint8_t   rcvid;                /* RecvID to match for incoming seg */
+  uint8_t   maclen;               /* length of authentication code (hash) */
+  uint8_t   keyflags;             /* See TCP_AO_KEYF_ */
+  uint8_t   keylen;               /* Length of ::key */
+  uint8_t   key[TCP_AO_MAXKEYLEN];
+} __attribute__((aligned(8)));
+
+struct tcp_ao_del { /* setsockopt(TCP_AO_DEL_KEY) */
+  struct sockaddr_storage addr;   /* Peer's address for the key */
+  int32_t  ifindex;               /* L3 dev index for VRF */
+  uint32_t set_current  :1,       /* Corresponding ::current_key */
+           set_rnext    :1,       /* Corresponding ::rnext */
+           del_async    :1,       /* Only valid for listen sockets */
+           reserved     :29;      /* Must be 0 */
+  uint16_t reserved2;             /* Padding, must be 0 */
+  uint8_t  prefix;                /* Peer's address prefix */
+  uint8_t  sndid;                 /* SendID for outgoing segments */
+  uint8_t  rcvid;                 /* RecvID to match for incoming seg */
+  uint8_t  current_key;           /* KeyID to set as Current_key */
+  uint8_t  rnext;                 /* KeyID to set as Rnext_key */
+  uint8_t  keyflags;              /* See TCP_AO_KEYF_ */
+} __attribute__((aligned(8)));
+
+struct tcp_ao_info_opt { /* setsockopt(TCP_AO_INFO), getsockopt(TCP_AO_INFO)
+                          */
+  /* Here 'in' is for setsockopt(), 'out' is for getsockopt() */
+  uint32_t  set_current   :1,   /* In/out: corresponding ::current_key */
+            set_rnext     :1,   /* In/out: corresponding ::rnext */
+            ao_required   :1,   /* In/out: don't accept non-AO connects */
+            set_counters  :1,   /* In: set/clear ::pkt_* counters */
+            accept_icmps  :1,   /* In/out: accept incoming ICMPs */
+            reserved      :27;  /* must be 0 */
+  uint16_t  reserved2;          /* Padding, must be 0 */
+  uint8_t   current_key;        /* In/out: KeyID of Current_key */
+  uint8_t   rnext;              /* In/out: keyid of RNext_key */
+  uint64_t  pkt_good;           /* In/out: verified segments */
+  uint64_t  pkt_bad;            /* In/out: failed verification */
+  uint64_t  pkt_key_not_found;  /* In/out: could not find a key to verify */
+  uint64_t  pkt_ao_required;    /* In/out: segments missing TCP-AO sign */
+  uint64_t  pkt_dropped_icmp;   /* In/out: ICMPs that were ignored */
+} __attribute__((aligned(8)));
+
+struct tcp_ao_getsockopt { /* getsockopt(TCP_AO_GET_KEYS) */
+  struct sockaddr_storage addr;   /* In/out: dump keys for peer
+                                   * with this address/prefix
+                                   */
+  uint8_t   alg_name[64];         /* out: crypto hash algorithm */
+  uint8_t   key[TCP_AO_MAXKEYLEN];
+  uint32_t  nkeys;                /* In: size of the userspace buffer
+                                   * @optval, measured in @optlen - the
+                                   * sizeof(struct tcp_ao_getsockopt)
+                                   * Out: number of keys that matched
+                                   */
+  uint16_t  is_current  :1,       /* In: match and dump Current_key,
+                                   * Out: the dumped key is Current_key
+                                   */
+            is_rnext    :1,       /* In: match and dump RNext_key,
+                                   * Out: the dumped key is RNext_key
+                                   */
+            get_all     :1,       /* In: dump all keys */
+            reserved    :13;      /* Padding, must be 0 */
+  uint8_t  sndid;                 /* In/out: dump keys with SendID */
+  uint8_t  rcvid;                 /* In/out: dump keys with RecvID */
+  uint8_t  prefix;                /* In/out: dump keys with address/prefix */
+  uint8_t  maclen;                /* Out: key's length of authentication
+                                   * code (hash)
+                                  */
+  uint8_t  keyflags;              /* In/out: see TCP_AO_KEYF_ */
+  uint8_t  keylen;                /* Out: length of ::key */
+  int32_t  ifindex;               /* In/out: L3 dev index for VRF */
+  uint64_t  pkt_good;             /* Out: verified segments */
+  uint64_t  pkt_bad;              /* Out: segments that failed verification */
+} __attribute__((aligned(8)));
+
+struct tcp_ao_repair { /* {s,g}etsockopt(TCP_AO_REPAIR) */
+  uint32_t      snt_isn;
+  uint32_t      rcv_isn;
+  uint32_t      snd_sne;
+  uint32_t      rcv_sne;
+} __attribute__((aligned(8)));
 
 /* For socket repair options.  */
 struct tcp_repair_opt
@@ -307,7 +504,7 @@ enum
 /* Flags for both getsockopt and setsockopt */
 #define TCP_COOKIE_IN_ALWAYS	(1 << 0)	/* Discard SYN without cookie */
 #define TCP_COOKIE_OUT_NEVER	(1 << 1)	/* Prohibit outgoing cookies,
-						 * supercedes everything. */
+						 * supersedes everything. */
 
 /* Flags for getsockopt */
 #define TCP_S_DATA_IN		(1 << 2)	/* Was data received? */
@@ -342,6 +539,15 @@ struct tcp_zerocopy_receive
   uint64_t address; /* In: address of mapping.  */
   uint32_t length; /* In/out: number of bytes to map/mapped.  */
   uint32_t recv_skip_hint; /* Out: amount of bytes to skip.  */
+  uint32_t inq; /* Out: amount of bytes in read queue.  */
+  int32_t err; /* Out: socket error.  */
+  uint64_t copybuf_address; /* On: copybuf address (small reads).  */
+  int32_t copybuf_len; /* In/Out: copybuf bytes avail/used or error.  */
+  uint32_t flags; /* In: flags.  */
+  uint64_t msg_control; /* Ancillary data.  */
+  uint64_t msg_controllen;
+  uint32_t msg_flags;
+  uint32_t reserved; /* Set to 0 for now.  */
 };
 
 #endif /* Misc.  */

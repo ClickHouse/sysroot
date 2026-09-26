@@ -1,4 +1,4 @@
-/* Copyright (C) 2002-2022 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -152,7 +152,7 @@ enum
 
 
 /* Conditional variable handling.  */
-#define PTHREAD_COND_INITIALIZER { { {0}, {0}, {0, 0}, {0, 0}, 0, 0, {0, 0} } }
+#define PTHREAD_COND_INITIALIZER { { {0}, {0}, {0, 0}, 0, 0, {0, 0}, 0, 0 } }
 
 
 /* Cleanup buffers */
@@ -223,7 +223,7 @@ extern int pthread_join (pthread_t __th, void **__thread_return);
    the thread in *THREAD_RETURN, if THREAD_RETURN is not NULL.  */
 extern int pthread_tryjoin_np (pthread_t __th, void **__thread_return) __THROW;
 
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 /* Make calling thread wait for termination of the thread TH, but only
    until TIMEOUT.  The exit status of the thread is stored in
    *THREAD_RETURN, if THREAD_RETURN is not NULL.
@@ -516,7 +516,7 @@ extern int pthread_once (pthread_once_t *__once_control,
    exception in C++ code.  If cancellation is implemented by unwinding
    this is necessary to have the compiler generate the unwind information.  */
 
-/* Set cancelability state of current thread to STATE, returning old
+/* Set cancellability state of current thread to STATE, returning old
    state in *OLDSTATE if OLDSTATE is not NULL.  */
 extern int pthread_setcancelstate (int __state, int *__oldstate);
 
@@ -796,7 +796,7 @@ extern int pthread_mutex_lock (pthread_mutex_t *__mutex)
 
 #ifdef __USE_XOPEN2K
 /* Wait until lock becomes available, or specified time passes. */
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 extern int pthread_mutex_timedlock (pthread_mutex_t *__restrict __mutex,
 				    const struct timespec *__restrict
 				    __abstime) __THROWNL __nonnull ((1, 2));
@@ -813,7 +813,7 @@ extern int __REDIRECT_NTHNL (pthread_mutex_timedlock,
 #endif
 
 #ifdef __USE_GNU
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 extern int pthread_mutex_clocklock (pthread_mutex_t *__restrict __mutex,
 				    clockid_t __clockid,
 				    const struct timespec *__restrict
@@ -981,8 +981,8 @@ extern int pthread_rwlock_tryrdlock (pthread_rwlock_t *__rwlock)
   __THROWNL __nonnull ((1));
 
 # ifdef __USE_XOPEN2K
-/* Try to acquire read lock for RWLOCK or return after specfied time.  */
-#  ifndef __USE_TIME_BITS64
+/* Try to acquire read lock for RWLOCK or return after specified time.  */
+#  ifndef __USE_TIME64_REDIRECTS
 extern int pthread_rwlock_timedrdlock (pthread_rwlock_t *__restrict __rwlock,
 				       const struct timespec *__restrict
 				       __abstime) __THROWNL __nonnull ((1, 2));
@@ -1000,7 +1000,7 @@ extern int __REDIRECT_NTHNL (pthread_rwlock_timedrdlock,
 # endif
 
 # ifdef __USE_GNU
-#  ifndef __USE_TIME_BITS64
+#  ifndef __USE_TIME64_REDIRECTS
 extern int pthread_rwlock_clockrdlock (pthread_rwlock_t *__restrict __rwlock,
 				       clockid_t __clockid,
 				       const struct timespec *__restrict
@@ -1028,8 +1028,8 @@ extern int pthread_rwlock_trywrlock (pthread_rwlock_t *__rwlock)
      __THROWNL __nonnull ((1));
 
 # ifdef __USE_XOPEN2K
-/* Try to acquire write lock for RWLOCK or return after specfied time.  */
-#  ifndef __USE_TIME_BITS64
+/* Try to acquire write lock for RWLOCK or return after specified time.  */
+#  ifndef __USE_TIME64_REDIRECTS
 extern int pthread_rwlock_timedwrlock (pthread_rwlock_t *__restrict __rwlock,
 				       const struct timespec *__restrict
 				       __abstime) __THROWNL __nonnull ((1, 2));
@@ -1047,7 +1047,7 @@ extern int __REDIRECT_NTHNL (pthread_rwlock_timedwrlock,
 # endif
 
 # ifdef __USE_GNU
-#  ifndef __USE_TIME_BITS64
+#  ifndef __USE_TIME64_REDIRECTS
 extern int pthread_rwlock_clockwrlock (pthread_rwlock_t *__restrict __rwlock,
 				       clockid_t __clockid,
 				       const struct timespec *__restrict
@@ -1141,7 +1141,7 @@ extern int pthread_cond_wait (pthread_cond_t *__restrict __cond,
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 extern int pthread_cond_timedwait (pthread_cond_t *__restrict __cond,
 				   pthread_mutex_t *__restrict __mutex,
 				   const struct timespec *__restrict __abstime)
@@ -1167,7 +1167,7 @@ extern int __REDIRECT (pthread_cond_timedwait,
 
    This function is a cancellation point and therefore not marked with
    __THROW. */
-#  ifndef __USE_TIME_BITS64
+#  ifndef __USE_TIME64_REDIRECTS
 extern int pthread_cond_clockwait (pthread_cond_t *__restrict __cond,
 				   pthread_mutex_t *__restrict __mutex,
 				   __clockid_t __clock_id,
@@ -1315,6 +1315,11 @@ extern int pthread_setspecific (pthread_key_t __key,
 extern int pthread_getcpuclockid (pthread_t __thread_id,
 				  __clockid_t *__clock_id)
      __THROW __nonnull ((2));
+#endif
+
+#ifdef __USE_GNU
+/* Return the Linux TID for THREAD_ID.  Returns -1 on failure.  */
+extern pid_t pthread_gettid_np (pthread_t __thread_id);
 #endif
 
 

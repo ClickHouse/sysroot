@@ -63,6 +63,10 @@
  * From: sys/arm/include/bus.h
  */
 
+#ifdef __arm__
+#include <arm/bus.h>
+#else /* !__arm__ */
+
 #ifndef _MACHINE_BUS_H_
 #define	_MACHINE_BUS_H_
 
@@ -72,6 +76,7 @@
 
 #define	BUS_SPACE_MAXADDR_24BIT	0xFFFFFFUL
 #define	BUS_SPACE_MAXADDR_32BIT 0xFFFFFFFFUL
+#define	BUS_SPACE_MAXADDR_36BIT 0xFFFFFFFFFUL
 #define	BUS_SPACE_MAXADDR_40BIT	0xFFFFFFFFFFUL
 #define	BUS_SPACE_MAXSIZE_24BIT	0xFFFFFFUL
 #define	BUS_SPACE_MAXSIZE_32BIT	0xFFFFFFFFUL
@@ -83,6 +88,7 @@
 #define	BUS_SPACE_MAP_CACHEABLE		0x01
 #define	BUS_SPACE_MAP_LINEAR		0x02
 #define	BUS_SPACE_MAP_PREFETCHABLE	0x04
+#define	BUS_SPACE_MAP_NONPOSTED		0x08
 
 #define	BUS_SPACE_UNRESTRICTED	(~0)
 
@@ -275,7 +281,7 @@ struct bus_space {
 			   bus_size_t, uint64_t);
 };
 
-#ifdef SAN_NEEDS_INTERCEPTORS
+#if defined(SAN_NEEDS_INTERCEPTORS) && !defined(SAN_RUNTIME)
 #include <sys/bus_san.h>
 #else
 
@@ -518,3 +524,5 @@ struct bus_space {
 #include <machine/bus_dma.h>
 
 #endif /* _MACHINE_BUS_H_ */
+
+#endif /* !__arm__ */

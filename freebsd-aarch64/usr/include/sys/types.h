@@ -192,7 +192,7 @@ typedef	__rlim_t	rlim_t;		/* resource limit */
 #define	_RLIM_T_DECLARED
 #endif
 
-typedef	__int64_t	sbintime_t;
+typedef	__sbintime_t	sbintime_t;
 
 typedef	__segsz_t	segsz_t;	/* segment size (in pages) */
 
@@ -269,6 +269,8 @@ typedef	__vm_size_t	vm_size_t;
 
 typedef __rman_res_t    rman_res_t;
 
+typedef __register_t	syscallarg_t;
+
 #ifdef _KERNEL
 typedef	unsigned int	boolean_t;
 typedef	struct _device	*device_t;
@@ -307,68 +309,7 @@ typedef	_Bool	bool;
  * The following are all things that really shouldn't exist in this header,
  * since its purpose is to provide typedefs, not miscellaneous doodads.
  */
-
-#ifdef __POPCNT__
-#define	__bitcount64(x)	__builtin_popcountll((__uint64_t)(x))
-#define	__bitcount32(x)	__builtin_popcount((__uint32_t)(x))
-#define	__bitcount16(x)	__builtin_popcount((__uint16_t)(x))
-#define	__bitcountl(x)	__builtin_popcountl((unsigned long)(x))
-#define	__bitcount(x)	__builtin_popcount((unsigned int)(x))
-#else
-/*
- * Population count algorithm using SWAR approach
- * - "SIMD Within A Register".
- */
-static __inline __uint16_t
-__bitcount16(__uint16_t _x)
-{
-
-	_x = (_x & 0x5555) + ((_x & 0xaaaa) >> 1);
-	_x = (_x & 0x3333) + ((_x & 0xcccc) >> 2);
-	_x = (_x + (_x >> 4)) & 0x0f0f;
-	_x = (_x + (_x >> 8)) & 0x00ff;
-	return (_x);
-}
-
-static __inline __uint32_t
-__bitcount32(__uint32_t _x)
-{
-
-	_x = (_x & 0x55555555) + ((_x & 0xaaaaaaaa) >> 1);
-	_x = (_x & 0x33333333) + ((_x & 0xcccccccc) >> 2);
-	_x = (_x + (_x >> 4)) & 0x0f0f0f0f;
-	_x = (_x + (_x >> 8));
-	_x = (_x + (_x >> 16)) & 0x000000ff;
-	return (_x);
-}
-
-#ifdef __LP64__
-static __inline __uint64_t
-__bitcount64(__uint64_t _x)
-{
-
-	_x = (_x & 0x5555555555555555) + ((_x & 0xaaaaaaaaaaaaaaaa) >> 1);
-	_x = (_x & 0x3333333333333333) + ((_x & 0xcccccccccccccccc) >> 2);
-	_x = (_x + (_x >> 4)) & 0x0f0f0f0f0f0f0f0f;
-	_x = (_x + (_x >> 8));
-	_x = (_x + (_x >> 16));
-	_x = (_x + (_x >> 32)) & 0x000000ff;
-	return (_x);
-}
-
-#define	__bitcountl(x)	__bitcount64((unsigned long)(x))
-#else
-static __inline __uint64_t
-__bitcount64(__uint64_t _x)
-{
-
-	return (__bitcount32(_x >> 32) + __bitcount32(_x));
-}
-
-#define	__bitcountl(x)	__bitcount32((unsigned long)(x))
-#endif
-#define	__bitcount(x)	__bitcount32((unsigned int)(x))
-#endif
+#include <sys/bitcount.h>
 
 #if __BSD_VISIBLE
 
@@ -404,6 +345,18 @@ __makedev(int _Major, int _Minor)
 	return (((dev_t)(_Major & 0xffffff00) << 32) | ((_Major & 0xff) << 8) |
 	    ((dev_t)(_Minor & 0xff00) << 24) | (_Minor & 0xffff00ff));
 }
+
+#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 13))
+#define __enum_uint8_decl(name)	enum enum_ ## name ## _uint8 : uint8_t
+#define __enum_uint8(name)	enum enum_ ## name ## _uint8
+#else
+/*
+ * Note: there is no real size checking here, but the code below can be
+ * removed once we require GCC 13.
+ */
+#define __enum_uint8_decl(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
+#define __enum_uint8(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
+#endif
 
 /*
  * These declarations belong elsewhere, but are repeated here and in

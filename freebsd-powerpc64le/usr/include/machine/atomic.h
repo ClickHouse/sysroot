@@ -32,10 +32,6 @@
 #ifndef _MACHINE_ATOMIC_H_
 #define	_MACHINE_ATOMIC_H_
 
-#ifndef _SYS_CDEFS_H_
-#error this file needs sys/cdefs.h as a prerequisite
-#endif
-
 #include <sys/atomic_common.h>
 
 #ifndef __powerpc64__
@@ -506,7 +502,7 @@ atomic_readandclear_long(volatile u_long *addr)
  */
 #define	ATOMIC_STORE_LOAD(TYPE)					\
 static __inline u_##TYPE					\
-atomic_load_acq_##TYPE(volatile u_##TYPE *p)			\
+atomic_load_acq_##TYPE(const volatile u_##TYPE *p)		\
 {								\
 	u_##TYPE v;						\
 								\
@@ -538,10 +534,10 @@ ATOMIC_STORE_LOAD(long)
 #define	atomic_store_rel_ptr	atomic_store_rel_long
 #else
 static __inline u_long
-atomic_load_acq_long(volatile u_long *addr)
+atomic_load_acq_long(const volatile u_long *addr)
 {
 
-	return ((u_long)atomic_load_acq_int((volatile u_int *)addr));
+	return ((u_long)atomic_load_acq_int((const volatile u_int *)addr));
 }
 
 static __inline void
@@ -775,7 +771,7 @@ atomic_fcmpset_char(volatile u_char *p, u_char *cmpval, u_char newval)
 		"b 2f\n\t"			/* we've succeeded */
 		"1:\n\t"
 		"stbcx. %0, 0, %3\n\t"       	/* clear reservation (74xx) */
-		"stwx %0, 0, %7\n\t"
+		"stbx %0, 0, %7\n\t"
 		"li %0, 0\n\t"			/* failure - retval = 0 */
 		"2:\n\t"
 		: "=&r" (ret), "=m" (*p), "=m" (*cmpval)
@@ -800,7 +796,7 @@ atomic_fcmpset_short(volatile u_short *p, u_short *cmpval, u_short newval)
 		"b 2f\n\t"			/* we've succeeded */
 		"1:\n\t"
 		"sthcx. %0, 0, %3\n\t"       	/* clear reservation (74xx) */
-		"stwx %0, 0, %7\n\t"
+		"sthx %0, 0, %7\n\t"
 		"li %0, 0\n\t"			/* failure - retval = 0 */
 		"2:\n\t"
 		: "=&r" (ret), "=m" (*p), "=m" (*cmpval)
@@ -1097,11 +1093,15 @@ atomic_testandset_acq_long(volatile u_long *p, u_int v)
 	return (a);
 }
 
-#define	atomic_testandclear_int		atomic_testandclear_int
-#define	atomic_testandset_int		atomic_testandset_int
-#define	atomic_testandclear_long	atomic_testandclear_long
-#define	atomic_testandset_long		atomic_testandset_long
-#define	atomic_testandset_acq_long	atomic_testandset_acq_long
+#ifdef __powerpc64__
+#define	atomic_testandclear_ptr		atomic_testandclear_long
+#define	atomic_testandset_ptr		atomic_testandset_long
+#else
+#define	atomic_testandclear_ptr(p,v)					\
+	atomic_testandclear_32((volatile u_int *)(p), v)
+#define	atomic_testandset_ptr(p,v)					\
+	atomic_testandset_32((volatile u_int *)(p), v)
+#endif
 
 static __inline void
 atomic_thread_fence_acq(void)
@@ -1137,7 +1137,38 @@ atomic_thread_fence_seq_cst(void)
 #define	atomic_cmpset_short	atomic_cmpset_16
 #define	atomic_fcmpset_char	atomic_fcmpset_8
 #define	atomic_fcmpset_short	atomic_fcmpset_16
-#endif
+#define	atomic_set_short	atomic_set_16
+#define	atomic_clear_short	atomic_clear_16
+#else
+
+static __inline void
+atomic_set_short(volatile u_short *p, u_short bit)
+{
+	u_short v;
+
+	v = atomic_load_short(p);
+	for (;;) {
+		if (atomic_fcmpset_16(p, &v, v | bit))
+			break;
+	}
+}
+
+static __inline void
+atomic_clear_short(volatile u_short *p, u_short bit)
+{
+	u_short v;
+
+	v = atomic_load_short(p);
+	for (;;) {
+		if (atomic_fcmpset_16(p, &v, v & ~bit))
+			break;
+	}
+}
+
+#define	atomic_set_16		atomic_set_short
+#define	atomic_clear_16		atomic_clear_short
+
+#endif	/* ISA_206_ATOMICS */
 
 /* These need sys/_atomic_subword.h on non-ISA-2.06-atomic platforms. */
 ATOMIC_CMPSET_ACQ_REL(char);

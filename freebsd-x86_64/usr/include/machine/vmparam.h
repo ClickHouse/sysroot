@@ -42,6 +42,10 @@
  *	from: @(#)vmparam.h	5.9 (Berkeley) 5/12/91
  */
 
+#ifdef __i386__
+#include <i386/vmparam.h>
+#else /* !__i386__ */
+
 #ifndef _MACHINE_VMPARAM_H_
 #define	_MACHINE_VMPARAM_H_ 1
 
@@ -74,7 +78,7 @@
  * of the direct mapped segment.  This uses 2MB pages for reduced
  * TLB pressure.
  */
-#ifndef KASAN
+#if !defined(KASAN) && !defined(KMSAN)
 #define	UMA_MD_SMALL_ALLOC
 #endif
 
@@ -285,12 +289,6 @@
 #define	ZERO_REGION_SIZE	(2 * 1024 * 1024)	/* 2MB */
 
 /*
- * Use a fairly large batch size since we expect amd64 systems to have lots of
- * memory.
- */
-#define	VM_BATCHQUEUE_SIZE	31
-
-/*
  * The pmap can create non-transparent large page mappings.
  */
 #define	PMAP_HAS_LARGEPAGES	1
@@ -301,3 +299,5 @@
 #define MINIDUMP_PAGE_TRACKING	1
 
 #endif /* _MACHINE_VMPARAM_H_ */
+
+#endif /* __i386__ */

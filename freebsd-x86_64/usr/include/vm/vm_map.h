@@ -298,6 +298,7 @@ struct vmspace {
 	caddr_t vm_daddr;	/* (c) user virtual address of data */
 	caddr_t vm_maxsaddr;	/* user VA at max stack growth */
 	vm_offset_t vm_stacktop; /* top of the stack, may not be page-aligned */
+	vm_offset_t vm_shp_base; /* shared page address */
 	u_int vm_refcnt;	/* number of references */
 	/*
 	 * Keep the PMAP last, so that CPU-specific variations of that
@@ -385,6 +386,7 @@ long vmspace_resident_count(struct vmspace *vmspace);
 #define	MAP_CREATE_STACK_GAP_DN	0x00020000
 #define	MAP_VN_EXEC		0x00040000
 #define	MAP_SPLIT_BOUNDARY_MASK	0x00180000
+#define	MAP_NO_HINT		0x00200000
 
 #define	MAP_SPLIT_BOUNDARY_SHIFT 19
 
@@ -469,10 +471,13 @@ vm_map_entry_read_succ(void *token, struct vm_map_entry *const clone,
 #endif				/* ! _KERNEL */
 
 #ifdef _KERNEL
+bool vm_map_check_boundary(vm_map_t, vm_offset_t, vm_offset_t);
 boolean_t vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
 int vm_map_delete(vm_map_t, vm_offset_t, vm_offset_t);
 int vm_map_find(vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t *, vm_size_t,
     vm_offset_t, int, vm_prot_t, vm_prot_t, int);
+int vm_map_find_locked(vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t *,
+    vm_size_t, vm_offset_t, int, vm_prot_t, vm_prot_t, int);
 int vm_map_find_min(vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t *,
     vm_size_t, vm_offset_t, vm_offset_t, int, vm_prot_t, vm_prot_t, int);
 int vm_map_find_aligned(vm_map_t map, vm_offset_t *addr, vm_size_t length,

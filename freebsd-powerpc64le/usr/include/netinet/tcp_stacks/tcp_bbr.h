@@ -267,7 +267,7 @@ struct bbr_log {
 	uint8_t n_sackblks;
 	uint8_t applied;	/* UU */
 	uint8_t inhpts;		/* UU */
-	uint8_t ininput;	/* UU */
+	uint8_t __spare;	/* UU */
 	uint8_t use_lt_bw;	/* UU */
 };
 
@@ -347,8 +347,6 @@ struct bbr_log_sysctl_out {
 /*
  * Locking for the rack control block.
  * a) Locked by INP_WLOCK
- * b) Locked by the hpts-mutex
- *
  */
 #define BBR_STATE_STARTUP   0x01
 #define BBR_STATE_DRAIN     0x02

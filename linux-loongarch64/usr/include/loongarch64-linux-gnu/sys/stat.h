@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
 
 #include <bits/types.h>		/* For __mode_t and __dev_t.  */
 
-#ifdef __USE_XOPEN2K8
+#if defined(__USE_ATFILE) || defined(__USE_XOPEN2K8)
 # include <bits/types/struct_timespec.h>
 #endif
 
@@ -209,7 +209,7 @@ extern int stat (const char *__restrict __file,
    that file descriptor FD is open on and put them in BUF.  */
 extern int fstat (int __fd, struct stat *__buf) __THROW __nonnull ((2));
 #else
-# ifdef __USE_TIME_BITS64
+# ifdef __USE_TIME64_REDIRECTS
 #  ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (stat, (const char *__restrict __file,
 				  struct stat *__restrict __buf),
@@ -236,7 +236,7 @@ extern int __REDIRECT_NTH (fstat, (int __fd, struct stat *__buf), fstat64)
 # endif
 #endif
 #ifdef __USE_LARGEFILE64
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 extern int stat64 (const char *__restrict __file,
 		   struct stat64 *__restrict __buf) __THROW __nonnull ((1, 2));
 extern int fstat64 (int __fd, struct stat64 *__buf) __THROW __nonnull ((2));
@@ -251,7 +251,7 @@ extern int __REDIRECT_NTH (fstat64, (int __fd, struct stat64 *__buf),
      __nonnull ((2));
 #  else
 #   define stat64 __stat64_time64
-#   define fstat64 __fstat64_time
+#   define fstat64 __fstat64_time64
 #  endif
 # endif
 #endif
@@ -263,14 +263,14 @@ extern int __REDIRECT_NTH (fstat64, (int __fd, struct stat64 *__buf),
 # ifndef __USE_FILE_OFFSET64
 extern int fstatat (int __fd, const char *__restrict __file,
 		    struct stat *__restrict __buf, int __flag)
-     __THROW __nonnull ((2, 3));
+     __THROW __nonnull ((3));
 # else
-#  ifdef __USE_TIME_BITS64
+#  ifdef __USE_TIME64_REDIRECTS
 #   ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (fstatat, (int __fd, const char *__restrict __file,
 				     struct stat *__restrict __buf,
 				     int __flag),
-			   __fstatat64_time64) __nonnull ((2, 3));
+			   __fstatat64_time64) __nonnull ((3));
 #   else
 #    define fstatat __fstatat64_time64
 #   endif
@@ -279,7 +279,7 @@ extern int __REDIRECT_NTH (fstatat, (int __fd, const char *__restrict __file,
 extern int __REDIRECT_NTH (fstatat, (int __fd, const char *__restrict __file,
 				     struct stat *__restrict __buf,
 				     int __flag),
-			   fstatat64) __nonnull ((2, 3));
+			   fstatat64) __nonnull ((3));
 #   else
 #    define fstatat fstatat64
 #   endif
@@ -287,10 +287,10 @@ extern int __REDIRECT_NTH (fstatat, (int __fd, const char *__restrict __file,
 # endif
 
 # ifdef __USE_LARGEFILE64
-#  ifndef __USE_TIME_BITS64
+#  ifndef __USE_TIME64_REDIRECTS
 extern int fstatat64 (int __fd, const char *__restrict __file,
 		      struct stat64 *__restrict __buf, int __flag)
-     __THROW __nonnull ((2, 3));
+     __THROW __nonnull ((3));
 #  else
 #   ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (fstatat64, (int __fd,
@@ -298,7 +298,7 @@ extern int __REDIRECT_NTH (fstatat64, (int __fd,
 				       struct stat64 *__restrict __buf,
 				       int __flag),
 			   __fstatat64_time64)
-     __nonnull ((2, 3));
+     __nonnull ((3));
 #   else
 #    define fstatat64 __fstatat64_time64
 #   endif
@@ -313,7 +313,7 @@ extern int __REDIRECT_NTH (fstatat64, (int __fd,
 extern int lstat (const char *__restrict __file,
 		  struct stat *__restrict __buf) __THROW __nonnull ((1, 2));
 # else
-#  ifdef __USE_TIME_BITS64
+#  ifdef __USE_TIME64_REDIRECTS
 #   ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (lstat,
 			   (const char *__restrict __file,
@@ -334,7 +334,7 @@ extern int __REDIRECT_NTH (lstat,
 #  endif
 # endif
 # ifdef __USE_LARGEFILE64
-#  ifndef __USE_TIME_BITS64
+#  ifndef __USE_TIME64_REDIRECTS
 extern int lstat64 (const char *__restrict __file,
 		    struct stat64 *__restrict __buf)
      __THROW __nonnull ((1, 2));
@@ -427,19 +427,19 @@ extern int mkfifoat (int __fd, const char *__path, __mode_t __mode)
 #endif
 
 #ifdef __USE_ATFILE
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 /* Set file access and modification times relative to directory file
    descriptor.  */
 extern int utimensat (int __fd, const char *__path,
 		      const struct timespec __times[2],
 		      int __flags)
-     __THROW __nonnull ((2));
+     __THROW;
 # else
 #  ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (utimensat, (int fd, const char *__path,
                                        const struct timespec __times[2],
                                        int flags),
-                           __utimensat64) __nonnull ((2));
+                           __utimensat64);
 #  else
 #   define utimensat __utimensat64
 #  endif
@@ -447,7 +447,7 @@ extern int __REDIRECT_NTH (utimensat, (int fd, const char *__path,
 #endif
 
 #ifdef __USE_XOPEN2K8
-# ifndef __USE_TIME_BITS64
+# ifndef __USE_TIME64_REDIRECTS
 /* Set file access and modification times of the file associated with FD.  */
 extern int futimens (int __fd, const struct timespec __times[2]) __THROW;
 

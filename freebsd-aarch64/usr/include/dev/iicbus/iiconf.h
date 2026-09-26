@@ -32,7 +32,7 @@
 #include <dev/iicbus/iic.h>
 
 
-#define IICPRI (PZERO+8)		/* XXX sleep/wakeup queue priority */
+#define IICPRI (PWAIT)		/* XXX sleep/wakeup queue priority */
 
 #define LSB 0x1
 
@@ -171,7 +171,6 @@ int iicdev_writeto(device_t _slavedev, uint8_t _regaddr, void *_buffer,
 #define IICBUS_PREFVER	IICBUS_MODVER
 
 extern driver_t iicbb_driver;
-extern devclass_t iicbb_devclass;
 
 #define IICBB_MODVER	1
 #define IICBB_MINVER	1

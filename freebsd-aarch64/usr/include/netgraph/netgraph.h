@@ -69,11 +69,20 @@
  * modules.
  */
 #define _NG_ABI_VERSION 12
-#ifdef	NETGRAPH_DEBUG /*----------------------------------------------*/
-#define NG_ABI_VERSION	(_NG_ABI_VERSION + 0x10000)
-#else	/* NETGRAPH_DEBUG */ /*----------------------------------------------*/
-#define NG_ABI_VERSION	_NG_ABI_VERSION
-#endif	/* NETGRAPH_DEBUG */ /*----------------------------------------------*/
+
+#ifdef	NETGRAPH_DEBUG
+#define	_NG_ABI_PREFIX1 0x10000
+#else
+#define	_NG_ABI_PREFIX1 0
+#endif
+
+#ifdef	INVARIANTS
+#define	_NG_ABI_PREFIX2 0x20000
+#else
+#define	_NG_ABI_PREFIX2 0
+#endif
+
+#define NG_ABI_VERSION	(_NG_ABI_PREFIX1 + _NG_ABI_PREFIX2 + _NG_ABI_VERSION)
 
 /*
  * Forward references for the basic structures so we can
@@ -1154,6 +1163,7 @@ int 	ng_send_fn1(node_p node, hook_p hook, ng_item_fn *fn, void *arg1,
 int 	ng_send_fn2(node_p node, hook_p hook, item_p pitem, ng_item_fn2 *fn,
 	void *arg1, int arg2, int flags);
 int	ng_uncallout(struct callout *c, node_p node);
+int	ng_uncallout_drain(struct callout *c, node_p node);
 int	ng_callout(struct callout *c, node_p node, hook_p hook, int ticks,
 	    ng_item_fn *fn, void * arg1, int arg2);
 #define	ng_callout_init(c)	callout_init(c, 1)

@@ -1,5 +1,5 @@
 /* Checking macros for syslog functions.
-   Copyright (C) 2005-2022 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -20,15 +20,7 @@
 # error "Never include <bits/syslog.h> directly; use <sys/syslog.h> instead."
 #endif
 
-
-extern void __syslog_chk (int __pri, int __flag, const char *__fmt, ...)
-     __attribute__ ((__format__ (__printf__, 3, 4)));
-
-#ifdef __USE_MISC
-extern void __vsyslog_chk (int __pri, int __flag, const char *__fmt,
-			   __gnuc_va_list __ap)
-     __attribute__ ((__format__ (__printf__, 3, 0)));
-#endif
+#include <bits/syslog-decl.h>
 
 #include <bits/floatn.h>
 #if defined __LDBL_COMPAT || __LDOUBLE_REDIRECTS_TO_FLOAT128_ABI == 1
@@ -44,6 +36,15 @@ syslog (int __pri, const char *__fmt, ...)
 {
   __syslog_chk (__pri, __USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
 }
+#elif __fortify_use_clang && defined __USE_MISC
+__fortify_function_error_function __attribute_overloadable__ void
+syslog (int __pri, __fortify_clang_overload_arg (const char *, , __fmt), ...)
+{
+  __gnuc_va_list __fortify_ap;
+  __builtin_va_start (__fortify_ap, __fmt);
+  __vsyslog_chk (__pri, __USE_FORTIFY_LEVEL - 1, __fmt, __fortify_ap);
+  __builtin_va_end (__fortify_ap);
+}
 #elif !defined __cplusplus
 # define syslog(pri, ...) \
   __syslog_chk (pri, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
@@ -51,8 +52,9 @@ syslog (int __pri, const char *__fmt, ...)
 
 
 #ifdef __USE_MISC
-__fortify_function void
-vsyslog (int __pri, const char *__fmt, __gnuc_va_list __ap)
+__fortify_function __attribute_overloadable__ void
+vsyslog (int __pri, __fortify_clang_overload_arg (const char *, ,__fmt),
+	 __gnuc_va_list __ap)
 {
   __vsyslog_chk (__pri,  __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
 }

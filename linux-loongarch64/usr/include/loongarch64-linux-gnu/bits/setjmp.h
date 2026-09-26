@@ -1,5 +1,5 @@
 /* Define the machine-dependent type `jmp_buf'.
-   Copyright (C) 2022 Free Software Foundation, Inc.
+   Copyright (C) 2022-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -31,8 +31,11 @@ typedef struct __jmp_buf_internal_tag
   long int __fp;
   /* Callee-saved registers.  */
   long int __regs[9];
+
+#ifndef __loongarch_soft_float
   /* Callee-saved floating point registers.  */
   double __fpregs[8];
+#endif
 
 } __jmp_buf[1];
 

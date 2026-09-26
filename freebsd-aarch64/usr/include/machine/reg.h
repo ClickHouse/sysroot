@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __arm__
+#include <arm/reg.h>
+#else /* !__arm__ */
+
 #ifndef	_MACHINE_REG_H_
 #define	_MACHINE_REG_H_
 
@@ -38,7 +42,7 @@ struct reg {
 	__uint64_t lr;
 	__uint64_t sp;
 	__uint64_t elr;
-	__uint32_t spsr;
+	__uint64_t spsr;
 };
 
 struct reg32 {
@@ -57,6 +61,19 @@ struct fpreg {
 
 struct fpreg32 {
 	int dummy;
+};
+
+#define	SVEREG_FLAG_REGS_MASK	0x0001
+#define	SVEREG_FLAG_FP		0x0000
+#define	SVEREG_FLAG_SVE		0x0001
+
+struct svereg_header {
+	__uint32_t	sve_size;
+	__uint32_t	sve_maxsize;
+	__uint16_t	sve_vec_len;
+	__uint16_t	sve_max_vec_len;
+	__uint16_t	sve_flags;
+	__uint16_t	sve_reserved;
 };
 
 struct dbreg {
@@ -81,6 +98,13 @@ struct dbreg32 {
 	int dummy;
 };
 
+struct arm64_addr_mask {
+	__uint64_t	code;
+	__uint64_t	data;
+};
+
 #define	__HAVE_REG32
 
 #endif /* !_MACHINE_REG_H_ */
+
+#endif /* !__arm__ */

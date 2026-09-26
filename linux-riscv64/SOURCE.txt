@@ -1,0 +1,5 @@
+Debian suite: trixie (2026-09-09)
+Package: libc6-dev Version: 2.41-12+deb13u3
+Package: libc6 Version: 2.41-12+deb13u3
+Package: libgcc-14-dev Version: 14.2.0-19
+Package: linux-libc-dev Version: 6.12.94-1

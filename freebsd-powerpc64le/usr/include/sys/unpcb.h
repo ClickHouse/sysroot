@@ -95,6 +95,7 @@ struct unpcb {
 	u_int	unp_msgcount;		/* (g) references from message queue */
 	u_int	unp_gcrefs;		/* (g) garbage collector refcount */
 	ino_t	unp_ino;		/* (g) fake inode number */
+	mode_t  unp_mode;		/* (g) initial pre-bind() mode */
 	LIST_ENTRY(unpcb) unp_dead;	/* (g) link in dead list */
 } __aligned(CACHE_LINE_SIZE);
 
@@ -173,7 +174,7 @@ struct xunpgen {
 	u_int	xug_count;
 	unp_gen_t xug_gen;
 	so_gen_t xug_sogen;
-} __aligned(8);;
+} __aligned(8);
 #endif /* _SYS_SOCKETVAR_H_ */
 
 #if defined(_KERNEL)

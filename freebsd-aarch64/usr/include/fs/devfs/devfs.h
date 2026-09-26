@@ -122,6 +122,8 @@ struct devfs_rule {
 MALLOC_DECLARE(M_DEVFS);
 #endif
 
+#endif /* _KERNEL */
+
 struct componentname;
 
 TAILQ_HEAD(devfs_dlist_head, devfs_dirent);
@@ -154,6 +156,9 @@ struct devfs_dirent {
 	int			de_usecount;
 };
 
+#include <sys/_lock.h>
+#include <sys/_sx.h>
+
 struct devfs_mount {
 	u_int			dm_idx;
 	struct mount		*dm_mount;
@@ -166,6 +171,8 @@ struct devfs_mount {
 
 #define DEVFS_ROOTINO 2
 
+#ifdef _KERNEL
+
 extern unsigned devfs_rule_depth;
 
 #define VFSTODEVFS(mp)	((struct devfs_mount *)((mp)->mnt_data))
@@ -176,8 +183,7 @@ extern unsigned devfs_rule_depth;
 #define DEVFS_DMP_HOLD(dmp)	((dmp)->dm_holdcnt++)
 #define DEVFS_DMP_DROP(dmp)	(--(dmp)->dm_holdcnt == 0)
 
-#define	DEVFS_DEL_VNLOCKED	0x01
-#define	DEVFS_DEL_NORECURSE	0x02
+#define	DEVFS_DEL_NORECURSE	0x01
 
 void	devfs_rules_apply(struct devfs_mount *, struct devfs_dirent *);
 void	devfs_rules_cleanup(struct devfs_mount *);

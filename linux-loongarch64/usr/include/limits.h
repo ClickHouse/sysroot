@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -142,7 +142,7 @@
 /* The integer width macros are not defined by GCC's <limits.h> before
    GCC 7, or if _GNU_SOURCE rather than
    __STDC_WANT_IEC_60559_BFP_EXT__ is used to enable this feature.  */
-#if __GLIBC_USE (IEC_60559_BFP_EXT_C2X)
+#if __GLIBC_USE (IEC_60559_BFP_EXT_C23)
 # ifndef CHAR_WIDTH
 #  define CHAR_WIDTH 8
 # endif
@@ -179,14 +179,17 @@
 #endif /* Use IEC_60559_BFP_EXT.  */
 
 /* The macros for _Bool are not defined by GCC's <limits.h> before GCC
-   11, or if _GNU_SOURCE is defined rather than enabling C2x support
-   with -std.  */
-#if __GLIBC_USE (ISOC2X)
+   11, or if _GNU_SOURCE is defined rather than enabling C23 support
+   with -std; likewise for the version macro before GCC 13.  */
+#if __GLIBC_USE (ISOC23)
 # ifndef BOOL_MAX
 #  define BOOL_MAX 1
 # endif
 # ifndef BOOL_WIDTH
 #  define BOOL_WIDTH 1
+# endif
+# ifndef __STDC_VERSION_LIMITS_H__
+#  define __STDC_VERSION_LIMITS_H__ 202311L
 # endif
 #endif
 

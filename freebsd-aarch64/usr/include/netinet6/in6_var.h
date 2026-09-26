@@ -325,8 +325,7 @@ struct in6_prflags {
 	struct prf_ra {
 		u_char onlink : 1;
 		u_char autonomous : 1;
-		u_char ra_derived: 1;
-		u_char reserved : 5;
+		u_char reserved : 6;
 	} prf_ra;
 	u_char prf_reserved1;
 	u_short prf_reserved2;
@@ -357,7 +356,6 @@ struct  in6_prefixreq {
 
 #define ipr_raf_onlink		ipr_flags.prf_ra.onlink
 #define ipr_raf_auto		ipr_flags.prf_ra.autonomous
-#define ipr_raf_ra_derived	ipr_flags.prf_ra.ra_derived
 
 #define ipr_statef_onlink	ipr_flags.prf_state.onlink
 
@@ -408,6 +406,7 @@ struct	in6_rrenumreq {
 #define IA6_DSTSIN6(ia)	(&((ia)->ia_dstaddr))
 #define IFA_IN6(x)	(&((struct sockaddr_in6 *)((x)->ifa_addr))->sin6_addr)
 #define IFA_DSTIN6(x)	(&((struct sockaddr_in6 *)((x)->ifa_dstaddr))->sin6_addr)
+#define IFA_MASKIN6(x)	(&((struct sockaddr_in6 *)((x)->ifa_netmask))->sin6_addr)
 
 #define IFPR_IN6(x)	(&((struct sockaddr_in6 *)((x)->ifpr_prefix))->sin6_addr)
 
@@ -550,10 +549,6 @@ do {								\
 		    ((ifp)->if_afdata[AF_INET6]))->in6_ifstat[	\
 		    offsetof(struct in6_ifstat, tag) / sizeof(uint64_t)], 1);\
 } while (/*CONSTCOND*/ 0)
-
-extern u_char inet6ctlerrmap[];
-VNET_DECLARE(unsigned long, in6_maxmtu);
-#define	V_in6_maxmtu			VNET(in6_maxmtu)
 #endif /* _KERNEL */
 
 /*
@@ -775,35 +770,13 @@ static __inline struct in6_multi *
 in6m_ifmultiaddr_get_inm(struct ifmultiaddr *ifma)
 {
 
-	NET_EPOCH_ASSERT();
-
 	return ((ifma->ifma_addr->sa_family != AF_INET6 ||	
 	    (ifma->ifma_flags & IFMA_F_ENQUEUED) == 0) ? NULL :
 	    ifma->ifma_protospec);
 }
 
-/*
- * Look up an in6_multi record for an IPv6 multicast address
- * on the interface ifp.
- * If no record found, return NULL.
- *
- * SMPng: The IN6_MULTI_LOCK and must be held and must be in network epoch.
- */
-static __inline struct in6_multi *
-in6m_lookup_locked(struct ifnet *ifp, const struct in6_addr *mcaddr)
-{
-	struct ifmultiaddr *ifma;
-	struct in6_multi *inm;
-
-	CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
-		inm = in6m_ifmultiaddr_get_inm(ifma);
-		if (inm == NULL)
-			continue;
-		if (IN6_ARE_ADDR_EQUAL(&inm->in6m_addr, mcaddr))
-			return (inm);
-	}
-	return (NULL);
-}
+struct in6_multi *
+in6m_lookup_locked(struct ifnet *ifp, const struct in6_addr *mcaddr);
 
 /*
  * Wrapper for in6m_lookup_locked().
@@ -859,6 +832,7 @@ struct ip6_moptions;
 struct sockopt;
 struct inpcbinfo;
 struct rib_head;
+struct ucred;
 
 /* Multicast KPIs. */
 int	im6o_mc_filter(const struct ip6_moptions *, const struct ifnet *,
@@ -881,12 +855,14 @@ int	ip6_setmoptions(struct inpcb *, struct sockopt *);
 #define IN6_IFAUPDATE_DADDELAY	0x1 /* first time to configure an address */
 
 int	in6_mask2len(struct in6_addr *, u_char *);
-int	in6_control(struct socket *, u_long, caddr_t, struct ifnet *,
+int	in6_control(struct socket *, u_long, void *, struct ifnet *,
 	struct thread *);
+int	in6_control_ioctl(u_long, void *, struct ifnet *, struct ucred *);
 int	in6_update_ifa(struct ifnet *, struct in6_aliasreq *,
 	struct in6_ifaddr *, int);
 void	in6_prepare_ifra(struct in6_aliasreq *, const struct in6_addr *,
 	const struct in6_addr *);
+int	in6_addifaddr(struct ifnet *, struct in6_aliasreq *, struct in6_ifaddr *);
 void	in6_purgeaddr(struct ifaddr *);
 void	in6_purgeifaddr(struct in6_ifaddr *);
 int	in6if_do_dad(struct ifnet *);
@@ -896,7 +872,6 @@ void	in6_domifdetach(struct ifnet *, void *);
 int	in6_domifmtu(struct ifnet *);
 struct rib_head *in6_inithead(uint32_t fibnum);
 void	in6_detachhead(struct rib_head *rh);
-void	in6_setmaxmtu(void);
 int	in6_if2idlen(struct ifnet *);
 struct in6_ifaddr *in6ifa_ifpforlinklocal(struct ifnet *, int);
 struct in6_ifaddr *in6ifa_ifpwithaddr(struct ifnet *, const struct in6_addr *);
@@ -916,6 +891,8 @@ int	in6_is_addr_deprecated(struct sockaddr_in6 *);
 int	in6_src_ioctl(u_long, caddr_t);
 
 void	in6_newaddrmsg(struct in6_ifaddr *, int);
+
+void	in6_purge_proxy_ndp(struct ifnet *);
 /*
  * Extended API for IPv6 FIB support.
  */

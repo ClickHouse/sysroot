@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2022 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,7 +24,9 @@
    __STRICT_ANSI__	ISO Standard C.
    _ISOC99_SOURCE	Extensions to ISO C89 from ISO C99.
    _ISOC11_SOURCE	Extensions to ISO C99 from ISO C11.
-   _ISOC2X_SOURCE	Extensions to ISO C99 from ISO C2X.
+   _ISOC23_SOURCE	Extensions to ISO C99 from ISO C23.
+   _ISOC2X_SOURCE	Old name for _ISOC23_SOURCE.
+   _ISOC2Y_SOURCE	Extensions to ISO C23 from ISO C2Y.
    __STDC_WANT_LIB_EXT2__
 			Extensions to ISO C99 from TR 27431-2:2010.
    __STDC_WANT_IEC_60559_BFP_EXT__
@@ -34,7 +36,7 @@
    __STDC_WANT_IEC_60559_TYPES_EXT__
 			Extensions to ISO C11 from TS 18661-3:2015.
    __STDC_WANT_IEC_60559_EXT__
-			ISO C2X interfaces defined only in Annex F.
+			ISO C23 interfaces defined only in Annex F.
 
    _POSIX_SOURCE	IEEE Std 1003.1.
    _POSIX_C_SOURCE	If ==1, like _POSIX_SOURCE; if >=2 add IEEE Std 1003.2;
@@ -42,9 +44,11 @@
 			if >=199506L, add IEEE Std 1003.1c-1995;
 			if >=200112L, all of IEEE 1003.1-2004
 			if >=200809L, all of IEEE 1003.1-2008
+			if >=202405L, all of IEEE 1003.1-2024
    _XOPEN_SOURCE	Includes POSIX and XPG things.  Set to 500 if
 			Single Unix conformance is wanted, to 600 for the
-			sixth revision, to 700 for the seventh revision.
+			sixth revision, to 700 for the seventh revision,
+			to 800 for the eighth revision.
    _XOPEN_SOURCE_EXTENDED XPG things and X/Open Unix extensions.
    _LARGEFILE_SOURCE	Some more functions for correct standard I/O.
    _LARGEFILE64_SOURCE	Additional functionality from LFS for large files.
@@ -57,7 +61,8 @@
 			__STRICT_ANSI__).
 
    _FORTIFY_SOURCE	Add security hardening to many library functions.
-			Set to 1 or 2; 2 performs stricter checks than 1.
+			Set to 1, 2 or 3; 3 performs stricter checks than 2, which
+			performs stricter checks than 1.
 
    _REENTRANT, _THREAD_SAFE
 			Obsolete; equivalent to _POSIX_C_SOURCE=199506L.
@@ -66,7 +71,7 @@
    options such as `-std=c99', define __STRICT_ANSI__.  If none of
    these are defined, or if _DEFAULT_SOURCE is defined, the default is
    to have _POSIX_SOURCE set to one and _POSIX_C_SOURCE set to
-   200809L, as well as enabling miscellaneous functions from BSD and
+   202405L, as well as enabling miscellaneous functions from BSD and
    SVID.  If more than one of these are defined, they accumulate.  For
    example __STRICT_ANSI__, _POSIX_SOURCE and _POSIX_C_SOURCE together
    give you ISO C, 1003.1, and 1003.2, but nothing else.
@@ -93,6 +98,8 @@
    __USE_XOPEN2KXSI     Define XPG6 XSI things.
    __USE_XOPEN2K8       Define XPG7 things.
    __USE_XOPEN2K8XSI    Define XPG7 XSI things.
+   __USE_XOPEN2K24      Define XPG8 things.
+   __USE_XOPEN2K24XSI   Define XPG8 XSI things.
    __USE_LARGEFILE	Define correct standard I/O things.
    __USE_LARGEFILE64	Define LFS things with separate names.
    __USE_FILE_OFFSET64	Define 64bit interface as default.
@@ -138,6 +145,8 @@
 #undef	__USE_XOPEN2KXSI
 #undef	__USE_XOPEN2K8
 #undef	__USE_XOPEN2K8XSI
+#undef	__USE_XOPEN2K24
+#undef	__USE_XOPEN2K24XSI
 #undef	__USE_LARGEFILE
 #undef	__USE_LARGEFILE64
 #undef	__USE_FILE_OFFSET64
@@ -147,11 +156,13 @@
 #undef	__USE_GNU
 #undef	__USE_FORTIFY_LEVEL
 #undef	__KERNEL_STRICT_NAMES
-#undef	__GLIBC_USE_ISOC2X
+#undef	__GLIBC_USE_ISOC23
+#undef	__GLIBC_USE_ISOC2Y
 #undef	__GLIBC_USE_DEPRECATED_GETS
 #undef	__GLIBC_USE_DEPRECATED_SCANF
+#undef	__GLIBC_USE_C23_STRTOL
 
-/* Suppress kernel-name space pollution unless user expressedly asks
+/* Suppress kernel-name space pollution unless user explicitly asks
    for it.  */
 #ifndef _LOOSE_KERNEL_NAMES
 # define __KERNEL_STRICT_NAMES
@@ -196,6 +207,13 @@
 # define _DEFAULT_SOURCE	1
 #endif
 
+/* Remap the old name _ISOC2X_SOURCE to _ISOC23_SOURCE.  */
+#ifdef _ISOC2X_SOURCE
+# undef _ISOC2X_SOURCE
+# undef _ISOC23_SOURCE
+# define _ISOC23_SOURCE	1
+#endif
+
 /* If _GNU_SOURCE was defined by the user, turn on all the other features.  */
 #ifdef _GNU_SOURCE
 # undef  _ISOC95_SOURCE
@@ -204,14 +222,16 @@
 # define _ISOC99_SOURCE	1
 # undef  _ISOC11_SOURCE
 # define _ISOC11_SOURCE	1
-# undef  _ISOC2X_SOURCE
-# define _ISOC2X_SOURCE	1
+# undef  _ISOC23_SOURCE
+# define _ISOC23_SOURCE	1
+# undef  _ISOC2Y_SOURCE
+# define _ISOC2Y_SOURCE	1
 # undef  _POSIX_SOURCE
 # define _POSIX_SOURCE	1
 # undef  _POSIX_C_SOURCE
-# define _POSIX_C_SOURCE	200809L
+# define _POSIX_C_SOURCE	202405L
 # undef  _XOPEN_SOURCE
-# define _XOPEN_SOURCE	700
+# define _XOPEN_SOURCE	800
 # undef  _XOPEN_SOURCE_EXTENDED
 # define _XOPEN_SOURCE_EXTENDED	1
 # undef	 _LARGEFILE64_SOURCE
@@ -229,37 +249,46 @@
 #if (defined _DEFAULT_SOURCE					\
      || (!defined __STRICT_ANSI__				\
 	 && !defined _ISOC99_SOURCE && !defined _ISOC11_SOURCE	\
-	 && !defined _ISOC2X_SOURCE				\
+	 && !defined _ISOC23_SOURCE && !defined _ISOC2Y_SOURCE	\
 	 && !defined _POSIX_SOURCE && !defined _POSIX_C_SOURCE	\
 	 && !defined _XOPEN_SOURCE))
 # undef  _DEFAULT_SOURCE
 # define _DEFAULT_SOURCE	1
 #endif
 
-/* This is to enable the ISO C2X extension.  */
-#if (defined _ISOC2X_SOURCE \
-     || (defined __STDC_VERSION__ && __STDC_VERSION__ > 201710L))
-# define __GLIBC_USE_ISOC2X	1
+/* This is to enable the ISO C2Y extension.  */
+#if (defined _ISOC2Y_SOURCE \
+     || (defined __STDC_VERSION__ && __STDC_VERSION__ > 202311L))
+# define __GLIBC_USE_ISOC2Y	1
 #else
-# define __GLIBC_USE_ISOC2X	0
+# define __GLIBC_USE_ISOC2Y	0
+#endif
+
+/* This is to enable the ISO C23 extension.  */
+#if (defined _ISOC23_SOURCE || defined _ISOC2Y_SOURCE \
+     || (defined __STDC_VERSION__ && __STDC_VERSION__ > 201710L))
+# define __GLIBC_USE_ISOC23	1
+#else
+# define __GLIBC_USE_ISOC23	0
 #endif
 
 /* This is to enable the ISO C11 extension.  */
-#if (defined _ISOC11_SOURCE || defined _ISOC2X_SOURCE \
+#if (defined _ISOC11_SOURCE || defined _ISOC23_SOURCE	\
+     || defined _ISOC2Y_SOURCE				\
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L))
 # define __USE_ISOC11	1
 #endif
 
 /* This is to enable the ISO C99 extension.  */
 #if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE			\
-     || defined _ISOC2X_SOURCE						\
+     || defined _ISOC23_SOURCE || defined _ISOC2Y_SOURCE		\
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
 # define __USE_ISOC99	1
 #endif
 
 /* This is to enable the ISO C90 Amendment 1:1995 extension.  */
 #if (defined _ISOC99_SOURCE || defined _ISOC11_SOURCE			\
-     || defined _ISOC2X_SOURCE						\
+     || defined _ISOC23_SOURCE || defined _ISOC2Y_SOURCE		\
      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199409L))
 # define __USE_ISOC95	1
 #endif
@@ -278,7 +307,7 @@
 #endif
 
 /* If none of the ANSI/POSIX macros are defined, or if _DEFAULT_SOURCE
-   is defined, use POSIX.1-2008 (or another version depending on
+   is defined, use POSIX.1-2024 (or another version depending on
    _XOPEN_SOURCE).  */
 #ifdef _DEFAULT_SOURCE
 # if !defined _POSIX_SOURCE && !defined _POSIX_C_SOURCE
@@ -287,7 +316,7 @@
 # undef  _POSIX_SOURCE
 # define _POSIX_SOURCE	1
 # undef  _POSIX_C_SOURCE
-# define _POSIX_C_SOURCE	200809L
+# define _POSIX_C_SOURCE	202405L
 #endif
 
 #if ((!defined __STRICT_ANSI__					\
@@ -300,8 +329,10 @@
 #  define _POSIX_C_SOURCE	199506L
 # elif defined _XOPEN_SOURCE && (_XOPEN_SOURCE - 0) < 700
 #  define _POSIX_C_SOURCE	200112L
-# else
+# elif defined _XOPEN_SOURCE && (_XOPEN_SOURCE - 0) < 800
 #  define _POSIX_C_SOURCE	200809L
+# else
+#  define _POSIX_C_SOURCE	202405L
 # endif
 # define __USE_POSIX_IMPLICITLY	1
 #endif
@@ -351,6 +382,10 @@
 # define _ATFILE_SOURCE	1
 #endif
 
+#if defined _POSIX_C_SOURCE && (_POSIX_C_SOURCE - 0) >= 202405L
+# define __USE_XOPEN2K24	1
+#endif
+
 #ifdef	_XOPEN_SOURCE
 # define __USE_XOPEN	1
 # if (_XOPEN_SOURCE - 0) >= 500
@@ -362,6 +397,10 @@
 #   if (_XOPEN_SOURCE - 0) >= 700
 #    define __USE_XOPEN2K8	1
 #    define __USE_XOPEN2K8XSI	1
+#    if (_XOPEN_SOURCE - 0) >= 800
+#     define __USE_XOPEN2K24	1
+#     define __USE_XOPEN2K24XSI	1
+#    endif
 #   endif
 #   define __USE_XOPEN2K	1
 #   define __USE_XOPEN2KXSI	1
@@ -462,6 +501,17 @@
 # define __GLIBC_USE_DEPRECATED_SCANF 0
 #endif
 
+/* ISO C23 added support for a 0b or 0B prefix on binary constants as
+   inputs to strtol-family functions (base 0 or 2).  This macro is
+   used to condition redirection in headers to allow that redirection
+   to be disabled when building those functions, despite _GNU_SOURCE
+   being defined.  */
+#if __GLIBC_USE (ISOC23)
+# define __GLIBC_USE_C23_STRTOL 1
+#else
+# define __GLIBC_USE_C23_STRTOL 0
+#endif
+
 /* Get definitions of __STDC_* predefined macros, if the compiler has
    not preincluded this header automatically.  */
 #include <stdc-predef.h>
@@ -478,7 +528,7 @@
 /* Major and minor version number of the GNU C library package.  Use
    these macros to test for features in specific releases.  */
 #define	__GLIBC__	2
-#define	__GLIBC_MINOR__	36
+#define	__GLIBC_MINOR__	43
 
 #define __GLIBC_PREREQ(maj, min) \
 	((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((maj) << 16) + (min))
@@ -501,7 +551,7 @@
 /* Decide whether we can define 'extern inline' functions in headers.  */
 #if __GNUC_PREREQ (2, 7) && defined __OPTIMIZE__ \
     && !defined __OPTIMIZE_SIZE__ && !defined __NO_INLINE__ \
-    && defined __extern_inline
+    && defined __extern_inline && !(defined __clang__ && defined _LIBC)
 # define __USE_EXTERN_INLINES	1
 #endif
 

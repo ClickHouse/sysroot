@@ -4,6 +4,9 @@
 
 #include <bits/wordsize.h>
 
-#if defined __loongarch_lp64
-# include <gnu/stubs-lp64.h>
+#if __WORDSIZE == 64 && defined __loongarch_soft_float
+# include <gnu/stubs-lp64s.h>
+#endif
+#if __WORDSIZE == 64 && defined __loongarch_double_float
+# include <gnu/stubs-lp64d.h>
 #endif

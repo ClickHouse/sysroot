@@ -43,51 +43,14 @@
  *	from: @(#)pmap.h	7.4 (Berkeley) 5/12/91
  */
 
+#ifdef __i386__
+#include <i386/pmap.h>
+#else /* !__i386__ */
+
 #ifndef _MACHINE_PMAP_H_
 #define	_MACHINE_PMAP_H_
 
-/*
- * Page-directory and page-table entries follow this format, with a few
- * of the fields not present here and there, depending on a lot of things.
- */
-				/* ---- Intel Nomenclature ---- */
-#define	X86_PG_V	0x001	/* P	Valid			*/
-#define	X86_PG_RW	0x002	/* R/W	Read/Write		*/
-#define	X86_PG_U	0x004	/* U/S  User/Supervisor		*/
-#define	X86_PG_NC_PWT	0x008	/* PWT	Write through		*/
-#define	X86_PG_NC_PCD	0x010	/* PCD	Cache disable		*/
-#define	X86_PG_A	0x020	/* A	Accessed		*/
-#define	X86_PG_M	0x040	/* D	Dirty			*/
-#define	X86_PG_PS	0x080	/* PS	Page size (0=4k,1=2M)	*/
-#define	X86_PG_PTE_PAT	0x080	/* PAT	PAT index		*/
-#define	X86_PG_G	0x100	/* G	Global			*/
-#define	X86_PG_AVAIL1	0x200	/*    /	Available for system	*/
-#define	X86_PG_AVAIL2	0x400	/*   <	programmers use		*/
-#define	X86_PG_AVAIL3	0x800	/*    \				*/
-#define	X86_PG_PDE_PAT	0x1000	/* PAT	PAT index		*/
-#define	X86_PG_PKU(idx)	((pt_entry_t)idx << 59)
-#define	X86_PG_NX	(1ul<<63) /* No-execute */
-#define	X86_PG_AVAIL(x)	(1ul << (x))
-
-/* Page level cache control fields used to determine the PAT type */
-#define	X86_PG_PDE_CACHE (X86_PG_PDE_PAT | X86_PG_NC_PWT | X86_PG_NC_PCD)
-#define	X86_PG_PTE_CACHE (X86_PG_PTE_PAT | X86_PG_NC_PWT | X86_PG_NC_PCD)
-
-/* Protection keys indexes */
-#define	PMAP_MAX_PKRU_IDX	0xf
-#define	X86_PG_PKU_MASK		X86_PG_PKU(PMAP_MAX_PKRU_IDX)
-
-/*
- * Intel extended page table (EPT) bit definitions.
- */
-#define	EPT_PG_READ		0x001	/* R	Read		*/
-#define	EPT_PG_WRITE		0x002	/* W	Write		*/
-#define	EPT_PG_EXECUTE		0x004	/* X	Execute		*/
-#define	EPT_PG_IGNORE_PAT	0x040	/* IPAT	Ignore PAT	*/
-#define	EPT_PG_PS		0x080	/* PS	Page size	*/
-#define	EPT_PG_A		0x100	/* A	Accessed	*/
-#define	EPT_PG_M		0x200	/* D	Dirty		*/
-#define	EPT_PG_MEMORY_TYPE(x)	((x) << 3) /* MT Memory Type	*/
+#include <machine/pte.h>
 
 /*
  * Define the PG_xx macros in terms of the bits on x86 PTEs.
@@ -116,30 +79,15 @@
 #define	EPT_PG_EMUL_V	X86_PG_AVAIL(52)
 #define	EPT_PG_EMUL_RW	X86_PG_AVAIL(53)
 #define	PG_PROMOTED	X86_PG_AVAIL(54)	/* PDE only */
-#define	PG_FRAME	(0x000ffffffffff000ul)
-#define	PG_PS_FRAME	(0x000fffffffe00000ul)
-#define	PG_PS_PDP_FRAME	(0x000fffffc0000000ul)
 
 /*
  * Promotion to a 2MB (PDE) page mapping requires that the corresponding 4KB
  * (PTE) page mappings have identical settings for the following fields:
  */
 #define	PG_PTE_PROMOTE	(PG_NX | PG_MANAGED | PG_W | PG_G | PG_PTE_CACHE | \
-	    PG_M | PG_A | PG_U | PG_RW | PG_V | PG_PKU_MASK)
+	    PG_M | PG_U | PG_RW | PG_V | PG_PKU_MASK)
 
 /*
- * Page Protection Exception bits
- */
-
-#define PGEX_P		0x01	/* Protection violation vs. not present */
-#define PGEX_W		0x02	/* during a Write cycle */
-#define PGEX_U		0x04	/* access from User mode (UPL) */
-#define PGEX_RSV	0x08	/* reserved PTE field is non-zero */
-#define PGEX_I		0x10	/* during an instruction fetch */
-#define	PGEX_PK		0x20	/* protection key violation */
-#define	PGEX_SGX	0x8000	/* SGX-related */
-
-/* 
  * undef the PG_xx macros that define bits in the regular x86 PTEs that
  * have a different position in nested PTEs. This is done when compiling
  * code that needs to be aware of the differences between regular x86 and
@@ -165,12 +113,7 @@
  * Pte related macros.  This is complicated by having to deal with
  * the sign extension of the 48th bit.
  */
-#define KV4ADDR(l4, l3, l2, l1) ( \
-	((unsigned long)-1 << 47) | \
-	((unsigned long)(l4) << PML4SHIFT) | \
-	((unsigned long)(l3) << PDPSHIFT) | \
-	((unsigned long)(l2) << PDRSHIFT) | \
-	((unsigned long)(l1) << PAGE_SHIFT))
+#define KV4ADDR(l4, l3, l2, l1)		KV5ADDR(-1, l4, l3, l2, l1)
 #define KV5ADDR(l5, l4, l3, l2, l1) (		\
 	((unsigned long)-1 << 56) | \
 	((unsigned long)(l5) << PML5SHIFT) | \
@@ -281,11 +224,14 @@
 
 #ifndef LOCORE
 
+#include <sys/kassert.h>
 #include <sys/queue.h>
 #include <sys/_cpuset.h>
 #include <sys/_lock.h>
 #include <sys/_mutex.h>
 #include <sys/_pctrie.h>
+#include <machine/_pmap.h>
+#include <sys/_pv_entry.h>
 #include <sys/_rangeset.h>
 #include <sys/_smr.h>
 
@@ -348,8 +294,6 @@ extern pt_entry_t pg_nx;
 /*
  * Pmap stuff
  */
-struct	pv_entry;
-struct	pv_chunk;
 
 /*
  * Locks
@@ -365,11 +309,6 @@ enum pmap_type {
 	PT_X86,			/* regular x86 page tables */
 	PT_EPT,			/* Intel's nested page tables */
 	PT_RVI,			/* AMD's nested page tables */
-};
-
-struct pmap_pcids {
-	uint32_t	pm_pcid;
-	uint32_t	pm_gen;
 };
 
 /*
@@ -390,7 +329,7 @@ struct pmap {
 	long			pm_eptgen;	/* EPT pmap generation id */
 	smr_t			pm_eptsmr;
 	int			pm_flags;
-	struct pmap_pcids	pm_pcids[MAXCPU];
+	struct pmap_pcid	*pm_pcidp;
 	struct rangeset		pm_pkru;
 };
 
@@ -419,39 +358,6 @@ extern struct pmap	kernel_pmap_store;
 
 int	pmap_pinit_type(pmap_t pmap, enum pmap_type pm_type, int flags);
 int	pmap_emulate_accessed_dirty(pmap_t pmap, vm_offset_t va, int ftype);
-#endif
-
-/*
- * For each vm_page_t, there is a list of all currently valid virtual
- * mappings of that page.  An entry is a pv_entry_t, the list is pv_list.
- */
-typedef struct pv_entry {
-	vm_offset_t	pv_va;		/* virtual address for mapping */
-	TAILQ_ENTRY(pv_entry)	pv_next;
-} *pv_entry_t;
-
-/*
- * pv_entries are allocated in chunks per-process.  This avoids the
- * need to track per-pmap assignments.
- */
-#define	_NPCM	3
-#define	_NPCPV	168
-#define	PV_CHUNK_HEADER							\
-	pmap_t			pc_pmap;				\
-	TAILQ_ENTRY(pv_chunk)	pc_list;				\
-	uint64_t		pc_map[_NPCM];	/* bitmap; 1 = free */	\
-	TAILQ_ENTRY(pv_chunk)	pc_lru;
-
-struct pv_chunk_header {
-	PV_CHUNK_HEADER
-};
-
-struct pv_chunk {
-	PV_CHUNK_HEADER
-	struct pv_entry		pc_pventry[_NPCPV];
-};
-
-#ifdef	_KERNEL
 
 extern caddr_t	CADDR1;
 extern pt_entry_t *CMAP1;
@@ -460,6 +366,8 @@ extern vm_offset_t virtual_end;
 extern vm_paddr_t dmaplimit;
 extern int pmap_pcid_enabled;
 extern int invpcid_works;
+extern int invlpgb_works;
+extern int invlpgb_maxcnt;
 extern int pmap_pcid_invlpg_workaround;
 extern int pmap_pcid_invlpg_workaround_uena;
 
@@ -504,7 +412,7 @@ void	pmap_page_set_memattr_noflush(vm_page_t m, vm_memattr_t ma);
 void	pmap_pinit_pml4(vm_page_t);
 void	pmap_pinit_pml5(vm_page_t);
 bool	pmap_ps_enabled(pmap_t pmap);
-void	pmap_unmapdev(vm_offset_t, vm_size_t);
+void	pmap_unmapdev(void *, vm_size_t);
 void	pmap_invalidate_page(pmap_t, vm_offset_t);
 void	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
 void	pmap_invalidate_all(pmap_t);
@@ -513,8 +421,8 @@ void	pmap_invalidate_cache_pages(vm_page_t *pages, int count);
 void	pmap_invalidate_cache_range(vm_offset_t sva, vm_offset_t eva);
 void	pmap_force_invalidate_cache_range(vm_offset_t sva, vm_offset_t eva);
 void	pmap_get_mapping(pmap_t pmap, vm_offset_t va, uint64_t *ptr, int *num);
-boolean_t pmap_map_io_transient(vm_page_t *, vm_offset_t *, int, boolean_t);
-void	pmap_unmap_io_transient(vm_page_t *, vm_offset_t *, int, boolean_t);
+bool	pmap_map_io_transient(vm_page_t *, vm_offset_t *, int, bool);
+void	pmap_unmap_io_transient(vm_page_t *, vm_offset_t *, int, bool);
 void	pmap_map_delete(pmap_t, vm_offset_t, vm_offset_t);
 void	pmap_pti_add_kva(vm_offset_t sva, vm_offset_t eva, bool exec);
 void	pmap_pti_remove_kva(vm_offset_t sva, vm_offset_t eva);
@@ -530,11 +438,8 @@ int	pmap_vmspace_copy(pmap_t dst_pmap, pmap_t src_pmap);
 void	pmap_page_array_startup(long count);
 vm_page_t pmap_page_alloc_below_4g(bool zeroed);
 
-#ifdef KASAN
-void	pmap_kasan_enter(vm_offset_t);
-#endif
-#ifdef KMSAN
-void	pmap_kmsan_enter(vm_offset_t);
+#if defined(KASAN) || defined(KMSAN)
+void	pmap_san_enter(vm_offset_t);
 #endif
 
 /*
@@ -567,6 +472,46 @@ pmap_invlpg(pmap_t pmap, vm_offset_t va)
 	}
 }
 #endif /* sys/pcpu.h && machine/cpufunc.h */
+
+#if defined(_SYS_PCPU_H_)
+/* Return pcid for the pmap pmap on current cpu */
+static __inline uint32_t
+pmap_get_pcid(pmap_t pmap)
+{
+	struct pmap_pcid *pcidp;
+
+	MPASS(pmap_pcid_enabled);
+	pcidp = zpcpu_get(pmap->pm_pcidp);
+	return (pcidp->pm_pcid);
+}
+#endif /* sys/pcpu.h */
+
+/*
+ * Invalidation request.  PCPU pc_smp_tlb_op uses u_int instead of the
+ * enum to avoid both namespace and ABI issues (with enums).
+ */
+enum invl_op_codes {
+	INVL_OP_TLB               = 1,
+	INVL_OP_TLB_INVPCID       = 2,
+	INVL_OP_TLB_INVPCID_PTI   = 3,
+	INVL_OP_TLB_PCID          = 4,
+	INVL_OP_PGRNG             = 5,
+	INVL_OP_PGRNG_INVPCID     = 6,
+	INVL_OP_PGRNG_PCID        = 7,
+	INVL_OP_PG                = 8,
+	INVL_OP_PG_INVPCID        = 9,
+	INVL_OP_PG_PCID           = 10,
+	INVL_OP_CACHE             = 11,
+};
+
+typedef void (*smp_invl_local_cb_t)(struct pmap *, vm_offset_t addr1,
+    vm_offset_t addr2);
+typedef void (*smp_targeted_tlb_shootdown_t)(pmap_t, vm_offset_t, vm_offset_t,
+    smp_invl_local_cb_t, enum invl_op_codes);
+
+void smp_targeted_tlb_shootdown_native(pmap_t, vm_offset_t, vm_offset_t,
+    smp_invl_local_cb_t, enum invl_op_codes);
+extern smp_targeted_tlb_shootdown_t smp_targeted_tlb_shootdown;
 
 #endif /* _KERNEL */
 
@@ -609,3 +554,5 @@ pmap_pml5e_index(vm_offset_t va)
 #endif /* !LOCORE */
 
 #endif /* !_MACHINE_PMAP_H_ */
+
+#endif /* __i386__ */

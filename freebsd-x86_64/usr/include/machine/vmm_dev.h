@@ -87,7 +87,9 @@ struct vm_register_set {
 
 struct vm_run {
 	int		cpuid;
-	struct vm_exit	vm_exit;
+	cpuset_t	*cpuset;	/* CPU set storage */
+	size_t		cpusetsize;
+	struct vm_exit	*vm_exit;
 };
 
 struct vm_exception {
@@ -347,7 +349,7 @@ enum {
 };
 
 #define	VM_RUN		\
-	_IOWR('v', IOCNUM_RUN, struct vm_run)
+	_IOW('v', IOCNUM_RUN, struct vm_run)
 #define	VM_SUSPEND	\
 	_IOW('v', IOCNUM_SUSPEND, struct vm_suspend)
 #define	VM_REINIT	\

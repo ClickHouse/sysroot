@@ -33,7 +33,7 @@
 
 #include <sys/time.h>
 #include <sys/param.h>
-
+#include <sys/mbuf.h>
 #include <netinet/in.h>
 
 #ifndef TCP_LRO_ENTRIES
@@ -43,20 +43,20 @@
 
 /*
  * Flags for ACK entry for compression
- * the bottom 8 bits has the th_flags.
+ * the bottom 12 bits has the th_x2|th_flags.
  * LRO itself adds only the TSTMP flags
  * to indicate if either of the types
  * of timestamps are filled and the
  * HAS_TSTMP option to indicate if the
  * TCP timestamp option is valid.
  *
- * The other 5 flag bits are for processing
+ * The other 1 flag bits are for processing
  * by a stack.
  *
  */
-#define TSTMP_LRO		0x0100
-#define TSTMP_HDWR		0x0200
-#define HAS_TSTMP		0x0400
+#define TSTMP_LRO		0x1000
+#define TSTMP_HDWR		0x2000
+#define HAS_TSTMP		0x4000
 /*
  * Default number of interrupts on the same cpu in a row
  * that will cause us to declare a "affinity cpu".
@@ -143,9 +143,10 @@ struct lro_entry {
 	uint16_t		compressed;
 	uint16_t		uncompressed;
 	uint16_t		window;
-	uint8_t			flags;
-	uint8_t			timestamp : 1;
-	uint8_t			needs_merge : 1;
+	uint16_t		flags : 12,	/* 12 TCP header bits */
+				timestamp : 1,
+				needs_merge : 1,
+				reserved : 2;	/* unused */
 	struct bintime		alloc_time;	/* time when entry was allocated */
 };
 
@@ -199,12 +200,24 @@ struct tcp_ackent {
 #define	TCP_LRO_LENGTH_MAX	(65535 - 255)	/* safe value with room for outer headers */
 #define	TCP_LRO_ACKCNT_MAX	65535		/* unlimited */
 
+#define	TCP_LRO_TS_OPTION	ntohl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |\
+    (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)
+
+static inline struct tcphdr *
+tcp_lro_get_th(struct mbuf *m)
+{
+	return ((struct tcphdr *)((char *)m->m_data +
+	    m->m_pkthdr.lro_tcp_h_off));
+}
+
+extern long tcplro_stacks_wanting_mbufq;
+
 int tcp_lro_init(struct lro_ctrl *);
 int tcp_lro_init_args(struct lro_ctrl *, struct ifnet *, unsigned, unsigned);
 void tcp_lro_free(struct lro_ctrl *);
 void tcp_lro_flush_inactive(struct lro_ctrl *, const struct timeval *);
-void tcp_lro_flush(struct lro_ctrl *, struct lro_entry *);
 void tcp_lro_flush_all(struct lro_ctrl *);
+extern int (*tcp_lro_flush_tcphpts)(struct lro_ctrl *, struct lro_entry *);
 int tcp_lro_rx(struct lro_ctrl *, struct mbuf *, uint32_t);
 void tcp_lro_queue_mbuf(struct lro_ctrl *, struct mbuf *);
 void tcp_lro_reg_mbufq(void);

@@ -48,7 +48,7 @@
 #define TCP_DEFER_ACCEPT	 9  /* Wake up listener only when data arrive */
 #define TCP_WINDOW_CLAMP	 10 /* Bound advertised window */
 #define TCP_INFO		 11 /* Information about this connection. */
-#define	TCP_QUICKACK		 12 /* Bock/reenable quick ACKs.  */
+#define	TCP_QUICKACK		 12 /* Bock/re-enable quick ACKs.  */
 #define TCP_CONGESTION		 13 /* Congestion control algorithm.  */
 #define TCP_MD5SIG		 14 /* TCP MD5 Signature (RFC2385) */
 #define TCP_COOKIE_TRANSACTIONS	 15 /* TCP Cookie Transactions */
@@ -209,7 +209,7 @@ enum
 # define TCPI_OPT_TIMESTAMPS	1
 # define TCPI_OPT_SACK		2
 # define TCPI_OPT_WSCALE	4
-# define TCPI_OPT_ECN		8  /* ECN was negociated at TCP session init */
+# define TCPI_OPT_ECN		8  /* ECN was negotiated at TCP session init */
 # define TCPI_OPT_ECN_SEEN	16 /* we received at least one packet with ECT */
 # define TCPI_OPT_SYN_DATA	32 /* SYN-ACK acked data in SYN sent or rcvd */
 
@@ -272,6 +272,7 @@ struct tcp_info
 
 /* tcp_md5sig extension flags for TCP_MD5SIG_EXT.  */
 #define TCP_MD5SIG_FLAG_PREFIX	1 /* Address prefix length.  */
+#define TCP_MD5SIG_FLAG_IFINDEX	2 /* Ifindex set.  */
 
 struct tcp_md5sig
 {
@@ -279,7 +280,7 @@ struct tcp_md5sig
   uint8_t	tcpm_flags;			/* Extension flags.  */
   uint8_t	tcpm_prefixlen;			/* Address prefix.  */
   uint16_t	tcpm_keylen;			/* Key length.  */
-  uint32_t	__tcpm_pad;			/* Zero.  */
+  int		tcpm_ifindex;			/* Device index for scope.  */
   uint8_t	tcpm_key[TCP_MD5SIG_MAXKEYLEN];	/* Key (binary).  */
 };
 
@@ -307,7 +308,7 @@ enum
 /* Flags for both getsockopt and setsockopt */
 #define TCP_COOKIE_IN_ALWAYS	(1 << 0)	/* Discard SYN without cookie */
 #define TCP_COOKIE_OUT_NEVER	(1 << 1)	/* Prohibit outgoing cookies,
-						 * supercedes everything. */
+						 * supersedes everything. */
 
 /* Flags for getsockopt */
 #define TCP_S_DATA_IN		(1 << 2)	/* Was data received? */

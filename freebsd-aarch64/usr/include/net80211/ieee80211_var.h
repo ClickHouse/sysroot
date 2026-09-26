@@ -100,6 +100,8 @@
 	    ((ic)->ic_flags_ext & IEEE80211_FEXT_SEQNO_OFFLOAD)
 #define	IEEE80211_CONF_FRAG_OFFLOAD(ic)	\
 	    ((ic)->ic_flags_ext & IEEE80211_FEXT_FRAG_OFFLOAD)
+#define	IEEE80211_CONF_AMPDU_OFFLOAD(ic)	\
+	    ((ic)->ic_flags_ext & IEEE80211_FEXT_AMPDU_OFFLOAD)
 
 /*
  * 802.11 control state is split into a common portion that maps
@@ -163,7 +165,7 @@ struct ieee80211com {
 	uint32_t		ic_caps;	/* capabilities */
 	uint32_t		ic_htcaps;	/* HT capabilities */
 	uint32_t		ic_htextcaps;	/* HT extended capabilities */
-	uint32_t		ic_cryptocaps;	/* crypto capabilities */
+	uint32_t		ic_cryptocaps;	/* hardware crypto caps */
 						/* set of mode capabilities */
 	uint8_t			ic_modecaps[IEEE80211_MODE_BYTES];
 	uint8_t			ic_promisc;	/* vap's needing promisc mode */
@@ -375,7 +377,11 @@ struct ieee80211com {
 	void			(*ic_update_chw)(struct ieee80211com *);
 
 	const struct debugnet80211_methods	*ic_debugnet_meth;
-	uint64_t		ic_spare[7];
+				/* driver-supported software crypto caps */
+	uint32_t		ic_sw_cryptocaps;
+
+	uint32_t		ic_spare1;
+	uint64_t		ic_spare[6];
 };
 
 struct ieee80211_aclator;
@@ -568,6 +574,9 @@ struct ieee80211vap {
 	/* state machine processing */
 	int			(*iv_newstate)(struct ieee80211vap *,
 				    enum ieee80211_state, int);
+	struct ieee80211_node *	(*iv_update_bss)(struct ieee80211vap *,
+				    struct ieee80211_node *);
+
 	/* 802.3 output method for raw frame xmit */
 	int			(*iv_output)(struct ifnet *, struct mbuf *,
 				    const struct sockaddr *, struct route *);
@@ -607,9 +616,6 @@ struct ieee80211vap {
 	/* Optional transmit/receive histogram statistics */
 	struct ieee80211_rx_histogram	*rx_histogram;
 	struct ieee80211_tx_histogram	*tx_histogram;
-
-	struct ieee80211_node *	(*iv_update_bss)(struct ieee80211vap *,
-				    struct ieee80211_node *);
 
 	uint64_t		iv_spare[36];
 };
@@ -693,13 +699,14 @@ MALLOC_DECLARE(M_80211_VAP);
 #define	IEEE80211_FEXT_VHT	0x00400000	/* CONF: VHT support */
 #define	IEEE80211_FEXT_QUIET_IE	0x00800000	/* STATUS: quiet IE in a beacon has been added */
 #define	IEEE80211_FEXT_UAPSD	0x01000000	/* CONF: enable U-APSD */
+#define	IEEE80211_FEXT_AMPDU_OFFLOAD	0x02000000	/* CONF: driver/fw handles AMPDU[-TX] itself */
 
 #define	IEEE80211_FEXT_BITS \
 	"\20\2INACT\3SCANWAIT\4BGSCAN\5WPS\6TSN\7SCANREQ\10RESUME" \
 	"\0114ADDR\12NONEPR_PR\13SWBMISS\14DFS\15DOTD\16STATEWAIT\17REINIT" \
 	"\20BPF\21WDSLEGACY\22PROBECHAN\23UNIQMAC\24SCAN_OFFLOAD\25SEQNO_OFFLOAD" \
 	    "\26FRAG_OFFLOAD\27VHT" \
-	"\30QUIET_IE\31UAPSD"
+	"\30QUIET_IE\31UAPSD\32AMPDU_OFFLOAD"
 
 /* ic_flags_ht/iv_flags_ht */
 #define	IEEE80211_FHT_NONHT_PR	 0x00000001	/* STATUS: non-HT sta present */
@@ -728,17 +735,29 @@ MALLOC_DECLARE(M_80211_VAP);
 
 #define	IEEE80211_FVEN_BITS	"\20"
 
+/*
+ * These flags are compared in ieee80211_setupcurchan().
+ * Thus 160 should be > 80P80.
+ */
 #define	IEEE80211_FVHT_VHT	0x000000001	/* CONF: VHT supported */
 #define	IEEE80211_FVHT_USEVHT40	0x000000002	/* CONF: Use VHT40 */
 #define	IEEE80211_FVHT_USEVHT80	0x000000004	/* CONF: Use VHT80 */
-#define	IEEE80211_FVHT_USEVHT160	0x000000008	/* CONF: Use VHT160 */
-#define	IEEE80211_FVHT_USEVHT80P80	0x000000010	/* CONF: Use VHT 80+80 */
-#define	IEEE80211_FVHT_MASK						\
+#define	IEEE80211_FVHT_USEVHT80P80	0x000000008	/* CONF: Use VHT 80+80 */
+#define	IEEE80211_FVHT_USEVHT160	0x000000010	/* CONF: Use VHT160 */
+#define	IEEE80211_FVHT_STBC_TX	0x00000020	/* CONF: STBC tx enabled */
+#define	IEEE80211_FVHT_STBC_RX	0x00000040	/* CONF: STBC rx enabled */
+
+#define	IEEE80211_FVHT_CHANWIDTH_MASK					\
 	(IEEE80211_FVHT_VHT | IEEE80211_FVHT_USEVHT40 |			\
 	IEEE80211_FVHT_USEVHT80 | IEEE80211_FVHT_USEVHT160 |		\
 	IEEE80211_FVHT_USEVHT80P80)
+
+#define	IEEE80211_FVHT_MASK						\
+	(IEEE80211_FVHT_CHANWIDTH_MASK |				\
+	IEEE80211_FVHT_STBC_TX | IEEE80211_FVHT_STBC_RX)
+
 #define	IEEE80211_VFHT_BITS \
-	"\20\1VHT\2VHT40\3VHT80\4VHT160\5VHT80P80"
+	"\20\1VHT\2VHT40\3VHT80\4VHT80P80\5VHT160\6STBC_TX\7STBC_RX"
 
 #define	IEEE80211_COM_DETACHED	0x00000001	/* ieee80211_ifdetach called */
 #define	IEEE80211_COM_REF_ADD	0x00000002	/* add / remove reference */
@@ -749,6 +768,10 @@ MALLOC_DECLARE(M_80211_VAP);
 int	ic_printf(struct ieee80211com *, const char *, ...) __printflike(2, 3);
 void	ieee80211_ifattach(struct ieee80211com *);
 void	ieee80211_ifdetach(struct ieee80211com *);
+void	ieee80211_set_software_ciphers(struct ieee80211com *,
+	    uint32_t cipher_suite);
+void	ieee80211_set_hardware_ciphers(struct ieee80211com *,
+	    uint32_t cipher_suite);
 int	ieee80211_vap_setup(struct ieee80211com *, struct ieee80211vap *,
 		const char name[IFNAMSIZ], int unit,
 		enum ieee80211_opmode opmode, int flags,

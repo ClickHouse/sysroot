@@ -314,7 +314,6 @@ typedef struct ng_btsocket_rfcomm_pcb *	ng_btsocket_rfcomm_pcb_p;
 
 #ifdef _KERNEL
 
-void ng_btsocket_rfcomm_init       (void);
 void ng_btsocket_rfcomm_abort      (struct socket *);
 void ng_btsocket_rfcomm_close      (struct socket *);
 int  ng_btsocket_rfcomm_accept     (struct socket *, struct sockaddr **);
@@ -323,7 +322,7 @@ int  ng_btsocket_rfcomm_bind       (struct socket *, struct sockaddr *,
                                     struct thread *);
 int  ng_btsocket_rfcomm_connect    (struct socket *, struct sockaddr *,
                                     struct thread *);
-int  ng_btsocket_rfcomm_control    (struct socket *, u_long, caddr_t,
+int  ng_btsocket_rfcomm_control    (struct socket *, u_long, void *,
                                     struct ifnet *, struct thread *);
 int  ng_btsocket_rfcomm_ctloutput  (struct socket *, struct sockopt *);
 void ng_btsocket_rfcomm_detach     (struct socket *);

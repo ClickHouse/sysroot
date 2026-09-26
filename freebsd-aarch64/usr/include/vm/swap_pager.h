@@ -43,6 +43,7 @@
 
 struct buf;
 struct swdevt;
+struct thread;
 typedef void sw_strategy_t(struct buf *, struct swdevt *);
 typedef void sw_close_t(struct thread *, struct swdevt *);
 
@@ -69,7 +70,9 @@ struct swdevt {
 
 #ifdef _KERNEL
 
+extern bool swap_pager_almost_full;
 extern int swap_pager_avail;
+extern int nsw_cluster_max;
 
 struct xswdev;
 int swap_dev_info(int name, struct xswdev *xs, char *devname, size_t len);

@@ -120,6 +120,7 @@ int	openpty(int *_amaster, int *_aslave, char *_name,
 	    struct termios *_termp, struct winsize *_winp);
 int	pidfile_close(struct pidfh *_pfh);
 int	pidfile_fileno(const struct pidfh *_pfh);
+int	pidfile_signal(const char *pathp, int sig, pid_t *pidptr);
 struct pidfh *
 	pidfile_open(const char *_path, mode_t _mode, pid_t *_pidptr);
 int	pidfile_remove(struct pidfh *_pfh);
@@ -205,6 +206,14 @@ const char *
 int	quota_read(struct quotafile *_qf, struct dqblk *_dqb, int _id);
 int	quota_write_limits(struct quotafile *_qf, struct dqblk *_dqb, int _id);
 int	quota_write_usage(struct quotafile *_qf, struct dqblk *_dqb, int _id);
+#endif
+
+#ifdef _SYS_CPUSET_H_
+int	cpuset_parselist(const char *list, cpuset_t *mask);
+#define CPUSET_PARSE_OK			0
+#define CPUSET_PARSE_GETAFFINITY	-1
+#define CPUSET_PARSE_ERROR		-2
+#define CPUSET_PARSE_INVALID_CPU	-3
 #endif
 
 __END_DECLS

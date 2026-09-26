@@ -103,9 +103,7 @@
 #define	MAP_EXCL	 0x00004000 /* for MAP_FIXED, fail if address is used */
 #define	MAP_NOCORE	 0x00020000 /* dont include these pages in a coredump */
 #define	MAP_PREFAULT_READ 0x00040000 /* prefault mapping for reading */
-#ifdef __LP64__
 #define	MAP_32BIT	 0x00080000 /* map in the low 2GB of address space */
-#endif
 
 /*
  * Request specific alignment (n == log2 of the desired alignment).
@@ -293,7 +291,7 @@ struct shmfd {
 	int		shm_flags;
 	int		shm_seals;
 
-	/* largepage config */
+	/* largepage config, synchronized by the rangelock */
 	int		shm_lp_psind;
 	int		shm_lp_alloc_policy;
 };
@@ -312,8 +310,9 @@ void	shm_drop(struct shmfd *shmfd);
 int	shm_dotruncate(struct shmfd *shmfd, off_t length);
 bool	shm_largepage(struct shmfd *shmfd);
 void	shm_remove_prison(struct prison *pr);
+int	shm_get_path(struct vm_object *obj, char *path, size_t sz);
 
-extern struct fileops shm_ops;
+extern const struct fileops shm_ops;
 
 #define	MAP_32BIT_MAX_ADDR	((vm_offset_t)1 << 31)
 

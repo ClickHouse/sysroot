@@ -36,7 +36,7 @@ typedef	void	(*pmap_kenter_attr_t)(vm_offset_t, vm_paddr_t, vm_memattr_t);
 typedef	void	(*pmap_kremove_t)(vm_offset_t);
 typedef	void	*(*pmap_mapdev_t)(vm_paddr_t, vm_size_t);
 typedef	void	*(*pmap_mapdev_attr_t)(vm_paddr_t, vm_size_t, vm_memattr_t);
-typedef	void	(*pmap_unmapdev_t)(vm_offset_t, vm_size_t);
+typedef	void	(*pmap_unmapdev_t)(void *, vm_size_t);
 typedef	void	(*pmap_page_set_memattr_t)(vm_page_t, vm_memattr_t);
 typedef	int	(*pmap_change_attr_t)(vm_offset_t, vm_size_t, vm_memattr_t);
 typedef	int	(*pmap_map_user_ptr_t)(pmap_t, volatile const void *,
@@ -60,7 +60,7 @@ typedef	void	(*pmap_enter_object_t)(pmap_t, vm_offset_t, vm_offset_t,
 typedef	void	(*pmap_enter_quick_t)(pmap_t, vm_offset_t, vm_page_t, vm_prot_t);
 typedef	vm_paddr_t	(*pmap_extract_t)(pmap_t, vm_offset_t);
 typedef	vm_page_t	(*pmap_extract_and_hold_t)(pmap_t, vm_offset_t, vm_prot_t);
-typedef	void	(*pmap_growkernel_t)(vm_offset_t);
+typedef	int	(*pmap_growkernel_nopanic_t)(vm_offset_t);
 typedef	void	(*pmap_init_t)(void);
 typedef	boolean_t	(*pmap_is_modified_t)(vm_page_t);
 typedef	boolean_t	(*pmap_is_prefaultable_t)(pmap_t, vm_offset_t);
@@ -130,7 +130,7 @@ struct pmap_funcs {
 	pmap_enter_quick_t	enter_quick;
 	pmap_extract_t	extract;
 	pmap_extract_and_hold_t	extract_and_hold;
-	pmap_growkernel_t	growkernel;
+	pmap_growkernel_nopanic_t	growkernel_nopanic;
 	pmap_init_t	init;
 	pmap_is_modified_t	is_modified;
 	pmap_is_prefaultable_t	is_prefaultable;

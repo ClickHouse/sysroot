@@ -94,11 +94,8 @@ struct rt_metrics {
 
 /*
  * rmx_rtt and rmx_rttvar are stored as microseconds;
- * RTTTOPRHZ(rtt) converts to a value suitable for use
- * by a protocol slowtimo counter.
  */
 #define	RTM_RTTUNIT	1000000	/* units for rtt, rttvar, as units per sec */
-#define	RTTTOPRHZ(r)	((r) / (RTM_RTTUNIT / PR_SLOWHZ))
 
 /* lle state is exported in rmx_state rt_metrics field */
 #define	rmx_state	rmx_weight
@@ -421,8 +418,7 @@ struct ifmultiaddr;
 struct rib_head;
 
 void	 rt_ieee80211msg(struct ifnet *, int, void *, size_t);
-void	 rt_ifmsg(struct ifnet *);
-void	 rt_ifmsg_14(struct ifnet *, int);
+void	 rt_ifmsg(struct ifnet *, int);
 void	 rt_missmsg(int, struct rt_addrinfo *, int, int);
 void	 rt_missmsg_fib(int, struct rt_addrinfo *, int, int, int);
 int	 rt_addrmsg(int, struct ifaddr *, int);
@@ -446,10 +442,7 @@ void	rt_flushifroutes(struct ifnet *ifp);
  * For now the protocol indepedent versions are the same as the AF_INET ones
  * but this will change.. 
  */
-int	 rtioctl_fib(u_long, caddr_t, u_int);
-int	rib_lookup_info(uint32_t, const struct sockaddr *, uint32_t, uint32_t,
-	    struct rt_addrinfo *);
-void	rib_free_info(struct rt_addrinfo *info);
+int	rtioctl_fib(u_long, caddr_t, u_int);
 
 /* New API */
 void rib_flush_routes_family(int family);

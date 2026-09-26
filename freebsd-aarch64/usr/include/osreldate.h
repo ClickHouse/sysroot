@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 1992-2021 The FreeBSD Project.
+ * Copyright (c) 1992-2023 The FreeBSD Project.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,5 +29,5 @@
 #error "<osreldate.h> cannot be used in the kernel, use <sys/param.h>"
 #else
 #undef __FreeBSD_version
-#define __FreeBSD_version 1304000
+#define __FreeBSD_version 1405000
 #endif

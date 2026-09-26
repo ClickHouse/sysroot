@@ -74,9 +74,16 @@
  * Data structure and control definitions for bridge interfaces.
  */
 
+#ifndef	_NET_IF_BRIDGEVAR_H_
+#define	_NET_IF_BRIDGEVAR_H_
+
+#include <sys/types.h>
 #include <sys/callout.h>
 #include <sys/queue.h>
 #include <sys/condvar.h>
+
+#include <net/ethernet.h>
+#include <net/if.h>
 
 /*
  * Commands used in the SIOCSDRVSPEC ioctl.  Note the lookup of the
@@ -181,7 +188,7 @@ struct ifbareq {
 	unsigned long	ifba_expire;		/* address expire time */
 	uint8_t		ifba_flags;		/* address flags */
 	uint8_t		ifba_dst[ETHER_ADDR_LEN];/* destination address */
-	uint16_t	ifba_vlan;		/* vlan id */
+	ether_vlanid_t	ifba_vlan;		/* vlan id */
 };
 
 #define	IFBAF_TYPEMASK	0x03	/* address type mask */
@@ -303,8 +310,10 @@ struct ifbpstpconf {
 	KASSERT((_ifp)->if_bridge_input != NULL,	\
 	    ("%s: if_bridge not loaded!", __func__));	\
 	_m = (*(_ifp)->if_bridge_input)(_ifp, _m);	\
-	if (_m != NULL)					\
+	if (_m != NULL)	{				\
 		_ifp = _m->m_pkthdr.rcvif;		\
+		m->m_flags &= ~M_BRIDGE_INJECT;		\
+	}						\
 } while (0)
 
 #define BRIDGE_OUTPUT(_ifp, _m, _err)	do {    	\
@@ -314,5 +323,8 @@ struct ifbpstpconf {
 } while (0)
 
 extern	void (*bridge_dn_p)(struct mbuf *, struct ifnet *);
+extern	bool (*bridge_member_ifaddrs_p)(void);
 
 #endif /* _KERNEL */
+
+#endif /* _NET_IF_BRIDGEVAR_H_ */

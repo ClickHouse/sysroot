@@ -1,5 +1,5 @@
-/* Restartable Sequences architecture header.  Stub version.
-   Copyright (C) 2021-2022 Free Software Foundation, Inc.
+/* Restartable Sequences Linux LoongArch architecture header.
+   Copyright (C) 2024-2026 Free Software Foundation, Inc.
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -26,4 +26,11 @@
    architecture.  When choosing this value, it needs to be taken into
    account that generating invalid instructions may have ill effects on
    tools like objdump, and may also have impact on the CPU speculative
-   execution efficiency in some cases.  */
+   execution efficiency in some cases.
+
+   RSEQ_SIG uses the following break instruction:
+
+   0x002a0010	break	0x10
+*/
+
+#define RSEQ_SIG        0x002a0010

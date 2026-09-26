@@ -898,7 +898,7 @@ struct sctp_association {
 	uint32_t str_reset_seq_in;
 
 	/* various verification tag information */
-	uint32_t my_vtag;	/* The tag to be used. if assoc is re-initited
+	uint32_t my_vtag;	/* The tag to be used. if assoc is re-initiated
 				 * by remote end, and I have unlocked this
 				 * will be regenerated to a new random value. */
 	uint32_t peer_vtag;	/* The peers last tag */
@@ -1172,6 +1172,10 @@ struct sctp_association {
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
 	uint8_t idata_supported;
+
+	/* Zero checksum supported information */
+	uint8_t rcv_edmid;
+	uint8_t snd_edmid;
 
 	/* Did the peer make the stream config (add out) request */
 	uint8_t peer_req_out;
