@@ -26,4 +26,9 @@ gtar -C / -cf - \
     "${GCC_LIB_DIR#/}" \
   | gtar -xf - -C "$SYSROOT"
 
+for name in crtbegin.o crtend.o crtbeginS.o crtendS.o; do
+  object=$("${GCC:-gcc}" -m64 -print-file-name="$name")
+  cp "$object" "$SYSROOT/usr/lib/amd64/$name"
+done
+
 echo "Sysroot refresh complete: $SYSROOT"
